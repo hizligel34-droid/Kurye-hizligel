@@ -335,4 +335,4 @@
 - [x] Yetkili müşteri/kurye fotoğraf yükleme prosedürünü ve dosya doğrulamasını ekle
 - [x] Sohbet arayüzüne hızlı fotoğraf seçme, önizleme ve gönderme kontrolü ekle
 - [x] Fotoğraf erişim güvenliği, MIME/boyut doğrulaması, Vitest, TypeScript, build ve mobil görsel denetimini tamamla
-- [ ] Fotoğraf sohbet sürümünü checkpoint olarak kaydet
+- [x] Fotoğraf sohbet sürümünü checkpoint olarak kaydet
