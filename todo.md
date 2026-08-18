@@ -272,4 +272,4 @@
 - [x] Müşteri canlı takip haritasında kurye işaretçisini akıcı güncelle ve bağlantı durumunu göster
 - [x] Kurye konum gönderimi, bağlantı kopması ve yetkisiz erişim için Vitest testleri ekle
 - [x] Gerçek zamanlı takip akışını TypeScript, build ve mobil görsel denetiminden geçir
-- [ ] Yeni gerçek zamanlı takip sürümünü checkpoint olarak kaydet
+- [x] Yeni gerçek zamanlı takip sürümünü checkpoint olarak kaydet
