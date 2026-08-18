@@ -237,3 +237,12 @@
 - [x] Kurye ve müşteri panelleri için temel wireframe/UI akış dokümanını beceriye ekle
 - [x] Lojistik platformu yatırımcı sunumu içeriğini varsayımları açıkça belirterek hazırla
 - [x] Yatırımcı sunumunu slayt dosyası olarak üret, görsel doğrula ve teslim et
+- [ ] Skill’e finansal öngörü, gelir modeli ve çalışan panel doğrulama rehberlerini ekle
+- [ ] Kurye ve müşteri wireframe’lerini Run Kurye’de çalışan etkileşimli panellere dönüştür
+- [ ] Müşteri paneline gerçek sipariş durumu takip çubuğu ve bildirim alanı ekle
+- [ ] Finansal öngörü ve gelir modelini yatırımcı sunumuna yeni slaytlarla ekle
+- [ ] Yeni akışları test et, mobil doğrula, skill’i validate et ve checkpoint oluştur
+- [x] Türkçe, İngilizce, Arapça, Rusça, Yunanca, İtalyanca, Almanca ve Fransızca dil kataloğunu tanımla
+- [x] Mobil header’da erişilebilir dil seçici ve kalıcı kullanıcı tercihi ekle
+- [x] Müşteri, kurye ve sohbet ekranlarında seçilen dil metinlerini bağla
+- [x] Çok dilli arayüz için test, TypeScript, build ve mobil görsel doğrulaması yap
