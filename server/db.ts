@@ -221,11 +221,11 @@ export function buildOrderAddressDetails(input: { pickupAddressDetail?: string; 
   return { pickupAddressDetail: normalize(input.pickupAddressDetail), deliveryAddressDetail: normalize(input.deliveryAddressDetail) };
 }
 
-export function buildSupportMessagePayload(input: { orderId: number; senderId?: number; senderRole: Message['senderRole']; content: string; detectedLanguage: string; translatedContent: string }) {
-  return { orderId: input.orderId, senderId: input.senderId, senderRole: input.senderRole, content: input.content, detectedLanguage: input.detectedLanguage, translatedContent: input.translatedContent };
+export function buildSupportMessagePayload(input: { orderId: number; senderId?: number; senderRole: Message['senderRole']; content: string; detectedLanguage: string; translatedContent: string; attachmentKey?: string | null; attachmentUrl?: string | null; attachmentContentType?: string | null; attachmentName?: string | null; attachmentSizeBytes?: number | null }) {
+  return { orderId: input.orderId, senderId: input.senderId, senderRole: input.senderRole, content: input.content, detectedLanguage: input.detectedLanguage, translatedContent: input.translatedContent, attachmentKey: input.attachmentKey ?? null, attachmentUrl: input.attachmentUrl ?? null, attachmentContentType: input.attachmentContentType ?? null, attachmentName: input.attachmentName ?? null, attachmentSizeBytes: input.attachmentSizeBytes ?? null };
 }
 
-export async function addMessage(input: { orderId: number; senderId?: number; senderRole: Message['senderRole']; content: string; detectedLanguage?: string; translatedContent?: string }) {
+export async function addMessage(input: { orderId: number; senderId?: number; senderRole: Message['senderRole']; content: string; detectedLanguage?: string; translatedContent?: string; attachmentKey?: string | null; attachmentUrl?: string | null; attachmentContentType?: string | null; attachmentName?: string | null; attachmentSizeBytes?: number | null }) {
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
   await db.insert(messages).values(input);
   return getMessages(input.orderId);

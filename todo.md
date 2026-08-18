@@ -327,4 +327,12 @@
 - [x] Şablonlara tıklayarak mevcut sohbet gönderim akışına mesaj gönder
 - [x] Şablonları çok dilli ve mobil erişilebilir arayüzde göster
 - [x] Hazır mesaj yardımcıları için Vitest, TypeScript, build ve mobil görsel doğrulama yap
-- [ ] Hazır mesaj sürümünü checkpoint olarak kaydet
+- [x] Hazır mesaj sürümünü checkpoint olarak kaydet
+
+
+## Chat photo sharing
+- [x] Mesaj şemasına fotoğraf metadata alanlarını ve migration’ı ekle
+- [x] Yetkili müşteri/kurye fotoğraf yükleme prosedürünü ve dosya doğrulamasını ekle
+- [x] Sohbet arayüzüne hızlı fotoğraf seçme, önizleme ve gönderme kontrolü ekle
+- [x] Fotoğraf erişim güvenliği, MIME/boyut doğrulaması, Vitest, TypeScript, build ve mobil görsel denetimini tamamla
+- [ ] Fotoğraf sohbet sürümünü checkpoint olarak kaydet

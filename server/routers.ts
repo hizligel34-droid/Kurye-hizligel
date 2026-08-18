@@ -27,7 +27,18 @@ function decodeCourierDocument(dataBase64: string, contentType: string) {
   if (!valid) throw new Error("Belge içeriği seçilen dosya türüyle eşleşmiyor");
   return { raw, bytes };
 }
-function safeDocumentName(fileName: string) { return fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120) || "document"; }
+export function safeDocumentName(fileName: string) { const baseName = fileName.split(/[\\/]/).pop() ?? "document"; return baseName.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/^\.+/, "") .slice(-120) || "document"; }
+const chatPhotoTypes = ["image/jpeg", "image/png", "image/webp"] as const;
+export function decodeChatPhoto(dataBase64: string, contentType: string) {
+  if (!chatPhotoTypes.includes(contentType as typeof chatPhotoTypes[number])) throw new Error("Sohbette yalnızca JPG, PNG veya WebP fotoğraf gönderebilirsiniz");
+  const raw = dataBase64.replace(/^data:[^;]+;base64,/, "");
+  const bytes = Buffer.from(raw, "base64");
+  if (!bytes.length || bytes.length > 5 * 1024 * 1024) throw new Error("Fotoğraf boyutu 5 MB’tan küçük olmalıdır");
+  const header = bytes.subarray(0, 12);
+  const valid = contentType === "image/jpeg" ? header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff : contentType === "image/png" ? header[0] === 0x89 && header[1] === 0x50 && header[2] === 0x4e && header[3] === 0x47 : header.subarray(0, 4).toString("ascii") === "RIFF" && header.subarray(8, 12).toString("ascii") === "WEBP";
+  if (!valid) throw new Error("Fotoğraf içeriği seçilen dosya türüyle eşleşmiyor");
+  return { raw, bytes };
+}
 
 const statusLabels = { received: "Alındı", on_the_way: "Yolda", delivered: "Teslim Edildi", cancelled: "İptal Edildi" } as const;
 export const supportedLanguages = ["tr", "en", "de", "ru", "ar", "zh", "el"] as const;
@@ -198,7 +209,7 @@ export const appRouter = router({
     }),
   }),
   chat: router({
-    messages: protectedProcedure.input(z.object({ orderId: z.number() })).query(async ({ ctx, input }) => { await getAccessibleOrder(input.orderId, ctx.user); return getMessages(input.orderId); }),
+    messages: protectedProcedure.input(z.object({ orderId: z.number() })).query(async ({ ctx, input }) => { const { order } = await getAccessibleOrder(input.orderId, ctx.user); const rows = await getMessages(order.id); return Promise.all(rows.map(async message => message.attachmentKey ? { ...message, attachmentUrl: await storageGetSignedUrl(message.attachmentKey) } : message)); }),
 send: protectedProcedure.input(z.object({ orderId: z.number(), content: z.string().min(1), senderRole: z.enum(["customer", "courier", "operator"]), targetLanguage: z.enum(supportedLanguages).optional() })).mutation(async ({ ctx, input }) => {
       const { order } = await getAccessibleOrder(input.orderId, ctx.user);
       const expectedRole = ctx.user.role === "courier" ? "courier" : ctx.user.role === "admin" ? "operator" : "customer";
@@ -208,6 +219,15 @@ send: protectedProcedure.input(z.object({ orderId: z.number(), content: z.string
       const targetLanguage = input.targetLanguage ?? (input.senderRole === "customer" ? "tr" : customerLanguage);
       const translation = await translateSupportMessage(input.content, targetLanguage);
       return addMessage(buildSupportMessagePayload({ orderId: order.id, senderId: ctx.user.id, senderRole: input.senderRole, content: input.content, detectedLanguage: translation.sourceLanguage, translatedContent: translation.translatedText }));
+    }),
+    sendPhoto: protectedProcedure.input(z.object({ orderId: z.number().int().positive(), senderRole: z.enum(["customer", "courier", "operator"]), fileName: z.string().min(1).max(180), contentType: z.string(), dataBase64: z.string().min(20) })).mutation(async ({ ctx, input }) => {
+      const { order } = await getAccessibleOrder(input.orderId, ctx.user);
+      const expectedRole = ctx.user.role === "courier" ? "courier" : ctx.user.role === "admin" ? "operator" : "customer";
+      if (input.senderRole !== expectedRole) throw new Error("Gönderici rolü doğrulanamadı");
+      const photo = decodeChatPhoto(input.dataBase64, input.contentType);
+      const safeName = safeDocumentName(input.fileName);
+      const stored = await storagePut(`orders/${order.id}/chat/${ctx.user.id}/${nanoid(10)}-${safeName}`, photo.bytes, input.contentType);
+      return addMessage(buildSupportMessagePayload({ orderId: order.id, senderId: ctx.user.id, senderRole: input.senderRole, content: "Fotoğraf gönderildi", detectedLanguage: "und", translatedContent: "Fotoğraf gönderildi", attachmentKey: stored.key, attachmentUrl: stored.url, attachmentContentType: input.contentType, attachmentName: safeName, attachmentSizeBytes: photo.bytes.length }));
     }),
     assistant: publicProcedure.input(z.object({ question: z.string().min(2), trackingCode: z.string().optional() })).mutation(async ({ input }) => {
       const context = input.trackingCode ? await getOrderByTrackingCode(input.trackingCode) : undefined;

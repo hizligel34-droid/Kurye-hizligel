@@ -60,6 +60,11 @@ export const messages = mysqlTable("messages", {
   content: text("content").notNull(),
   detectedLanguage: varchar("detectedLanguage", { length: 16 }).default("tr").notNull(),
   translatedContent: text("translatedContent"),
+  attachmentKey: varchar("attachmentKey", { length: 360 }),
+  attachmentUrl: varchar("attachmentUrl", { length: 480 }),
+  attachmentContentType: varchar("attachmentContentType", { length: 80 }),
+  attachmentName: varchar("attachmentName", { length: 180 }),
+  attachmentSizeBytes: int("attachmentSizeBytes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
