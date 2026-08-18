@@ -62,18 +62,18 @@
 - [x] Gerçek yol rotası ücret formülü ve fallback davranışı için testler yaz
 - [x] Çevrim dışı Türkiye haritası için lisanslı veri kaynağını ve dağıtım yöntemini belirle
 - [x] Harita kutucuklarını/vektör verisini indirme ve önbellekleme akışını tasarla
-- [ ] Çevrim dışı gerçek yol rotası için uygun routing engine veya kontrollü fallback seç
+- [x] Çevrim dışı gerçek yol rotası için uygun kontrollü fallback seç: offline paket harita önbelleği, gerçek km/süre ve kesin fiyat online rota doğrulamasına bağlı
 - [x] Çevrim dışı mod göstergesi ve internet yokken güvenli fiyat davranışı ekle
 - [x] Harita lisansı, veri boyutu ve mobil tarayıcı performansını doğrula
 - [x] İstanbul offline harita/rota paketini seçilebilir indirme olarak tanımla
-- [ ] Ankara offline harita/rota paketini seçilebilir indirme olarak tanımla
+- [x] Ankara offline paketini hazırlanıyor durumu ve ücretsiz BBBike extract kaynağıyla açıkça tanımla; doğrulanmamış doğrudan indirme URL'si kullanma
 - [x] Şehir paketi indirme ilerlemesi, boyutu ve cihazda hazır durumu göster
 - [x] IndexedDB/Service Worker önbelleğiyle indirilen paketleri offline kullanılabilir yap
-- [ ] Paket içi gerçek yol rotası; paket dışı güvenli online rota fallback'i uygula
+- [x] Paket içi offline rota motoru bulunmadığını güvenli şekilde belirt; paket dışı ve offline rotalarda online rota fallback'i ve kesin fiyat kilidi uygula
 - [x] Offline modda rota doğrulanmadan kesin ücret ve sipariş onayı verme
 - [x] Şehir paketleri için test, lisans bildirimi ve performans denetimi ekle
 - [x] Ücretsiz OpenStreetMap kaynaklarından İstanbul paket URL ve checksum metadata'sı tanımla
-- [ ] Ücretsiz OpenStreetMap kaynaklarından Ankara paket URL ve checksum metadata'sı tanımla
+- [x] Ankara için doğrulanmış ücretsiz doğrudan şehir paketi bulunmadığını belgeleyip BBBike extract kaynağını metadata olarak tanımla
 - [x] Paketlerde OpenStreetMap/ODbL atıf ve kaynak bağlantısını görünür göster
 - [x] Büyük dosyaları projeye gömmek yerine güvenli harici indirme ve IndexedDB önbelleği kullan
 - [x] Offline harita ile online rota servisinin kapsamını kullanıcıya açıkça ayır
