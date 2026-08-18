@@ -13,6 +13,7 @@ import { RUN_KURYE_CONTRACT_VERSION, runKuryeContractNotice, runKuryeContractSec
 import { createValhallaProvider } from "./valhallaAdapter";
 import { resolveOfflineRoute } from "@shared/offlineRouting";
 import { storageGetSignedUrl, storagePut } from "./storage";
+import { isValidIstanbulLocation, publishCourierLocation } from "./realtime";
 
 const courierDocumentTypes = ["identity", "license", "vehicle_registration"] as const;
 const courierDocumentContentTypes = ["image/jpeg", "image/png", "application/pdf"] as const;
@@ -142,6 +143,13 @@ export const appRouter = router({
       const order = await getOrderByTrackingCode(input.trackingCode);
       if (!order) return null;
       return { trackingCode: order.trackingCode, status: order.status, distanceKm: order.distanceKm, totalPrice: order.totalPrice, routeDurationMinutes: order.routeDurationMinutes, routeStatus: order.routeStatus, createdAt: order.createdAt, updatedAt: order.updatedAt };
+    }),
+    publishLocation: protectedProcedure.input(z.object({ orderId: z.number().int().positive(), lat: z.number(), lng: z.number(), accuracy: z.number().nullable().optional(), heading: z.number().nullable().optional(), speed: z.number().nullable().optional() })).mutation(async ({ ctx, input }) => {
+      const { order } = await getAccessibleOrder(input.orderId, ctx.user);
+      if (ctx.user.role !== "courier" || order.courierId !== ctx.user.id) throw new Error("Konum yalnızca atanmış kurye tarafından paylaşılabilir");
+      if (order.status !== "on_the_way") throw new Error("Konum paylaşımı yalnızca yoldaki siparişlerde açıktır");
+      if (!isValidIstanbulLocation(input)) throw new Error("Konum İstanbul hizmet alanı dışında");
+      return publishCourierLocation({ orderId: order.id, trackingCode: order.trackingCode, lat: input.lat, lng: input.lng, accuracy: input.accuracy ?? null, heading: input.heading ?? null, speed: input.speed ?? null, updatedAt: Date.now() });
     }),
     updateStatus: protectedProcedure.input(z.object({ orderId: z.number(), status: z.enum(["received", "on_the_way", "delivered", "cancelled"]), courierId: z.number().optional() })).mutation(async ({ ctx, input }) => {
       if (!["admin", "courier"].includes(ctx.user.role)) throw new Error("Bu işlem için yetkiniz yok");

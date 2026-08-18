@@ -11,7 +11,8 @@ const OFFLINE_PACKAGE_ID = "istanbul-osm-shortbread";
 const offlineProtocol = new Protocol({ metadata: true });
 let protocolRegistered = false;
 
-type OfflineIstanbulMapProps = { offlinePackageReady?: boolean };
+export type CourierMapLocation = { lat: number; lng: number; updatedAt: number };
+type OfflineIstanbulMapProps = { offlinePackageReady?: boolean; courierLocation?: CourierMapLocation | null };
 
 function registerOfflineProtocol() {
   if (!protocolRegistered) {
@@ -20,12 +21,14 @@ function registerOfflineProtocol() {
   }
 }
 
-export function OfflineIstanbulMap({ offlinePackageReady = false }: OfflineIstanbulMapProps) {
+export function OfflineIstanbulMap({ offlinePackageReady = false, courierLocation = null }: OfflineIstanbulMapProps) {
   const [isOnline, setIsOnline] = useState(true);
   const [offlineFile, setOfflineFile] = useState<File | null>(null);
   const [offlineError, setOfflineError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const mapContainer = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const courierMarkerRef = useRef<maplibregl.Marker | null>(null);
 
   useEffect(() => {
     const update = () => setIsOnline(navigator.onLine);
@@ -78,16 +81,31 @@ export function OfflineIstanbulMap({ offlinePackageReady = false }: OfflineIstan
       },
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-    return () => map.remove();
+    mapRef.current = map;
+    return () => { courierMarkerRef.current?.remove(); courierMarkerRef.current = null; mapRef.current = null; map.remove(); };
   }, [offlineFile]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !courierLocation) return;
+    const point: [number, number] = [courierLocation.lng, courierLocation.lat];
+    if (!courierMarkerRef.current) {
+      const element = document.createElement("div");
+      element.className = "h-5 w-5 rounded-full border-4 border-white bg-[#e54725] shadow-[0_0_0_6px_rgba(229,71,37,0.22)]";
+      courierMarkerRef.current = new maplibregl.Marker({ element }).setLngLat(point).addTo(map);
+    } else {
+      courierMarkerRef.current.setLngLat(point);
+    }
+    map.easeTo({ center: point, duration: 450, essential: true });
+  }, [courierLocation]);
 
   const showMap = Boolean(offlineFile);
   return (
     <Card className="overflow-hidden rounded-3xl border-0 bg-white shadow-sm">
       <CardHeader className="gap-3 border-b border-slate-100 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <CardTitle className="flex items-center gap-2 text-xl"><MapPinned className="text-[#e54725]" size={21} />İstanbul Offline Haritası</CardTitle>
-          <p className="mt-1 text-sm text-slate-500">İndirilen İstanbul PMTiles paketi cihazınızda açılır.</p>
+          <CardTitle className="flex items-center gap-2 text-xl"><MapPinned className="text-[#e54725]" size={21} />İstanbul canlı takip haritası</CardTitle>
+          <p className="mt-1 text-sm text-slate-500">İndirilen İstanbul PMTiles paketi cihazınızda açılır; kurye konumu bağlantı üzerinden yenilenir.</p>
         </div>
         <Badge className={isOnline ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"}>{isOnline ? <><Wifi className="mr-1" size={14} />Çevrim içi</> : <><WifiOff className="mr-1" size={14} />Çevrim dışı</>}</Badge>
       </CardHeader>

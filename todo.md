@@ -264,3 +264,12 @@
 - [x] Çok dilli akış, sandbox ödeme ve canlı takip için uçtan uca regresyon denetimi
 - [x] Yeni özellikler için Vitest testleri ve production build doğrulaması
 - [x] Yeni sürümü checkpoint olarak kaydet ve yayınlanan sürümü kullanıcıya ilet
+
+
+## Real-time courier location
+- [x] SSE veya WebSocket tabanlı kurye konum yayın kanalını ekle
+- [x] Konum akışını yalnızca sipariş sahibi ve yetkili operasyon rollerine aç
+- [x] Müşteri canlı takip haritasında kurye işaretçisini akıcı güncelle ve bağlantı durumunu göster
+- [x] Kurye konum gönderimi, bağlantı kopması ve yetkisiz erişim için Vitest testleri ekle
+- [x] Gerçek zamanlı takip akışını TypeScript, build ve mobil görsel denetiminden geçir
+- [ ] Yeni gerçek zamanlı takip sürümünü checkpoint olarak kaydet

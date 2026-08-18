@@ -10,6 +10,13 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { registerAddressProxy } from "../addressProxy";
 import { registerOfflineMapProxy } from "../offlineMapProxy";
+import { getOrderByTrackingCode } from "../db";
+import { sdk } from "./sdk";
+import { subscribeToCourierLocation } from "../realtime";
+
+function canAccessRealtimeOrder(user: { id: number; role: string }, order: { customerId: number; courierId: number | null }) {
+  return user.role === "admin" || user.role === "accountant" || order.customerId === user.id || (user.role === "courier" && order.courierId === user.id);
+}
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -40,6 +47,23 @@ async function startServer() {
   registerOAuthRoutes(app);
   registerAddressProxy(app);
   registerOfflineMapProxy(app);
+  app.get("/api/realtime/orders/:trackingCode", async (req, res) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      const order = await getOrderByTrackingCode(String(req.params.trackingCode));
+      if (!order || !user || !canAccessRealtimeOrder(user, order)) {
+        res.status(401).json({ error: "Canlı konum akışına erişim yetkiniz yok" });
+        return;
+      }
+      res.status(200).set({ "Content-Type": "text/event-stream", "Cache-Control": "no-cache, no-transform", Connection: "keep-alive", "X-Accel-Buffering": "no" });
+      res.flushHeaders();
+      const unsubscribe = subscribeToCourierLocation(order.id, res);
+      req.on("close", unsubscribe);
+    } catch {
+      if (!res.headersSent) res.status(401).json({ error: "Canlı konum akışı başlatılamadı" });
+      else res.end();
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",
