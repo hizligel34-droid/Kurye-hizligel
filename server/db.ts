@@ -73,6 +73,11 @@ export async function getMessages(orderId: number) {
   return db.select().from(messages).where(eq(messages.orderId, orderId)).orderBy(messages.createdAt);
 }
 
+export function buildOrderAddressDetails(input: { pickupAddressDetail?: string; deliveryAddressDetail?: string }) {
+  const normalize = (value: string | undefined) => (value ?? "Belirtilmedi").trim().slice(0, 240) || "Belirtilmedi";
+  return { pickupAddressDetail: normalize(input.pickupAddressDetail), deliveryAddressDetail: normalize(input.deliveryAddressDetail) };
+}
+
 export function buildSupportMessagePayload(input: { orderId: number; senderId?: number; senderRole: Message['senderRole']; content: string; detectedLanguage: string; translatedContent: string }) {
   return { orderId: input.orderId, senderId: input.senderId, senderRole: input.senderRole, content: input.content, detectedLanguage: input.detectedLanguage, translatedContent: input.translatedContent };
 }

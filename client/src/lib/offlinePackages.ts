@@ -1,5 +1,8 @@
 export type OfflinePackageStatus = "available" | "preparing";
 
+export type OfflineRouteCapability = { status: "unavailable"; reason: "map-package-only" };
+export function getOfflineRouteCapability(): OfflineRouteCapability { return { status: "unavailable", reason: "map-package-only" }; }
+
 export type OfflineMapPackage = {
   id: string;
   city: string;
@@ -37,7 +40,8 @@ export const OFFLINE_MAP_PACKAGES: OfflineMapPackage[] = [
 
 const DB_NAME = "run-kurye-offline";
 const STORE_NAME = "map-packages";
-const MAX_PACKAGE_BYTES = 80 * 1024 * 1024;
+export const MAX_OFFLINE_PACKAGE_BYTES = 80 * 1024 * 1024;
+export function isOfflinePackageSizeAllowed(sizeBytes: number) { return sizeBytes >= 0 && sizeBytes <= MAX_OFFLINE_PACKAGE_BYTES; }
 
 function openPackageDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -49,12 +53,10 @@ function openPackageDb(): Promise<IDBDatabase> {
   });
 }
 
-export async function downloadOfflinePackage(pkg: OfflineMapPackage, onProgress?: (value: number) => void) {
-  if (!pkg.downloadUrl) throw new Error(`${pkg.city} paketi henüz indirilebilir değil`);
-  const response = await fetch(pkg.downloadUrl, { mode: "cors" });
-  if (!response.ok || !response.body) throw new Error(`${pkg.city} paketi indirilemedi`);
+export async function readOfflineDownloadResponse(response: Response, onProgress?: (value: number) => void) {
+  if (!response.ok || !response.body) throw new Error("Offline paket indirilemedi");
   const total = Number(response.headers.get("content-length") ?? 0);
-  if (total > MAX_PACKAGE_BYTES) throw new Error(`${pkg.city} paketi mobil kullanım için çok büyük`);
+  if (!isOfflinePackageSizeAllowed(total)) throw new Error("Offline paket mobil kullanım için çok büyük");
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let received = 0;
@@ -64,7 +66,13 @@ export async function downloadOfflinePackage(pkg: OfflineMapPackage, onProgress?
     if (value) { chunks.push(value); received += value.byteLength; if (total) onProgress?.(Math.round((received / total) * 100)); }
   }
   const buffers = chunks.map(chunk => chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength) as unknown as ArrayBuffer);
-  const data = new Blob(buffers, { type: "application/zip" });
+  return new Blob(buffers, { type: "application/zip" });
+}
+
+export async function downloadOfflinePackage(pkg: OfflineMapPackage, onProgress?: (value: number) => void) {
+  if (!pkg.downloadUrl) throw new Error(`${pkg.city} paketi henüz indirilebilir değil`);
+  const response = await fetch(pkg.downloadUrl, { mode: "cors" });
+  const data = await readOfflineDownloadResponse(response, onProgress);
   const db = await openPackageDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");

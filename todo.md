@@ -49,29 +49,29 @@
 - [x] Profil kaydı sonrası hesap ekranındaki görünen kullanıcı verilerini auth sorgusundan garantiyle yenile
 - [x] Profil güncelleme akışının güncel ad ve telefon bilgisini yansıttığını test et
 - [x] Profil güncelleme tRPC prosedürünün güncel ad ve telefon değerlerini döndürdüğünü test et
-- [ ] Kuş uçuşu mesafe hesabını kaldırıp il-ilçe-mahalle-sokak/konum tabanlı rota hesabını tanımla
-- [ ] Türkiye'nin tüm il, ilçe ve mahallelerini adres seçim akışına ekle
-- [ ] Alış ve teslim adreslerinde il, ilçe, mahalle, sokak ve açık adres alanlarını kullan
-- [ ] Rota mesafesi ve ücret hesaplamasını sipariş oluşturma backend'ine bağla
-- [ ] Mobil sipariş formunda hiyerarşik adres seçimi ve yeni fiyat özetini göster
-- [ ] Türkiye adres kapsamı, rota ücretleri ve sabit %20 komisyon için testleri ekle
-- [ ] Ücretlendirmede kuş uçuşu mesafe yerine gerçek araç yol rotası kilometresi kullan
-- [ ] Adres koordinatlarını geocoding ile rota servisine gönder ve gerçek yol km/süre bilgisini al
-- [ ] Fiyat özetinde rota km'sini, tahmini süreyi ve 600 TL + km başı 100 TL hesabını açıkça göster
-- [ ] Rota servisi başarısız olduğunda tahmini fiyatı kesin fiyat gibi göstermeyen güvenli fallback ekle
-- [ ] Gerçek yol rotası ücret formülü ve fallback davranışı için testler yaz
+- [x] Kuş uçuşu mesafe hesabını kaldırıp il-ilçe-mahalle-sokak/konum tabanlı rota hesabını tanımla
+- [x] Türkiye'nin tüm il, ilçe ve mahallelerini adres seçim akışına ekle
+- [x] Alış ve teslim adreslerinde il, ilçe, mahalle, sokak ve açık adres alanlarını kullan
+- [x] Rota mesafesi ve ücret hesaplamasını sipariş oluşturma backend'ine bağla
+- [x] Mobil sipariş formunda hiyerarşik adres seçimi ve yeni fiyat özetini göster
+- [x] Türkiye adres kapsamı, rota ücretleri ve sabit %20 komisyon için testleri ekle
+- [x] Ücretlendirmede kuş uçuşu mesafe yerine gerçek araç yol rotası kilometresi kullan
+- [x] Adres koordinatlarını geocoding ile rota servisine gönder ve gerçek yol km/süre bilgisini al
+- [x] Fiyat özetinde rota km'sini, tahmini süreyi ve 600 TL + km başı 100 TL hesabını açıkça göster
+- [x] Rota servisi başarısız olduğunda tahmini fiyatı kesin fiyat gibi göstermeyen güvenli fallback ekle
+- [x] Gerçek yol rotası ücret formülü ve fallback davranışı için testler yaz
 - [x] Çevrim dışı Türkiye haritası için lisanslı veri kaynağını ve dağıtım yöntemini belirle
 - [x] Harita kutucuklarını/vektör verisini indirme ve önbellekleme akışını tasarla
 - [ ] Çevrim dışı gerçek yol rotası için uygun routing engine veya kontrollü fallback seç
-- [ ] Çevrim dışı mod göstergesi ve internet yokken güvenli fiyat davranışı ekle
+- [x] Çevrim dışı mod göstergesi ve internet yokken güvenli fiyat davranışı ekle
 - [x] Harita lisansı, veri boyutu ve mobil tarayıcı performansını doğrula
 - [x] İstanbul offline harita/rota paketini seçilebilir indirme olarak tanımla
 - [ ] Ankara offline harita/rota paketini seçilebilir indirme olarak tanımla
 - [x] Şehir paketi indirme ilerlemesi, boyutu ve cihazda hazır durumu göster
 - [x] IndexedDB/Service Worker önbelleğiyle indirilen paketleri offline kullanılabilir yap
 - [ ] Paket içi gerçek yol rotası; paket dışı güvenli online rota fallback'i uygula
-- [ ] Offline modda rota doğrulanmadan kesin ücret ve sipariş onayı verme
-- [ ] Şehir paketleri için test, lisans bildirimi ve performans denetimi ekle
+- [x] Offline modda rota doğrulanmadan kesin ücret ve sipariş onayı verme
+- [x] Şehir paketleri için test, lisans bildirimi ve performans denetimi ekle
 - [x] Ücretsiz OpenStreetMap kaynaklarından İstanbul paket URL ve checksum metadata'sı tanımla
 - [ ] Ücretsiz OpenStreetMap kaynaklarından Ankara paket URL ve checksum metadata'sı tanımla
 - [x] Paketlerde OpenStreetMap/ODbL atıf ve kaynak bağlantısını görünür göster
@@ -81,3 +81,19 @@
 - [x] İstanbul paket manifestine doğrulanmış checksum metadata'sı ekle ve checksum bilgisini kullanıcıya göster
 - [x] Offline indirme boyutu, hata durumu ve mobil performans için görünür uyarı ve mobil doğrulama ekle
 - [x] İstanbul offline paket kartında checksum algoritmasını ve doğrulanmış değerini kullanıcıya görünür göster
+- [x] AddressPicker select state'ini id tabanlı düzelt; Türkiye API için loading/error/empty state ekle
+- [x] Açık adres detayını backend payload ve kayıt modelinde ayrı alan olarak taşı ve test et
+- [x] Türkiye adres akışı ve rota/komisyon entegrasyonu için test kapsamını genişlet
+- [x] Rota fallback davranışı için ortak sipariş onay testi ekle
+- [x] Offline şehir paketleri için indirme performansı ve boyut davranışı testi ekle
+- [x] Açık adres detail alanları için orders.create/DB helper write-read testi ekle
+- [x] Türkiye adres seçimi, rota fiyatı ve %20 komisyon entegrasyonunu doğrulayan kapsamlı test ekle
+- [x] Offline paket indirme progress, boyut ve hata akışını testle
+- [x] orders.create veya ilgili DB write/read zincirinde pickupAddressDetail ve deliveryAddressDetail alanlarını doğrula
+- [x] Türkiye adres seçimi, routeEstimate ve %20 komisyonu aynı prosedür senaryosunda doğrula
+- [x] offlinePackages download akışında progress, fetch hatası ve oversize response mock testlerini ekle
+- [x] orders.create sonrası pickupAddressDetail ve deliveryAddressDetail alanlarını get/read-back yolu ile doğrula
+- [x] pricing.estimate ile Türkiye adres girdileri, gerçek rota km'si ve %20 komisyonu aynı senaryoda doğrula
+- [x] orders.create sonrası gerçek orders.mine read-back yolunu mock bypass etmeden doğrula
+- [x] pickupAddressDetail ve deliveryAddressDetail kolon migration uyumsuzluğunu gider
+- [x] Gerçek DB transaction rollback içinde geçici orders kaydını oluşturup pickup/delivery detail alanlarını mock'suz read-back doğrula
