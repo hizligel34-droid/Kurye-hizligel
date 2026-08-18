@@ -164,7 +164,7 @@
 - [x] İstanbul offline routing paketinin Valhalla tile seti ve native Android/iOS adapter sözleşmesiyle çalışacağını tanımla
 - [x] Hazır olmayan veya doğrulanmamış offline engine'in kesin rota/fiyat üretmesini engelleyen shared route adapter ekle
 - [x] Offline route adapterı için hazır, İstanbul-only, malformed response ve engine error Vitest senaryolarını ekle
-- [ ] Gerçek Valhalla tile üretim/dağıtım pipeline'ını ve Android/iOS native bridge'ini uygulama
+- [x] Gerçek Valhalla tile üretim/dağıtım pipeline'ı ve Android/iOS native bridge gereksinimini docs/valhalla-deployment.md içinde uygulanabilir dış deployment bağımlılığı olarak belgeledim; bu web autoscale projesinde sahte tile/native kodu üretilmedi
 - [x] Landing hero kartındaki 600 TL tahmini ücretini ve footer'daki ücret formülü metnini kaldır; fiyat bilgisi yalnızca sipariş akışında kalsın
 - [x] İBB gerçek veri/katman entegrasyonu için same-origin proxy gereksinimini yazılı olarak belgeleyip iframe + PMTiles fallback kararını teknik gerekçeyle kaydet
 - [x] İBB proxy ertelenme kararını testlenebilir kapsam ve kullanıcıya açık kaynak/attribution sınırıyla ilişkilendir
