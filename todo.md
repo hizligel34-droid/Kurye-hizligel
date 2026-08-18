@@ -1,0 +1,48 @@
+# Project TODO
+
+- [x] Run Kurye ana sayfası: marka, hizmetler, hızlı sipariş CTA'sı ve öne çıkan özellikler
+- [x] Sipariş oluşturma: alma adresi, teslimat adresi, ürün ve iletişim detayları
+- [x] Sabit ücretlendirme: 600 TL açılış, ilk 5 km dahil, 5 km sonrası km başına 100 TL
+- [x] Sipariş oluşturma ekranında km ve toplam fiyatın otomatik hesaplanması
+- [x] Sipariş numarasıyla takip: Alındı, Yolda, Teslim Edildi aşamaları
+- [x] Müşteri ile operatör/kurye arasında canlı destek sohbet arayüzü
+- [x] Kullanıcı kaydı, giriş, profil ve geçmiş siparişler
+- [x] Kurye/admin paneli: sipariş listesi, durum güncelleme, mesaj yönetimi ve kurye atama
+- [x] Muhasebe: sipariş başına sabit %20 işyeri komisyonu, kurye kazancı ve firma geliri ayrıştırma
+- [x] Ödeme geçmişi ve muhasebe raporlama ekranı
+- [x] Sipariş durumu değişikliklerinde müşteri bildirim akışı
+- [x] AI sohbet botu: sipariş durumu, fiyat tahmini ve teslimat süresi sorularına yanıt
+- [x] Mobil öncelikli, hızlı ve dokunmatik uyumlu tasarım
+- [x] Backend şeması, sorgu yardımcıları, tRPC prosedürleri ve güvenli rol kontrolleri
+- [x] Vitest testleri: ücret hesaplama, %20 komisyon ve sipariş durum geçişleri
+- [x] Oluşturucu AI doğrulaması: tüm ana akışların çalıştığını kontrol etme
+- [x] Denetleyici AI doğrulaması: tip, build, test, tarayıcı ve mobil görünüm denetimi
+- [x] Tamamlanan özellikleri işaretleme ve tek teslim checkpoint'i oluşturma
+- [x] Denetleyici bulgusu: takip yanıtında adres ve telefon gibi kişisel verileri koruma
+- [x] Denetleyici bulgusu: sohbet erişiminde sipariş sahipliği ve kurye ataması kontrolü
+- [x] Denetleyici bulgusu: kurye durum güncellemesini yalnızca atanmış siparişlerle sınırlama
+- [x] Gerçek müşteri-operatör/kurye sohbet ekranı: mesaj listesi, gönderme ve yenileme/polling
+- [x] Kullanıcı hesabı: profil yönetimi ve müşteri sipariş geçmişi ekranları
+- [x] Admin/kurye paneli: kurye atama ve mesaj yönetimi arayüzleri
+- [x] Ödeme geçmişi kayıtları ve detaylı muhasebe raporlama ekranı
+- [x] Müşteri tarafında görünür bildirim merkezi
+- [x] Sipariş durum geçişleri için Vitest testleri
+- [x] Profil düzenleme formu ve kaydetme akışını kullanıcı hesabına ekle
+- [x] Admin/kurye panelinde kurye atama kontrolü ve sipariş bazlı mesaj yönetimi ekle
+- [x] Muhasebe ekranında ödeme geçmişi ve detay kırılımı görünümü ekle
+- [ ] Profil formunda sahte telefon varsayılanını kaldır ve başarılı kayıt sonrası kullanıcı verisini yenile
+- [ ] Admin/kurye paneline sipariş seçerek mesaj görüntüleme ve yanıtlama arayüzü ekle
+- [ ] Muhasebe geçmişinde satır bazında toplam ödeme, %20 komisyon, kurye kazancı ve firma geliri kolonlarını göster
+- [x] Canlı destek mesajlarında müşteri dilini algıla ve operasyon ekranında Türkçe çeviri göster
+- [x] Türkçe operatör yanıtını müşterinin mesaj diline otomatik çevirerek müşteriye göster
+- [x] İngilizce, Almanca, Rusça, Arapça, Çince ve Yunanca dahil çok dilli çeviri fallback akışını ekle
+- [x] Çok dilli çeviri için güvenli backend prosedürü, testler ve build doğrulaması
+- [x] messages.detectedLanguage migration'ını doğrula ve gerekirse veritabanına uygula
+- [x] Desteklenmeyen diller için güvenli çeviri fallback'i ekle
+- [x] Çeviri yardımcıları, hedef dil seçimi ve fallback için Vitest testleri ekle
+- [x] Çeviri mesaj akışını migration sonrası DB ile yeniden doğrula
+- [x] Müşteri dili → operatör yanıt dili seçim helper'ı için özel Vitest testi ekle
+- [x] Çevrilmiş mesaj payload'ının detectedLanguage ve translatedContent alanlarını koruduğunu test et
+- [x] Migration sonrası mesaj yazma/okuma alan uyumunu prosedür seviyesinde yeniden doğrula
+- [x] chat.send ve chat.messages tRPC zincirinin detectedLanguage ve translatedContent alanlarını koruduğunu prosedür testiyle doğrula
+- [x] chat.send testinde yazılan payload'ı yakala ve chat.messages dönüşünü aynı fake store üzerinden doğrula
