@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, summarizeAccountingRows } from "./db";
+import { buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, rankCourierLeaderboard, summarizeAccountingRows } from "./db";
 import { normalizeSupportLanguage, selectSupportReplyLanguage } from "./routers";
 
 describe("Run Kurye role-based accounting", () => {
@@ -29,6 +29,17 @@ describe("Run Kurye courier achievement", () => {
 
   it("caps elite couriers at the top badge", () => {
     expect(calculateCourierAchievement(Array.from({ length: 125 }, () => ({ status: "delivered" })))).toMatchObject({ completedDeliveries: 125, points: 1250, badgeLabel: "Elit Kurye", nextBadgeLabel: null, nextBadgeAt: null, remainingToNext: 0, progressPercent: 100 });
+  });
+});
+
+describe("Run Kurye courier leaderboard", () => {
+  it("sorts by points, then deliveries, and assigns one-based ranks", () => {
+    const result = rankCourierLeaderboard([
+      { courierId: 1, displayName: "Zeynep", completedDeliveries: 5, points: 50, badgeKey: "reliable", badgeLabel: "Güvenilir Kurye" },
+      { courierId: 2, displayName: "Ali", completedDeliveries: 12, points: 120, badgeKey: "reliable", badgeLabel: "Güvenilir Kurye" },
+      { courierId: 3, displayName: "Bora", completedDeliveries: 5, points: 50, badgeKey: "reliable", badgeLabel: "Güvenilir Kurye" },
+    ]);
+    expect(result.map(entry => [entry.rank, entry.displayName, entry.points])).toEqual([[1, "Ali", 120], [2, "Bora", 50], [3, "Zeynep", 50]]);
   });
 });
 

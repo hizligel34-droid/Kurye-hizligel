@@ -113,6 +113,35 @@ export function calculateCourierAchievement(rows: Array<{ status: string }>): Co
   };
 }
 
+export type CourierLeaderboardEntry = {
+  rank: number;
+  courierId: number;
+  displayName: string;
+  completedDeliveries: number;
+  points: number;
+  badgeKey: CourierAchievement["badgeKey"];
+  badgeLabel: string;
+};
+
+export function rankCourierLeaderboard(entries: Array<Omit<CourierLeaderboardEntry, "rank">>): CourierLeaderboardEntry[] {
+  return [...entries].sort((a, b) => b.points - a.points || b.completedDeliveries - a.completedDeliveries || a.displayName.localeCompare(b.displayName, "tr"))
+    .map((entry, index) => ({ ...entry, rank: index + 1 }));
+}
+
+export async function getCourierLeaderboard(): Promise<CourierLeaderboardEntry[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const courierRows = await db.select({ id: users.id, name: users.name }).from(users).where(eq(users.role, "courier"));
+  const deliveredRows = await db.select({ courierId: orders.courierId, status: orders.status }).from(orders).where(eq(orders.status, "delivered"));
+  const counts = new Map<number, number>();
+  deliveredRows.forEach(row => { if (row.courierId) counts.set(row.courierId, (counts.get(row.courierId) ?? 0) + 1); });
+  return rankCourierLeaderboard(courierRows.map(courier => {
+    const completedDeliveries = counts.get(courier.id) ?? 0;
+    const achievement = calculateCourierAchievement(Array.from({ length: completedDeliveries }, () => ({ status: "delivered" })));
+    return { courierId: courier.id, displayName: courier.name?.trim().split(/\\s+/)[0] || "Kurye", completedDeliveries, points: achievement.points, badgeKey: achievement.badgeKey, badgeLabel: achievement.badgeLabel };
+  }));
+}
+
 export async function getOrderByTrackingCode(trackingCode: string) {
   const db = await getDb(); if (!db) return undefined;
   const result = await db.select().from(orders).where(eq(orders.trackingCode, trackingCode.toUpperCase())).limit(1);

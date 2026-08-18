@@ -6,7 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { makeRequest, type DirectionsResult, type GeocodingResult } from "./_core/map";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, getDb, getMessages, getOrderByTrackingCode, listNotifications, listOrders, summarizeAccountingRows, updateUserProfile } from "./db";
+import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, getDb, getMessages, getCourierLeaderboard, getOrderByTrackingCode, listNotifications, listOrders, summarizeAccountingRows, updateUserProfile } from "./db";
 import { orders } from "../drizzle/schema";
 import { nanoid } from "nanoid";
 import { createValhallaProvider } from "./valhallaAdapter";
@@ -167,6 +167,10 @@ send: protectedProcedure.input(z.object({ orderId: z.number(), content: z.string
       if (ctx.user.role !== "courier") throw new Error("Bu başarı profili yalnızca kuryeler içindir");
       const rows = await listOrders(ctx.user.id, ctx.user.role);
       return calculateCourierAchievement(rows);
+    }),
+    leaderboard: protectedProcedure.query(async ({ ctx }) => {
+      if (!["admin", "accountant", "courier"].includes(ctx.user.role)) throw new Error("Liderlik tablosuna erişim yetkiniz yok");
+      return getCourierLeaderboard();
     }),
   }),
 });

@@ -218,3 +218,7 @@
 - [x] Kurye profiline güvenli tamamlanan teslimat özeti, puan ve rozet prosedürünü ekle
 - [x] Kurye panelinde rozet, puan ve bir sonraki seviyeye ilerleme görünümünü ekle
 - [x] Kurye başarı sistemi için Vitest, TypeScript, build ve mobil görsel doğrulaması yap
+- [x] Gerçek teslimat puanlarına dayalı kurye leaderboard hesaplama sözleşmesini tanımla
+- [x] Rol kontrollü leaderboard tRPC prosedürünü ve güvenli kurye özetlerini ekle
+- [x] Mobil liderlik tablosu, kişisel sıra ve puan görünümünü kurye paneline ekle
+- [x] Leaderboard için Vitest, TypeScript, build ve mobil görsel doğrulaması yap
