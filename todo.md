@@ -49,3 +49,35 @@
 - [x] Profil kaydı sonrası hesap ekranındaki görünen kullanıcı verilerini auth sorgusundan garantiyle yenile
 - [x] Profil güncelleme akışının güncel ad ve telefon bilgisini yansıttığını test et
 - [x] Profil güncelleme tRPC prosedürünün güncel ad ve telefon değerlerini döndürdüğünü test et
+- [ ] Kuş uçuşu mesafe hesabını kaldırıp il-ilçe-mahalle-sokak/konum tabanlı rota hesabını tanımla
+- [ ] Türkiye'nin tüm il, ilçe ve mahallelerini adres seçim akışına ekle
+- [ ] Alış ve teslim adreslerinde il, ilçe, mahalle, sokak ve açık adres alanlarını kullan
+- [ ] Rota mesafesi ve ücret hesaplamasını sipariş oluşturma backend'ine bağla
+- [ ] Mobil sipariş formunda hiyerarşik adres seçimi ve yeni fiyat özetini göster
+- [ ] Türkiye adres kapsamı, rota ücretleri ve sabit %20 komisyon için testleri ekle
+- [ ] Ücretlendirmede kuş uçuşu mesafe yerine gerçek araç yol rotası kilometresi kullan
+- [ ] Adres koordinatlarını geocoding ile rota servisine gönder ve gerçek yol km/süre bilgisini al
+- [ ] Fiyat özetinde rota km'sini, tahmini süreyi ve 600 TL + km başı 100 TL hesabını açıkça göster
+- [ ] Rota servisi başarısız olduğunda tahmini fiyatı kesin fiyat gibi göstermeyen güvenli fallback ekle
+- [ ] Gerçek yol rotası ücret formülü ve fallback davranışı için testler yaz
+- [x] Çevrim dışı Türkiye haritası için lisanslı veri kaynağını ve dağıtım yöntemini belirle
+- [x] Harita kutucuklarını/vektör verisini indirme ve önbellekleme akışını tasarla
+- [ ] Çevrim dışı gerçek yol rotası için uygun routing engine veya kontrollü fallback seç
+- [ ] Çevrim dışı mod göstergesi ve internet yokken güvenli fiyat davranışı ekle
+- [x] Harita lisansı, veri boyutu ve mobil tarayıcı performansını doğrula
+- [x] İstanbul offline harita/rota paketini seçilebilir indirme olarak tanımla
+- [ ] Ankara offline harita/rota paketini seçilebilir indirme olarak tanımla
+- [x] Şehir paketi indirme ilerlemesi, boyutu ve cihazda hazır durumu göster
+- [x] IndexedDB/Service Worker önbelleğiyle indirilen paketleri offline kullanılabilir yap
+- [ ] Paket içi gerçek yol rotası; paket dışı güvenli online rota fallback'i uygula
+- [ ] Offline modda rota doğrulanmadan kesin ücret ve sipariş onayı verme
+- [ ] Şehir paketleri için test, lisans bildirimi ve performans denetimi ekle
+- [x] Ücretsiz OpenStreetMap kaynaklarından İstanbul paket URL ve checksum metadata'sı tanımla
+- [ ] Ücretsiz OpenStreetMap kaynaklarından Ankara paket URL ve checksum metadata'sı tanımla
+- [x] Paketlerde OpenStreetMap/ODbL atıf ve kaynak bağlantısını görünür göster
+- [x] Büyük dosyaları projeye gömmek yerine güvenli harici indirme ve IndexedDB önbelleği kullan
+- [x] Offline harita ile online rota servisinin kapsamını kullanıcıya açıkça ayır
+- [x] İndirilen offline paketleri IndexedDB'den okuyup cached paket erişimi ve offline harita önbelleği olarak sun
+- [x] İstanbul paket manifestine doğrulanmış checksum metadata'sı ekle ve checksum bilgisini kullanıcıya göster
+- [x] Offline indirme boyutu, hata durumu ve mobil performans için görünür uyarı ve mobil doğrulama ekle
+- [x] İstanbul offline paket kartında checksum algoritmasını ve doğrulanmış değerini kullanıcıya görünür göster

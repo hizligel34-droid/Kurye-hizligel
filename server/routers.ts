@@ -4,6 +4,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
+import { makeRequest, type DirectionsResult, type GeocodingResult } from "./_core/map";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { addMessage, addNotification, buildSupportMessagePayload, calculateOrderFinancials, canTransitionStatus, getDb, getMessages, getOrderByTrackingCode, listNotifications, listOrders, updateUserProfile } from "./db";
 import { orders } from "../drizzle/schema";
@@ -19,6 +20,24 @@ export function selectSupportReplyLanguage(customerLanguage: string | null | und
 }
 
 type TranslationResult = { sourceLanguage: string; translatedText: string };
+
+type RoadRoute = { distanceKm: number; durationMinutes: number; pickup: { lat: number; lng: number }; delivery: { lat: number; lng: number }; status: "verified"; provider: "google_driving" };
+
+async function resolveRoadRoute(pickupAddress: string, deliveryAddress: string): Promise<RoadRoute> {
+  const [pickupGeo, deliveryGeo] = await Promise.all([
+    makeRequest<GeocodingResult>("/maps/api/geocode/json", { address: pickupAddress, region: "tr" }),
+    makeRequest<GeocodingResult>("/maps/api/geocode/json", { address: deliveryAddress, region: "tr" }),
+  ]);
+  const pickup = pickupGeo.results?.[0]?.geometry?.location;
+  const delivery = deliveryGeo.results?.[0]?.geometry?.location;
+  if (!pickup || !delivery) throw new Error("Adreslerden biri haritada bulunamadı");
+  const directions = await makeRequest<DirectionsResult>("/maps/api/directions/json", { origin: `${pickup.lat},${pickup.lng}`, destination: `${delivery.lat},${delivery.lng}`, mode: "driving", units: "metric" });
+  const leg = directions.routes?.[0]?.legs?.[0];
+  if (!leg?.distance?.value || !leg.duration?.value) throw new Error("Araç rotası oluşturulamadı");
+  return { distanceKm: Number((leg.distance.value / 1000).toFixed(2)), durationMinutes: Number((leg.duration.value / 60).toFixed(1)), pickup, delivery, status: "verified", provider: "google_driving" };
+}
+
+function addressPart(value: string | undefined) { return (value ?? "Belirtilmedi").trim().slice(0, 180) || "Belirtilmedi"; }
 async function translateSupportMessage(content: string, targetLanguage: string): Promise<TranslationResult> {
   const response = await invokeLLM({
     messages: [
@@ -52,16 +71,24 @@ export const appRouter = router({
   }),
   profile: router({ update: protectedProcedure.input(z.object({ name: z.string().min(2), phone: z.string().min(7) })).mutation(({ ctx, input }) => updateUserProfile(ctx.user.id, input)) }),
   pricing: router({
-    estimate: publicProcedure.input(z.object({ distanceKm: z.number().min(0) })).query(({ input }) => calculateOrderFinancials(input.distanceKm)),
+    estimate: publicProcedure.input(z.object({ distanceKm: z.number().min(0).optional(), pickupAddress: z.string().min(5).optional(), deliveryAddress: z.string().min(5).optional() })).query(async ({ input }) => {
+      if (input.pickupAddress && input.deliveryAddress) {
+        const route = await resolveRoadRoute(input.pickupAddress, input.deliveryAddress);
+        return { ...calculateOrderFinancials(route.distanceKm), durationMinutes: route.durationMinutes, routeStatus: route.status, provider: route.provider };
+      }
+      if (input.distanceKm !== undefined) return { ...calculateOrderFinancials(input.distanceKm), durationMinutes: null, routeStatus: "unavailable" as const, provider: "manual" as const };
+      throw new Error("Rota adresleri veya mesafe gerekli");
+    }),
   }),
   orders: router({
-    create: protectedProcedure.input(z.object({ pickupAddress: z.string().min(5), deliveryAddress: z.string().min(5), productDescription: z.string().min(2), customerPhone: z.string().min(7), distanceKm: z.number().min(0) })).mutation(async ({ ctx, input }) => {
+    create: protectedProcedure.input(z.object({ pickupAddress: z.string().min(5), pickupProvince: z.string().optional(), pickupDistrict: z.string().optional(), pickupNeighborhood: z.string().optional(), pickupStreet: z.string().optional(), deliveryAddress: z.string().min(5), deliveryProvince: z.string().optional(), deliveryDistrict: z.string().optional(), deliveryNeighborhood: z.string().optional(), deliveryStreet: z.string().optional(), productDescription: z.string().min(2), customerPhone: z.string().min(7) })).mutation(async ({ ctx, input }) => {
       const db = await getDb(); if (!db) throw new Error("Database unavailable");
-      const financials = calculateOrderFinancials(input.distanceKm);
+      const route = await resolveRoadRoute(input.pickupAddress, input.deliveryAddress);
+      const financials = calculateOrderFinancials(route.distanceKm);
       const trackingCode = `RUN-${nanoid(8).toUpperCase()}`;
-      await db.insert(orders).values({ trackingCode, customerId: ctx.user.id, pickupAddress: input.pickupAddress, deliveryAddress: input.deliveryAddress, productDescription: input.productDescription, customerPhone: input.customerPhone, distanceKm: financials.distanceKm.toFixed(2), totalPrice: financials.total.toFixed(2), commission: financials.commission.toFixed(2), courierEarning: financials.courierEarning.toFixed(2), companyRevenue: financials.companyRevenue.toFixed(2), status: "received" });
+      await db.insert(orders).values({ trackingCode, customerId: ctx.user.id, pickupAddress: input.pickupAddress, pickupProvince: addressPart(input.pickupProvince), pickupDistrict: addressPart(input.pickupDistrict), pickupNeighborhood: addressPart(input.pickupNeighborhood), pickupStreet: addressPart(input.pickupStreet), deliveryAddress: input.deliveryAddress, deliveryProvince: addressPart(input.deliveryProvince), deliveryDistrict: addressPart(input.deliveryDistrict), deliveryNeighborhood: addressPart(input.deliveryNeighborhood), deliveryStreet: addressPart(input.deliveryStreet), productDescription: input.productDescription, customerPhone: input.customerPhone, distanceKm: financials.distanceKm.toFixed(2), routeDurationMinutes: route.durationMinutes.toFixed(1), routeStatus: route.status, routeProvider: route.provider, pickupLatitude: route.pickup.lat.toFixed(7), pickupLongitude: route.pickup.lng.toFixed(7), deliveryLatitude: route.delivery.lat.toFixed(7), deliveryLongitude: route.delivery.lng.toFixed(7), totalPrice: financials.total.toFixed(2), commission: financials.commission.toFixed(2), courierEarning: financials.courierEarning.toFixed(2), companyRevenue: financials.companyRevenue.toFixed(2), status: "received" });
       await addNotification({ userId: ctx.user.id, title: "Siparişiniz alındı", content: `${trackingCode} numaralı siparişiniz oluşturuldu.` });
-      return { trackingCode, ...financials, status: "received" as const };
+      return { trackingCode, ...financials, durationMinutes: route.durationMinutes, routeStatus: route.status, status: "received" as const };
     }),
     mine: protectedProcedure.query(({ ctx }) => listOrders(ctx.user.id, ctx.user.role)),
     track: publicProcedure.input(z.object({ trackingCode: z.string().min(4) })).query(async ({ input }) => {
