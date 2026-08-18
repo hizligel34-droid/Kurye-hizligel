@@ -160,3 +160,9 @@
 - [x] TRPCProvider/useState null hatasının kalıcı nedenini kodda gider; final main.tsx/Vite yapılandırmasında tekil ve doğrulanmış çözümü bırak
 - [x] Kalıcı runtime fix sonrası Home ve order mobil preview'da tarayıcı konsolunun hatasız olduğunu kanıtla
 - [x] Runtime fix sonrası İstanbul ilçe/mahalle/cadde akışını mobilde yeniden doğrula ve mümkünse bunu test/kanıtla destekle
+- [x] Valhalla'yı İstanbul offline routing için öncelikli açık kaynak aday olarak seç ve GraphHopper/servis sınırlamalarını belgeleyerek araştırma notu oluştur
+- [x] İstanbul offline routing paketinin Valhalla tile seti ve native Android/iOS adapter sözleşmesiyle çalışacağını tanımla
+- [x] Hazır olmayan veya doğrulanmamış offline engine'in kesin rota/fiyat üretmesini engelleyen shared route adapter ekle
+- [x] Offline route adapterı için hazır, İstanbul-only, malformed response ve engine error Vitest senaryolarını ekle
+- [ ] Gerçek Valhalla tile üretim/dağıtım pipeline'ını ve Android/iOS native bridge'ini uygulama
+- [x] Landing hero kartındaki 600 TL tahmini ücretini ve footer'daki ücret formülü metnini kaldır; fiyat bilgisi yalnızca sipariş akışında kalsın
