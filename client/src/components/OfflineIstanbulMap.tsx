@@ -3,9 +3,10 @@ import * as maplibregl from "maplibre-gl";
 import { FileSource, PMTiles, Protocol } from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { getOfflinePmtilesFile } from "@/lib/offlinePackages";
+import { followStateAfterRecenter, followStateAfterUserDrag, shouldAutoCenter } from "@/lib/courierFollow";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPinned, Wifi, WifiOff } from "lucide-react";
+import { LocateFixed, MapPinned, Wifi, WifiOff } from "lucide-react";
 
 const OFFLINE_PACKAGE_ID = "istanbul-osm-shortbread";
 const offlineProtocol = new Protocol({ metadata: true });
@@ -26,6 +27,9 @@ export function OfflineIstanbulMap({ offlinePackageReady = false, courierLocatio
   const [offlineFile, setOfflineFile] = useState<File | null>(null);
   const [offlineError, setOfflineError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [followCourier, setFollowCourier] = useState(true);
+  const [mapReady, setMapReady] = useState(false);
+  const followCourierRef = useRef(true);
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const courierMarkerRef = useRef<maplibregl.Marker | null>(null);
@@ -81,8 +85,10 @@ export function OfflineIstanbulMap({ offlinePackageReady = false, courierLocatio
       },
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    map.on("dragstart", () => { followCourierRef.current = followStateAfterUserDrag() === "following"; setFollowCourier(false); });
     mapRef.current = map;
-    return () => { courierMarkerRef.current?.remove(); courierMarkerRef.current = null; mapRef.current = null; map.remove(); };
+    setMapReady(true);
+    return () => { courierMarkerRef.current?.remove(); courierMarkerRef.current = null; mapRef.current = null; setMapReady(false); map.remove(); };
   }, [offlineFile]);
 
   useEffect(() => {
@@ -96,8 +102,16 @@ export function OfflineIstanbulMap({ offlinePackageReady = false, courierLocatio
     } else {
       courierMarkerRef.current.setLngLat(point);
     }
-    map.easeTo({ center: point, duration: 450, essential: true });
-  }, [courierLocation]);
+    if (shouldAutoCenter(followCourierRef.current ? "following" : "free", true)) map.easeTo({ center: point, duration: 450, essential: true });
+  }, [courierLocation, mapReady]);
+
+  const recenterOnCourier = () => {
+    if (!mapRef.current || !courierLocation) return;
+    const point: [number, number] = [courierLocation.lng, courierLocation.lat];
+    followCourierRef.current = followStateAfterRecenter() === "following";
+    setFollowCourier(true);
+    mapRef.current.easeTo({ center: point, duration: 500, essential: true });
+  };
 
   const showMap = Boolean(offlineFile);
   return (
@@ -110,8 +124,8 @@ export function OfflineIstanbulMap({ offlinePackageReady = false, courierLocatio
         <Badge className={isOnline ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"}>{isOnline ? <><Wifi className="mr-1" size={14} />Çevrim içi</> : <><WifiOff className="mr-1" size={14} />Çevrim dışı</>}</Badge>
       </CardHeader>
       <CardContent className="p-0">
-        {showMap ? <div ref={mapContainer} className="h-[360px] w-full bg-slate-100 sm:h-[440px]" aria-label="İstanbul offline PMTiles haritası" /> : <div className="flex min-h-[260px] flex-col items-center justify-center bg-slate-50 px-6 text-center"><WifiOff className="mb-3 text-slate-400" size={30} /><p className="font-bold text-slate-800">{isLoading ? "İstanbul offline harita hazırlanıyor" : offlineError ? "İstanbul offline harita açılamadı" : "İstanbul harita paketi bekleniyor"}</p><p className="mt-2 max-w-lg text-sm leading-6 text-slate-500">{isLoading ? "Cihazdaki İstanbul PMTiles paketi okunuyor." : offlineError || "Haritayı çevrim dışı kullanmak için önce İstanbul paketini indirmeniz gerekir."}</p></div>}
-        <div className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500"><span>Harita verisi cihazdaki İstanbul PMTiles paketinden okunur. Bu paket tek başına offline rota veya kesin fiyat üretmez.</span></div>
+        {showMap ? <div className="relative"><div ref={mapContainer} className="h-[360px] w-full bg-slate-100 sm:h-[440px]" aria-label="İstanbul offline PMTiles haritası" />{courierLocation && <button type="button" onClick={recenterOnCourier} disabled={!mapReady} aria-label="Kuryeyi Bul" aria-pressed={followCourier} className="absolute bottom-4 left-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-lg transition-colors hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-[#e54725] disabled:cursor-not-allowed disabled:opacity-60"><LocateFixed size={17} className={followCourier ? "text-[#e54725]" : "text-slate-500"} />{followCourier ? "Kurye takipte" : "Kuryeyi Bul"}</button>}</div> : <div className="flex min-h-[260px] flex-col items-center justify-center bg-slate-50 px-6 text-center"><WifiOff className="mb-3 text-slate-400" size={30} /><p className="font-bold text-slate-800">{isLoading ? "İstanbul offline harita hazırlanıyor" : offlineError ? "İstanbul offline harita açılamadı" : "İstanbul harita paketi bekleniyor"}</p><p className="mt-2 max-w-lg text-sm leading-6 text-slate-500">{isLoading ? "Cihazdaki İstanbul PMTiles paketi okunuyor." : offlineError || "Haritayı çevrim dışı kullanmak için önce İstanbul paketini indirmeniz gerekir."}</p></div>}
+        <div className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500"><span>{courierLocation ? (followCourier ? "Harita kurye hareketini izliyor. Haritada gezinirseniz otomatik merkezleme durur; Kuryeyi Bul ile yeniden açabilirsiniz." : "Harita serbest gezinme modunda. Kuryeyi Bul ile son konuma dönün ve otomatik takibi yeniden açın.") : "Harita verisi cihazdaki İstanbul PMTiles paketinden okunur. Bu paket tek başına offline rota veya kesin fiyat üretmez."}</span></div>
       </CardContent>
     </Card>
   );

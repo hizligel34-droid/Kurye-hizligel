@@ -273,3 +273,11 @@
 - [x] Kurye konum gönderimi, bağlantı kopması ve yetkisiz erişim için Vitest testleri ekle
 - [x] Gerçek zamanlı takip akışını TypeScript, build ve mobil görsel denetiminden geçir
 - [x] Yeni gerçek zamanlı takip sürümünü checkpoint olarak kaydet
+
+
+## Courier recenter control
+- [x] Offline haritada “Kuryeyi Bul” butonu ve son konuma yeniden merkezleme ekle
+- [x] Kullanıcı haritada gezinirken otomatik merkezlemeyi durdur, butonla yeniden etkinleştir
+- [x] Canlı kurye hareketinde takip modunu ve erişilebilir bağlantı durumunu göster
+- [x] Kuryeyi Bul davranışı için test, TypeScript, build ve mobil görsel doğrulama yap
+- [ ] Yeni harita kontrolü sürümünü checkpoint olarak kaydet
