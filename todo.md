@@ -170,3 +170,5 @@
 - [x] İBB proxy ertelenme kararını testlenebilir kapsam ve kullanıcıya açık kaynak/attribution sınırıyla ilişkilendir
 - [x] Backend Valhalla HTTP provider'ını Valhalla trip özetinden verified route formatına dönüştür
 - [x] Valhalla provider için service URL yokluğu, başarılı JSON ve güvenli null fallback testlerini ekle
+- [x] Valhalla provider health-check yardımcı fonksiyonunu ve sağlıklı/erişilemez servis testlerini ekle
+- [x] Sipariş ekranında offline haritanın gerçek offline routing motoru olmadığını ve kesin km/fiyat için online doğrulama gerektiğini görünür durum kartıyla göster

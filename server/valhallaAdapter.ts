@@ -21,6 +21,20 @@ function validPoint(point: RoutePoint) {
  * Valhalla tile/native servisinin HTTP JSON sözleşmesi için provider.
  * URL verilmezse provider unavailable kalır; uygulama kesin rota iddiasında bulunmaz.
  */
+export async function checkValhallaHealth(
+  baseUrl: string | undefined,
+  fetchImpl: ValhallaFetch = fetch,
+): Promise<boolean> {
+  const normalized = baseUrl?.replace(/\/$/, "");
+  if (!normalized) return false;
+  try {
+    const response = await fetchImpl(`${normalized}/status`, { headers: { accept: "application/json" } });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 export function createValhallaProvider(
   baseUrl: string | undefined,
   fetchImpl: ValhallaFetch = fetch,

@@ -94,3 +94,18 @@ describe("Valhalla HTTP provider", () => {
     expect(provider.state).toBe("unavailable");
   });
 });
+
+import { checkValhallaHealth } from "./valhallaAdapter";
+
+describe("Valhalla health check", () => {
+  it("returns true for a healthy status response", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    await expect(checkValhallaHealth("https://valhalla.example", fetchImpl)).resolves.toBe(true);
+  });
+
+  it("returns false for missing, failing, or unreachable services", async () => {
+    await expect(checkValhallaHealth(undefined, vi.fn())).resolves.toBe(false);
+    await expect(checkValhallaHealth("https://valhalla.example", vi.fn().mockResolvedValue(new Response("", { status: 503 })))).resolves.toBe(false);
+    await expect(checkValhallaHealth("https://valhalla.example", vi.fn().mockRejectedValue(new Error("offline")))).resolves.toBe(false);
+  });
+});
