@@ -298,4 +298,4 @@
 - [x] Trafik verisi alınamadığında güvenli fallback ve kullanıcı açıklaması göster
 - [x] ETA panelinde kalan mesafe, trafik durumu ve son güncelleme zamanını göster
 - [x] Dinamik ETA için Vitest, TypeScript, build ve mobil görsel doğrulama yap
-- [ ] Yeni dinamik ETA sürümünü checkpoint olarak kaydet
+- [x] Yeni dinamik ETA sürümünü checkpoint olarak kaydet
