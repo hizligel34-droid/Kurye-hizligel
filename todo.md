@@ -281,3 +281,12 @@
 - [x] Canlı kurye hareketinde takip modunu ve erişilebilir bağlantı durumunu göster
 - [x] Kuryeyi Bul davranışı için test, TypeScript, build ve mobil görsel doğrulama yap
 - [x] Yeni harita kontrolü sürümünü checkpoint olarak kaydet
+
+
+## Courier speed and ETA panel
+- [x] Canlı konum verisinden anlık hızı km/sa biçiminde göster
+- [x] Mevcut doğrulanmış rota süresinden ETA bilgisini üret ve harita panelinde göster
+- [x] Konum veya rota verisi eksik olduğunda güvenli bekleme durumunu göster
+- [x] Hız/ETA panelini mobil uyumlu, küçük ve erişilebilir tasarımla doğrula
+- [x] Hız ve ETA hesaplamaları için Vitest, TypeScript, build ve görsel denetim yap
+- [ ] Yeni hız ve ETA paneli sürümünü checkpoint olarak kaydet
