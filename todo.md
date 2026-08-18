@@ -30,9 +30,9 @@
 - [x] Profil düzenleme formu ve kaydetme akışını kullanıcı hesabına ekle
 - [x] Admin/kurye panelinde kurye atama kontrolü ve sipariş bazlı mesaj yönetimi ekle
 - [x] Muhasebe ekranında ödeme geçmişi ve detay kırılımı görünümü ekle
-- [ ] Profil formunda sahte telefon varsayılanını kaldır ve başarılı kayıt sonrası kullanıcı verisini yenile
-- [ ] Admin/kurye paneline sipariş seçerek mesaj görüntüleme ve yanıtlama arayüzü ekle
-- [ ] Muhasebe geçmişinde satır bazında toplam ödeme, %20 komisyon, kurye kazancı ve firma geliri kolonlarını göster
+- [x] Profil formunda sahte telefon varsayılanını kaldır ve başarılı kayıt sonrası kullanıcı verisini yenile
+- [x] Admin/kurye paneline sipariş seçerek mesaj görüntüleme ve yanıtlama arayüzü ekle
+- [x] Muhasebe geçmişinde satır bazında toplam ödeme, %20 komisyon, kurye kazancı ve firma geliri kolonlarını göster
 - [x] Canlı destek mesajlarında müşteri dilini algıla ve operasyon ekranında Türkçe çeviri göster
 - [x] Türkçe operatör yanıtını müşterinin mesaj diline otomatik çevirerek müşteriye göster
 - [x] İngilizce, Almanca, Rusça, Arapça, Çince ve Yunanca dahil çok dilli çeviri fallback akışını ekle
@@ -46,3 +46,6 @@
 - [x] Migration sonrası mesaj yazma/okuma alan uyumunu prosedür seviyesinde yeniden doğrula
 - [x] chat.send ve chat.messages tRPC zincirinin detectedLanguage ve translatedContent alanlarını koruduğunu prosedür testiyle doğrula
 - [x] chat.send testinde yazılan payload'ı yakala ve chat.messages dönüşünü aynı fake store üzerinden doğrula
+- [x] Profil kaydı sonrası hesap ekranındaki görünen kullanıcı verilerini auth sorgusundan garantiyle yenile
+- [x] Profil güncelleme akışının güncel ad ve telefon bilgisini yansıttığını test et
+- [x] Profil güncelleme tRPC prosedürünün güncel ad ve telefon değerlerini döndürdüğünü test et
