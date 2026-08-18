@@ -70,3 +70,27 @@ describe("offline route adapter", () => {
     await expect(resolveOfflineRoute(malformedProvider, pickup, delivery)).resolves.toBeNull();
   });
 });
+
+import { createValhallaProvider } from "./valhallaAdapter";
+
+describe("Valhalla HTTP provider", () => {
+  it("maps a Valhalla trip summary to a verified route", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      trip: {
+        summary: { length: 12.5, time: 1500 },
+        locations: [{ lat: 41.0082, lon: 28.9784 }, { lat: 41.0422, lon: 29.0067 }],
+      },
+    }), { status: 200 }));
+    const provider = createValhallaProvider("https://valhalla.example", fetchImpl);
+    const result = await provider.route({ pickup: { lat: 41.0082, lng: 28.9784 }, delivery: { lat: 41.0422, lng: 29.0067 } });
+
+    expect(result).toMatchObject({ distanceKm: 12.5, durationMinutes: 25, provider: "valhalla_offline", status: "verified" });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it("stays unavailable when no Valhalla service URL is configured", async () => {
+    const provider = createValhallaProvider(undefined, vi.fn());
+    await expect(provider.route({ pickup: { lat: 41, lng: 29 }, delivery: { lat: 41.1, lng: 29.1 } })).resolves.toBeNull();
+    expect(provider.state).toBe("unavailable");
+  });
+});

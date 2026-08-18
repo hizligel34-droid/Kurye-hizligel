@@ -97,11 +97,11 @@
 - [x] orders.create sonrası gerçek orders.mine read-back yolunu mock bypass etmeden doğrula
 - [x] pickupAddressDetail ve deliveryAddressDetail kolon migration uyumsuzluğunu gider
 - [x] Gerçek DB transaction rollback içinde geçici orders kaydını oluşturup pickup/delivery detail alanlarını mock'suz read-back doğrula
-- [ ] Ücretsiz offline routing engine seçimini ve lisansını doğrula
+- [x] Ücretsiz offline routing engine seçimini ve lisansını doğrula
 - [ ] İstanbul ve Ankara için routing engine'in okuyacağı indirilebilir yol ağı paket formatını belirle
 - [ ] Tarayıcıda veya yerel servis katmanında offline rota hesaplama modülünü entegre et
 - [ ] Offline rota çıktısından gerçek km, süre ve 600 TL + km bazlı fiyatı üret
-- [ ] İnternet yokken rota doğrulama, paket dışı koordinat ve hata durumlarını güvenli yönet
+- [x] İnternet yokken rota doğrulama, paket dışı koordinat ve hata durumlarını güvenli yönet
 - [ ] Offline routing engine için rota doğruluk, performans, fiyat ve mobil testlerini ekle
 - [ ] Kalıcı Valhalla servis URL'si ve health-check yapılandırmasını ekle
 - [ ] İstanbul ve Ankara Valhalla tile verilerinin sunucu depolama/yenileme stratejisini tanımla
@@ -109,12 +109,12 @@
 - [ ] Valhalla route km/süre çıktısını mevcut 600 TL + km başı 100 TL ve %20 komisyon akışına bağla
 - [ ] Kalıcı servis erişilemezliği, şehir dışı koordinat ve stale tile durumlarını güvenli yönet
 - [ ] Valhalla bağlantısı, route doğruluğu, süre, fiyat ve health-check testlerini ekle
-- [ ] Ücretsiz OpenStreetMap şehir haritası paketlerinin indirilebilir manifestini doğrula
-- [ ] Harita paketini IndexedDB/Service Worker ile cihazda sakla ve internet yokken aç
-- [ ] Harita görüntüleme için offline paket okuyucu/harita katmanını bağla
-- [ ] OpenStreetMap/ODbL attribution ve veri kaynağı bağlantısını göster
-- [ ] Offline harita ile offline gerçek rota motorunun ayrı kapsamını kullanıcıya açıkça göster
-- [ ] Harita paketinin indirme, önbellek, offline açılış ve mobil performans testlerini ekle
+- [x] Ücretsiz OpenStreetMap şehir haritası paketlerinin indirilebilir manifestini doğrula
+- [x] Harita paketini IndexedDB/Service Worker ile cihazda sakla ve internet yokken aç
+- [x] Harita görüntüleme için offline paket okuyucu/harita katmanını bağla
+- [x] OpenStreetMap/ODbL attribution ve veri kaynağı bağlantısını göster
+- [x] Offline harita ile offline gerçek rota motorunun ayrı kapsamını kullanıcıya açıkça göster
+- [x] Harita paketinin indirme, önbellek, offline açılış ve mobil performans testlerini ekle
 - [x] Adres seçiminde yalnızca İstanbul ilini sabitle
 - [x] İstanbul ilçe ve mahalle listesini kullan; diğer illeri gizle
 - [x] İstanbul cadde/sokak alanını ve açık adres girişini ekle
@@ -152,7 +152,7 @@
 - [x] ZIP/PMTiles dosya içe aktarma akışını tarayıcıda gerçekten doğrula: dosyayı seç, IndexedDB kaydını kontrol et ve offline PMTiles haritasının açıldığını kanıtla
 - [x] ZIP/PMTiles import akışı için IndexedDB write/read ve ready state testini ekle
 - [x] Mevcut boş/eksik IndexedDB veritabanlarını version migration ile düzelt ve içe aktarma akışını tekrar doğrula
-- [ ] İBB için gerçek veri/katman same-origin proxy gereksinimini ayrıca değerlendir; mevcut entegrasyon iframe/embed ve offline OSM PMTiles fallback olarak belgelenmiştir
+- [x] İBB için gerçek veri/katman same-origin proxy gereksinimini ayrıca değerlendir; mevcut entegrasyon iframe/embed ve offline OSM PMTiles fallback olarak belgelenmiştir
 - [x] TRPCProvider React hook çakışması sürerse React 18.3 uyumluluk seçeneğini izole bir denemeyle doğrula; başarılı olmazsa geri dön
 - [x] TRPCProvider ile React başlangıç runtime'ını minimal giriş akışında izole et ve boş ekranın kaynağını kesinleştir
 - [x] İzolasyon sonucuna göre React/tRPC provider başlatma akışını düzelt ve mobil preview'da render doğrula
@@ -166,3 +166,7 @@
 - [x] Offline route adapterı için hazır, İstanbul-only, malformed response ve engine error Vitest senaryolarını ekle
 - [ ] Gerçek Valhalla tile üretim/dağıtım pipeline'ını ve Android/iOS native bridge'ini uygulama
 - [x] Landing hero kartındaki 600 TL tahmini ücretini ve footer'daki ücret formülü metnini kaldır; fiyat bilgisi yalnızca sipariş akışında kalsın
+- [x] İBB gerçek veri/katman entegrasyonu için same-origin proxy gereksinimini yazılı olarak belgeleyip iframe + PMTiles fallback kararını teknik gerekçeyle kaydet
+- [x] İBB proxy ertelenme kararını testlenebilir kapsam ve kullanıcıya açık kaynak/attribution sınırıyla ilişkilendir
+- [x] Backend Valhalla HTTP provider'ını Valhalla trip özetinden verified route formatına dönüştür
+- [x] Valhalla provider için service URL yokluğu, başarılı JSON ve güvenli null fallback testlerini ekle
