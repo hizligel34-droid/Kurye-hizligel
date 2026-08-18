@@ -1,6 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { buildSupportMessagePayload, calculateOrderFinancials, canTransitionStatus } from "./db";
+import { buildSupportMessagePayload, calculateOrderFinancials, canTransitionStatus, summarizeAccountingRows } from "./db";
 import { normalizeSupportLanguage, selectSupportReplyLanguage } from "./routers";
+
+describe("Run Kurye role-based accounting", () => {
+  const rows = [{ totalPrice: "1000", commission: "200", courierEarning: "800", companyRevenue: "200" }];
+
+  it("shows only the customer's own spending without exposing commission or company revenue", () => {
+    expect(summarizeAccountingRows(rows, "user")).toEqual({ totalOrders: 1, gross: 1000, commission: 0, courierEarnings: 0, companyRevenue: 0 });
+  });
+
+  it("shows the courier's assigned earnings without company revenue", () => {
+    expect(summarizeAccountingRows(rows, "courier")).toEqual({ totalOrders: 1, gross: 1000, commission: 200, courierEarnings: 800, companyRevenue: 0 });
+  });
+
+  it("keeps the complete financial split for admin and accountant", () => {
+    expect(summarizeAccountingRows(rows, "admin")).toEqual({ totalOrders: 1, gross: 1000, commission: 200, courierEarnings: 800, companyRevenue: 200 });
+  });
+});
 
 describe("Run Kurye pricing", () => {
   it("charges 600 TL for distances up to 5 km", () => {

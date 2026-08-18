@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isOrderFormComplete, type OrderFormFields } from "@shared/orderValidation";
+import { isOrderFormComplete, isRouteAddressComplete, type OrderFormFields } from "@shared/orderValidation";
 
 const completeForm: OrderFormFields = {
   pickupAddress: "İstanbul Kadıköy Acıbadem Caddesi 10",
@@ -29,5 +29,10 @@ describe("order form validation", () => {
 
   it("rejects an address that only has free text without hierarchy", () => {
     expect(isOrderFormComplete({ ...completeForm, pickupDistrict: "", pickupNeighborhood: "", pickupStreet: "" })).toBe(false);
+  });
+
+  it("does not allow route pricing before both address hierarchies are complete", () => {
+    expect(isRouteAddressComplete({ ...completeForm, deliveryDistrict: "", deliveryNeighborhood: "", deliveryStreet: "", deliveryAddressDetail: "" })).toBe(false);
+    expect(isRouteAddressComplete(completeForm)).toBe(true);
   });
 });

@@ -199,3 +199,18 @@
 - [x] Mobil sipariş onayındaki backend validation hatasının gerçek hata mesajını log ve network payload'ından belirle
 - [x] orders.create input ile Home submit payload uyumsuzluğunu düzelt
 - [x] Mobil rota doğrulaması sonrası sipariş onayını başarı ve hata senaryolarıyla test et
+- [ ] Mobil ilçe seçimi sırasında görünen 1 error uyarısının gerçek hata kaynağını browserConsole/network ve proxy loglarından belirle
+- [ ] İlçe seçiminden sonra mahalle ve cadde state/endpoint senkronizasyonunu düzelt; iki AddressPicker'ın birbirini etkilemesini engelle
+- [ ] İlçe, mahalle ve cadde seçiminin pickup/delivery payload'ına doğru yazıldığını mobil etkileşim ve procedure testiyle doğrula
+- [ ] Adres akışında kullanıcıya görünen generic error yerine anlamlı yükleme/hata/boş durum mesajlarını göster
+- [x] Run Kurye logosunu header, mobil üst alan ve giriş/ana marka alanlarında görünür hale getir
+- [x] Logo için erişilebilir alt metin, responsive boyut ve mevcut marka renkleriyle tutarlı görünüm sağla
+- [x] Masaüstü ve mobil viewport'ta logo görünümünü test et
+ - [x] Pricing query'yi yalnızca pickup ve delivery adreslerinin ilçe-mahalle-cadde/sokak-açık adres hiyerarşisi tamamlandığında çalıştır; “İstanbul” gibi eksik adresleri sorgulama
+ - [x] Rota sorgusu eksik adres nedeniyle çalışmadığında generic API error yerine form içi yönlendirme göster
+- [x] Müşteri, kurye, firma/muhasebe ve admin üyelik deneyimini ortak güvenli oturum akışıyla netleştir
+- [x] Her rolün yalnızca kendi muhasebe kayıtlarını ve yetkili özetlerini görebileceği veri/procedure modelini tasarla
+- [x] Müşteri için Banabi/Getir benzeri hızlı sipariş, aktif sipariş ve geçmiş sipariş akışını geliştir
+- [x] Kurye için uygun işler, teslimat kazancı, komisyon ve ödeme geçmişi panelini geliştir
+- [x] Firma/muhasebe için sipariş, %20 komisyon, kurye kazancı ve tahsilat raporlarını rol bazlı göster
+- [x] Üyelik, muhasebe erişimi ve yeni mobil akışlar için Vitest ve mobil görsel denetim ekle

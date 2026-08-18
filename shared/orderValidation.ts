@@ -36,3 +36,19 @@ export function isOrderFormComplete(form: OrderFormFields) {
 }
 
 export const ORDER_FORM_INCOMPLETE_MESSAGE = "Sipariş için iki adresin ilçe, mahalle, cadde/sokak ve açık adres alanlarını; ürün açıklaması ile telefon numarasını doldurun.";
+
+/** Rota/fiyat sorgusu yalnızca iki adresin İstanbul hiyerarşisi tamamlandığında çalışmalıdır. */
+export function isRouteAddressComplete(form: Pick<OrderFormFields, "pickupProvince" | "pickupDistrict" | "pickupNeighborhood" | "pickupStreet" | "pickupAddressDetail" | "deliveryProvince" | "deliveryDistrict" | "deliveryNeighborhood" | "deliveryStreet" | "deliveryAddressDetail">) {
+  return [
+    form.pickupProvince,
+    form.pickupDistrict,
+    form.pickupNeighborhood,
+    form.pickupStreet,
+    form.pickupAddressDetail,
+    form.deliveryProvince,
+    form.deliveryDistrict,
+    form.deliveryNeighborhood,
+    form.deliveryStreet,
+    form.deliveryAddressDetail,
+  ].every(value => value.trim().length > 0);
+}

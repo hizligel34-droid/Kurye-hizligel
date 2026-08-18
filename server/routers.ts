@@ -6,7 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { makeRequest, type DirectionsResult, type GeocodingResult } from "./_core/map";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateOrderFinancials, canTransitionStatus, getDb, getMessages, getOrderByTrackingCode, listNotifications, listOrders, updateUserProfile } from "./db";
+import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateOrderFinancials, canTransitionStatus, getDb, getMessages, getOrderByTrackingCode, listNotifications, listOrders, summarizeAccountingRows, updateUserProfile } from "./db";
 import { orders } from "../drizzle/schema";
 import { nanoid } from "nanoid";
 import { createValhallaProvider } from "./valhallaAdapter";
@@ -158,9 +158,8 @@ send: protectedProcedure.input(z.object({ orderId: z.number(), content: z.string
   notifications: router({ list: protectedProcedure.query(({ ctx }) => listNotifications(ctx.user.id)) }),
   accounting: router({
     summary: protectedProcedure.query(async ({ ctx }) => {
-      if (!["admin", "accountant"].includes(ctx.user.role)) throw new Error("Bu raporu görme yetkiniz yok");
       const rows = await listOrders(ctx.user.id, ctx.user.role);
-      return rows.reduce((sum, row) => ({ totalOrders: sum.totalOrders + 1, gross: sum.gross + Number(row.totalPrice), commission: sum.commission + Number(row.commission), courierEarnings: sum.courierEarnings + Number(row.courierEarning), companyRevenue: sum.companyRevenue + Number(row.companyRevenue) }), { totalOrders: 0, gross: 0, commission: 0, courierEarnings: 0, companyRevenue: 0 });
+      return { role: ctx.user.role, ...summarizeAccountingRows(rows, ctx.user.role) };
     }),
   }),
 });

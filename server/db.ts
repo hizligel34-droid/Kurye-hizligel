@@ -63,6 +63,19 @@ export async function listOrders(userId: number, role: string) {
   return db.select().from(orders).where(eq(orders.customerId, userId)).orderBy(desc(orders.createdAt));
 }
 
+export function summarizeAccountingRows(rows: Array<{ totalPrice: string | number; commission: string | number; courierEarning: string | number; companyRevenue: string | number }>, role: string) {
+  const summary = rows.reduce((sum, row) => ({
+    totalOrders: sum.totalOrders + 1,
+    gross: sum.gross + Number(row.totalPrice),
+    commission: sum.commission + Number(row.commission),
+    courierEarnings: sum.courierEarnings + Number(row.courierEarning),
+    companyRevenue: sum.companyRevenue + Number(row.companyRevenue),
+  }), { totalOrders: 0, gross: 0, commission: 0, courierEarnings: 0, companyRevenue: 0 });
+  if (role === "courier") return { ...summary, companyRevenue: 0 };
+  if (role === "user") return { ...summary, commission: 0, courierEarnings: 0, companyRevenue: 0 };
+  return summary;
+}
+
 export async function getOrderByTrackingCode(trackingCode: string) {
   const db = await getDb(); if (!db) return undefined;
   const result = await db.select().from(orders).where(eq(orders.trackingCode, trackingCode.toUpperCase())).limit(1);
