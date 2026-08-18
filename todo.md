@@ -199,10 +199,10 @@
 - [x] Mobil sipariş onayındaki backend validation hatasının gerçek hata mesajını log ve network payload'ından belirle
 - [x] orders.create input ile Home submit payload uyumsuzluğunu düzelt
 - [x] Mobil rota doğrulaması sonrası sipariş onayını başarı ve hata senaryolarıyla test et
-- [ ] Mobil ilçe seçimi sırasında görünen 1 error uyarısının gerçek hata kaynağını browserConsole/network ve proxy loglarından belirle
-- [ ] İlçe seçiminden sonra mahalle ve cadde state/endpoint senkronizasyonunu düzelt; iki AddressPicker'ın birbirini etkilemesini engelle
-- [ ] İlçe, mahalle ve cadde seçiminin pickup/delivery payload'ına doğru yazıldığını mobil etkileşim ve procedure testiyle doğrula
-- [ ] Adres akışında kullanıcıya görünen generic error yerine anlamlı yükleme/hata/boş durum mesajlarını göster
+ - [x] Mobil ilçe seçimi sırasında görünen 1 error uyarısının gerçek hata kaynağını browserConsole/network ve proxy loglarından belirle
+ - [x] İlçe seçiminden sonra mahalle ve cadde state/endpoint senkronizasyonunu düzelt; iki AddressPicker'ın birbirini etkilemesini engelle
+ - [x] İlçe, mahalle ve cadde seçiminin pickup/delivery payload'ına doğru yazıldığını mobil etkileşim ve procedure testiyle doğrula
+ - [x] Adres akışında kullanıcıya görünen generic error yerine anlamlı yükleme/hata/boş durum mesajlarını göster
 - [x] Run Kurye logosunu header, mobil üst alan ve giriş/ana marka alanlarında görünür hale getir
 - [x] Logo için erişilebilir alt metin, responsive boyut ve mevcut marka renkleriyle tutarlı görünüm sağla
 - [x] Masaüstü ve mobil viewport'ta logo görünümünü test et
