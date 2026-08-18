@@ -233,3 +233,7 @@
 - [x] Mobil OAuth callback akışında invalid oauth state hatasını ve oturum cookie uyumunu düzelt
 - [x] OAuth hata durumunda kullanıcıya güvenli ve anlaşılır yeniden giriş yönlendirmesi göster
 - [x] OAuth mobil giriş, belge erişimi ve belge yükleme akışlarını yeniden test et
+- [x] Ödeme/e-fatura webhook mimarisi ve idempotent event sözleşmelerini beceriye ekle
+- [x] Kurye ve müşteri panelleri için temel wireframe/UI akış dokümanını beceriye ekle
+- [x] Lojistik platformu yatırımcı sunumu içeriğini varsayımları açıkça belirterek hazırla
+- [x] Yatırımcı sunumunu slayt dosyası olarak üret, görsel doğrula ve teslim et
