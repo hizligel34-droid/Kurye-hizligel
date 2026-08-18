@@ -1,14 +1,15 @@
-import { z } from "zod";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { makeRequest, type DirectionsResult, type GeocodingResult } from "./_core/map";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, getDb, getMessages, getCourierLeaderboard, getOrderByTrackingCode, listNotifications, listOrders, summarizeAccountingRows, updateUserProfile } from "./db";
+import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, getCourierContract, getCourierLeaderboard, getDb, getMessages, getOrderByTrackingCode, listNotifications, listOrders, saveCourierContract, summarizeAccountingRows, updateUserProfile } from "./db";
 import { orders } from "../drizzle/schema";
 import { nanoid } from "nanoid";
+import { RUN_KURYE_CONTRACT_VERSION, runKuryeContractNotice, runKuryeContractSections } from "@shared/courierContract";
 import { createValhallaProvider } from "./valhallaAdapter";
 import { resolveOfflineRoute } from "@shared/offlineRouting";
 
@@ -171,6 +172,14 @@ send: protectedProcedure.input(z.object({ orderId: z.number(), content: z.string
     leaderboard: protectedProcedure.query(async ({ ctx }) => {
       if (!["admin", "accountant", "courier"].includes(ctx.user.role)) throw new Error("Liderlik tablosuna erişim yetkiniz yok");
       return getCourierLeaderboard();
+    }),
+    contract: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "courier") throw new Error("Bu sözleşme yalnızca kuryeler içindir");
+      return { version: RUN_KURYE_CONTRACT_VERSION, sections: runKuryeContractSections, notice: runKuryeContractNotice, accepted: Boolean(await getCourierContract(ctx.user.id)), record: await getCourierContract(ctx.user.id) };
+    }),
+    acceptContract: protectedProcedure.input(z.object({ courierFullName: z.string().min(2).max(160), identityNumber: z.string().min(5).max(32), residenceAddress: z.string().min(5).max(320), taxOffice: z.string().min(2).max(120), taxNumber: z.string().min(5).max(40), vehiclePlate: z.string().min(2).max(20), iban: z.string().min(10).max(34), accepted: z.literal(true) })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "courier") throw new Error("Bu sözleşme yalnızca kuryeler içindir");
+      return saveCourierContract({ courierId: ctx.user.id, contractVersion: RUN_KURYE_CONTRACT_VERSION, courierFullName: input.courierFullName.trim(), identityNumber: input.identityNumber.trim(), residenceAddress: input.residenceAddress.trim(), taxOffice: input.taxOffice.trim(), taxNumber: input.taxNumber.trim(), vehiclePlate: input.vehiclePlate.trim().toUpperCase(), iban: input.iban.trim().toUpperCase() });
     }),
   }),
 });

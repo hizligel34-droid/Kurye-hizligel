@@ -222,3 +222,7 @@
 - [x] Rol kontrollü leaderboard tRPC prosedürünü ve güvenli kurye özetlerini ekle
 - [x] Mobil liderlik tablosu, kişisel sıra ve puan görünümünü kurye paneline ekle
 - [x] Leaderboard için Vitest, TypeScript, build ve mobil görsel doğrulaması yap
+- [x] Run Kurye için İstanbul içi bağımsız kurye hizmet sözleşmesi metnini ve alanlarını uyarlama
+- [x] Kurye sözleşmesi kabul kaydı için veri modeli ve rol kontrollü backend akışı ekleme
+- [x] Kurye profil/üyelik ekranında sözleşme görüntüleme ve onay kutusu akışını ekleme
+- [x] Sözleşme akışı için hukuki uyarı, Vitest, TypeScript, build ve mobil doğrulaması yapma

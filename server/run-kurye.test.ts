@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, rankCourierLeaderboard, summarizeAccountingRows } from "./db";
 import { normalizeSupportLanguage, selectSupportReplyLanguage } from "./routers";
+import { RUN_KURYE_CONTRACT_VERSION, runKuryeContractSections } from "@shared/courierContract";
+
+describe("Run Kurye courier contract", () => {
+  it("keeps the contract versioned and limited to Istanbul delivery service", () => {
+    expect(RUN_KURYE_CONTRACT_VERSION).toBe("2026-08-18-v1");
+    expect(runKuryeContractSections.map(section => section.title)).toContain("8. Yetki ve kapsam");
+    expect(runKuryeContractSections.find(section => section.title === "2. Sözleşmenin konusu")?.body).toContain("İstanbul ili sınırları");
+  });
+});
 
 describe("Run Kurye role-based accounting", () => {
   const rows = [{ totalPrice: "1000", commission: "200", courierEarning: "800", companyRevenue: "200" }];

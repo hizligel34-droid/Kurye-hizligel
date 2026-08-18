@@ -60,6 +60,21 @@ export const messages = mysqlTable("messages", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const courierContracts = mysqlTable("courierContracts", {
+  id: int("id").autoincrement().primaryKey(),
+  courierId: int("courierId").notNull().unique(),
+  contractVersion: varchar("contractVersion", { length: 40 }).notNull(),
+  courierFullName: varchar("courierFullName", { length: 160 }).notNull(),
+  identityNumber: varchar("identityNumber", { length: 32 }).notNull(),
+  residenceAddress: varchar("residenceAddress", { length: 320 }).notNull(),
+  taxOffice: varchar("taxOffice", { length: 120 }).notNull(),
+  taxNumber: varchar("taxNumber", { length: 40 }).notNull(),
+  vehiclePlate: varchar("vehiclePlate", { length: 20 }).notNull(),
+  iban: varchar("iban", { length: 34 }).notNull(),
+  acceptedAt: timestamp("acceptedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const notifications = mysqlTable("notifications", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
@@ -75,3 +90,4 @@ export type InsertUser = typeof users.$inferInsert;
 export type Order = typeof orders.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type CourierContract = typeof courierContracts.$inferSelect;

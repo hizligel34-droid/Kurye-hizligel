@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, Message, messages, notifications, orders, users } from "../drizzle/schema";
+import { CourierContract, InsertUser, Message, courierContracts, messages, notifications, orders, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -40,6 +40,18 @@ export async function updateUserProfile(userId: number, input: { name?: string; 
   await db.update(users).set({ name: input.name, phone: input.phone }).where(eq(users.id, userId));
   const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   return result[0];
+}
+
+export async function getCourierContract(courierId: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(courierContracts).where(eq(courierContracts.courierId, courierId)).limit(1);
+  return result[0];
+}
+
+export async function saveCourierContract(input: Omit<CourierContract, "id" | "acceptedAt" | "updatedAt">) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  await db.insert(courierContracts).values(input).onDuplicateKeyUpdate({ set: { ...input, updatedAt: new Date() } });
+  return getCourierContract(input.courierId);
 }
 
 export function canTransitionStatus(from: string, to: string) {
