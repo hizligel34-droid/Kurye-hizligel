@@ -263,4 +263,4 @@
 - [x] Investor deck finansal model slaytlarını final varsayımlar ve kaynak notlarıyla güncelle
 - [x] Çok dilli akış, sandbox ödeme ve canlı takip için uçtan uca regresyon denetimi
 - [x] Yeni özellikler için Vitest testleri ve production build doğrulaması
-- [ ] Yeni sürümü checkpoint olarak kaydet ve yayınlanan sürümü kullanıcıya ilet
+- [x] Yeni sürümü checkpoint olarak kaydet ve yayınlanan sürümü kullanıcıya ilet
