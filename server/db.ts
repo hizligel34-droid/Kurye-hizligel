@@ -76,6 +76,43 @@ export function summarizeAccountingRows(rows: Array<{ totalPrice: string | numbe
   return summary;
 }
 
+export type CourierAchievement = {
+  completedDeliveries: number;
+  points: number;
+  badgeKey: "starter" | "reliable" | "swift" | "master" | "elite";
+  badgeLabel: string;
+  nextBadgeLabel: string | null;
+  nextBadgeAt: number | null;
+  progressPercent: number;
+  remainingToNext: number;
+};
+
+const courierBadgeLevels = [
+  { key: "starter" as const, at: 0, label: "Yeni Başlayan" },
+  { key: "reliable" as const, at: 5, label: "Güvenilir Kurye" },
+  { key: "swift" as const, at: 25, label: "Hızlı Kurye" },
+  { key: "master" as const, at: 50, label: "Usta Kurye" },
+  { key: "elite" as const, at: 100, label: "Elit Kurye" },
+];
+
+export function calculateCourierAchievement(rows: Array<{ status: string }>): CourierAchievement {
+  const completedDeliveries = rows.filter(row => row.status === "delivered").length;
+  const current = [...courierBadgeLevels].reverse().find(level => completedDeliveries >= level.at) ?? courierBadgeLevels[0];
+  const next = courierBadgeLevels.find(level => level.at > completedDeliveries) ?? null;
+  const span = next ? next.at - current.at : 1;
+  const progressPercent = next ? Math.min(100, Math.round(((completedDeliveries - current.at) / span) * 100)) : 100;
+  return {
+    completedDeliveries,
+    points: completedDeliveries * 10,
+    badgeKey: current.key,
+    badgeLabel: current.label,
+    nextBadgeLabel: next?.label ?? null,
+    nextBadgeAt: next?.at ?? null,
+    progressPercent,
+    remainingToNext: next ? Math.max(0, next.at - completedDeliveries) : 0,
+  };
+}
+
 export async function getOrderByTrackingCode(trackingCode: string) {
   const db = await getDb(); if (!db) return undefined;
   const result = await db.select().from(orders).where(eq(orders.trackingCode, trackingCode.toUpperCase())).limit(1);

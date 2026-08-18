@@ -214,3 +214,7 @@
 - [x] Kurye için uygun işler, teslimat kazancı, komisyon ve ödeme geçmişi panelini geliştir
 - [x] Firma/muhasebe için sipariş, %20 komisyon, kurye kazancı ve tahsilat raporlarını rol bazlı göster
 - [x] Üyelik, muhasebe erişimi ve yeni mobil akışlar için Vitest ve mobil görsel denetim ekle
+- [x] Kurye tamamlanan teslimat sayısı, puan ve rozet seviyeleri için ortak hesaplama sözleşmesini tanımla
+- [x] Kurye profiline güvenli tamamlanan teslimat özeti, puan ve rozet prosedürünü ekle
+- [x] Kurye panelinde rozet, puan ve bir sonraki seviyeye ilerleme görünümünü ekle
+- [x] Kurye başarı sistemi için Vitest, TypeScript, build ve mobil görsel doğrulaması yap

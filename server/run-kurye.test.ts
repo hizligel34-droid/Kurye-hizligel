@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSupportMessagePayload, calculateOrderFinancials, canTransitionStatus, summarizeAccountingRows } from "./db";
+import { buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, summarizeAccountingRows } from "./db";
 import { normalizeSupportLanguage, selectSupportReplyLanguage } from "./routers";
 
 describe("Run Kurye role-based accounting", () => {
@@ -15,6 +15,20 @@ describe("Run Kurye role-based accounting", () => {
 
   it("keeps the complete financial split for admin and accountant", () => {
     expect(summarizeAccountingRows(rows, "admin")).toEqual({ totalOrders: 1, gross: 1000, commission: 200, courierEarnings: 800, companyRevenue: 200 });
+  });
+});
+
+describe("Run Kurye courier achievement", () => {
+  it("counts only delivered orders and awards 10 points per completion", () => {
+    expect(calculateCourierAchievement([{ status: "delivered" }, { status: "delivered" }, { status: "on_the_way" }])).toMatchObject({ completedDeliveries: 2, points: 20, badgeLabel: "Yeni Başlayan", nextBadgeLabel: "Güvenilir Kurye", nextBadgeAt: 5, remainingToNext: 3, progressPercent: 40 });
+  });
+
+  it("promotes a courier at the exact badge threshold", () => {
+    expect(calculateCourierAchievement(Array.from({ length: 25 }, () => ({ status: "delivered" })))).toMatchObject({ completedDeliveries: 25, points: 250, badgeLabel: "Hızlı Kurye", nextBadgeLabel: "Usta Kurye", remainingToNext: 25, progressPercent: 0 });
+  });
+
+  it("caps elite couriers at the top badge", () => {
+    expect(calculateCourierAchievement(Array.from({ length: 125 }, () => ({ status: "delivered" })))).toMatchObject({ completedDeliveries: 125, points: 1250, badgeLabel: "Elit Kurye", nextBadgeLabel: null, nextBadgeAt: null, remainingToNext: 0, progressPercent: 100 });
   });
 });
 
