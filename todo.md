@@ -226,3 +226,10 @@
 - [x] Kurye sözleşmesi kabul kaydı için veri modeli ve rol kontrollü backend akışı ekleme
 - [x] Kurye profil/üyelik ekranında sözleşme görüntüleme ve onay kutusu akışını ekleme
 - [x] Sözleşme akışı için hukuki uyarı, Vitest, TypeScript, build ve mobil doğrulaması yapma
+- [x] Kimlik, ehliyet ve araç ruhsatı belge türleri için güvenli metadata ve doğrulama sözleşmesini tanımla
+- [x] Kurye belgeleri için dosya depolama, erişim ve inceleme durumlarını rol kontrollü backend’e ekle
+- [x] Kurye belge yükleme ve admin inceleme ekranlarını mobil uyumlu geliştir
+- [x] Belge akışı için güvenlik, Vitest, TypeScript, build ve mobil görsel doğrulaması yap
+- [x] Mobil OAuth callback akışında invalid oauth state hatasını ve oturum cookie uyumunu düzelt
+- [x] OAuth hata durumunda kullanıcıya güvenli ve anlaşılır yeniden giriş yönlendirmesi göster
+- [x] OAuth mobil giriş, belge erişimi ve belge yükleme akışlarını yeniden test et

@@ -75,6 +75,21 @@ export const courierContracts = mysqlTable("courierContracts", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const courierDocuments = mysqlTable("courierDocuments", {
+  id: int("id").autoincrement().primaryKey(),
+  courierId: int("courierId").notNull(),
+  documentType: mysqlEnum("documentType", ["identity", "license", "vehicle_registration"]).notNull(),
+  storageKey: varchar("storageKey", { length: 320 }).notNull(),
+  storageUrl: varchar("storageUrl", { length: 420 }).notNull(),
+  originalName: varchar("originalName", { length: 180 }).notNull(),
+  contentType: varchar("contentType", { length: 80 }).notNull(),
+  sizeBytes: int("sizeBytes").notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  reviewNote: varchar("reviewNote", { length: 500 }),
+  uploadedAt: timestamp("uploadedAt").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+});
+
 export const notifications = mysqlTable("notifications", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
@@ -91,3 +106,4 @@ export type Order = typeof orders.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type CourierContract = typeof courierContracts.$inferSelect;
+export type CourierDocument = typeof courierDocuments.$inferSelect;

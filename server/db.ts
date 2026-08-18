@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { CourierContract, InsertUser, Message, courierContracts, messages, notifications, orders, users } from "../drizzle/schema";
+import { CourierContract, CourierDocument, InsertUser, Message, courierContracts, courierDocuments, messages, notifications, orders, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -52,6 +52,33 @@ export async function saveCourierContract(input: Omit<CourierContract, "id" | "a
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
   await db.insert(courierContracts).values(input).onDuplicateKeyUpdate({ set: { ...input, updatedAt: new Date() } });
   return getCourierContract(input.courierId);
+}
+
+export async function listCourierDocuments(courierId?: number) {
+  const db = await getDb(); if (!db) return [];
+  return courierId
+    ? db.select().from(courierDocuments).where(eq(courierDocuments.courierId, courierId))
+    : db.select().from(courierDocuments);
+}
+
+export async function saveCourierDocument(input: Omit<CourierDocument, "id" | "uploadedAt" | "reviewedAt">) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  await db.insert(courierDocuments).values(input);
+  const rows = await db.select().from(courierDocuments).where(eq(courierDocuments.courierId, input.courierId));
+  return rows.filter(row => row.documentType === input.documentType).sort((a, b) => b.id - a.id)[0];
+}
+
+export async function getCourierDocument(documentId: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const rows = await db.select().from(courierDocuments).where(eq(courierDocuments.id, documentId)).limit(1);
+  return rows[0];
+}
+
+export async function reviewCourierDocument(documentId: number, status: "approved" | "rejected", reviewNote?: string) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  await db.update(courierDocuments).set({ status, reviewNote: reviewNote || null, reviewedAt: new Date() }).where(eq(courierDocuments.id, documentId));
+  const rows = await db.select().from(courierDocuments).where(eq(courierDocuments.id, documentId)).limit(1);
+  return rows[0];
 }
 
 export function canTransitionStatus(from: string, to: string) {

@@ -6,12 +6,27 @@ import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { makeRequest, type DirectionsResult, type GeocodingResult } from "./_core/map";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, getCourierContract, getCourierLeaderboard, getDb, getMessages, getOrderByTrackingCode, listNotifications, listOrders, saveCourierContract, summarizeAccountingRows, updateUserProfile } from "./db";
+import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
 import { orders } from "../drizzle/schema";
 import { nanoid } from "nanoid";
 import { RUN_KURYE_CONTRACT_VERSION, runKuryeContractNotice, runKuryeContractSections } from "@shared/courierContract";
 import { createValhallaProvider } from "./valhallaAdapter";
 import { resolveOfflineRoute } from "@shared/offlineRouting";
+import { storageGetSignedUrl, storagePut } from "./storage";
+
+const courierDocumentTypes = ["identity", "license", "vehicle_registration"] as const;
+const courierDocumentContentTypes = ["image/jpeg", "image/png", "application/pdf"] as const;
+function decodeCourierDocument(dataBase64: string, contentType: string) {
+  if (!courierDocumentContentTypes.includes(contentType as typeof courierDocumentContentTypes[number])) throw new Error("Yalnızca PDF, JPG veya PNG belge yükleyebilirsiniz");
+  const raw = dataBase64.replace(/^data:[^;]+;base64,/, "");
+  const bytes = Buffer.from(raw, "base64");
+  if (!bytes.length || bytes.length > 8 * 1024 * 1024) throw new Error("Belge boyutu 8 MB’tan küçük olmalıdır");
+  const header = bytes.subarray(0, 8);
+  const valid = contentType === "application/pdf" ? header.toString("ascii", 0, 4) === "%PDF" : contentType === "image/png" ? header[0] === 0x89 && header[1] === 0x50 && header[2] === 0x4e && header[3] === 0x47 : header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
+  if (!valid) throw new Error("Belge içeriği seçilen dosya türüyle eşleşmiyor");
+  return { raw, bytes };
+}
+function safeDocumentName(fileName: string) { return fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120) || "document"; }
 
 const statusLabels = { received: "Alındı", on_the_way: "Yolda", delivered: "Teslim Edildi", cancelled: "İptal Edildi" } as const;
 export const supportedLanguages = ["tr", "en", "de", "ru", "ar", "zh", "el"] as const;
@@ -180,6 +195,27 @@ send: protectedProcedure.input(z.object({ orderId: z.number(), content: z.string
     acceptContract: protectedProcedure.input(z.object({ courierFullName: z.string().min(2).max(160), identityNumber: z.string().min(5).max(32), residenceAddress: z.string().min(5).max(320), taxOffice: z.string().min(2).max(120), taxNumber: z.string().min(5).max(40), vehiclePlate: z.string().min(2).max(20), iban: z.string().min(10).max(34), accepted: z.literal(true) })).mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "courier") throw new Error("Bu sözleşme yalnızca kuryeler içindir");
       return saveCourierContract({ courierId: ctx.user.id, contractVersion: RUN_KURYE_CONTRACT_VERSION, courierFullName: input.courierFullName.trim(), identityNumber: input.identityNumber.trim(), residenceAddress: input.residenceAddress.trim(), taxOffice: input.taxOffice.trim(), taxNumber: input.taxNumber.trim(), vehiclePlate: input.vehiclePlate.trim().toUpperCase(), iban: input.iban.trim().toUpperCase() });
+    }),
+    documents: protectedProcedure.query(({ ctx }) => {
+      if (!["courier", "admin", "accountant"].includes(ctx.user.role)) throw new Error("Belge alanına erişim yetkiniz yok");
+      return listCourierDocuments(ctx.user.role === "courier" ? ctx.user.id : undefined);
+    }),
+    uploadDocument: protectedProcedure.input(z.object({ documentType: z.enum(courierDocumentTypes), fileName: z.string().min(1).max(180), contentType: z.enum(courierDocumentContentTypes), dataBase64: z.string().min(32).max(12_000_000) })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "courier") throw new Error("Belgeleri yalnızca kuryeler yükleyebilir");
+      const { bytes } = decodeCourierDocument(input.dataBase64, input.contentType);
+      const stored = await storagePut(`couriers/${ctx.user.id}/documents/${input.documentType}/${safeDocumentName(input.fileName)}`, bytes, input.contentType);
+      return saveCourierDocument({ courierId: ctx.user.id, documentType: input.documentType, storageKey: stored.key, storageUrl: stored.url, originalName: safeDocumentName(input.fileName), contentType: input.contentType, sizeBytes: bytes.length, status: "pending", reviewNote: null });
+    }),
+    reviewDocument: protectedProcedure.input(z.object({ documentId: z.number().int().positive(), status: z.enum(["approved", "rejected"]), reviewNote: z.string().max(500).optional() })).mutation(async ({ ctx, input }) => {
+      if (!["admin", "accountant"].includes(ctx.user.role)) throw new Error("Belge inceleme yetkiniz yok");
+      return reviewCourierDocument(input.documentId, input.status, input.reviewNote?.trim());
+    }),
+    documentUrl: protectedProcedure.input(z.object({ documentId: z.number().int().positive() })).query(async ({ ctx, input }) => {
+      const document = await getCourierDocument(input.documentId);
+      if (!document) throw new Error("Belge bulunamadı");
+      if (ctx.user.role === "courier" && document.courierId !== ctx.user.id) throw new Error("Bu belgeye erişim yetkiniz yok");
+      if (!["courier", "admin", "accountant"].includes(ctx.user.role)) throw new Error("Belgeye erişim yetkiniz yok");
+      return { url: await storageGetSignedUrl(document.storageKey), expiresInSeconds: 900 };
     }),
   }),
 });

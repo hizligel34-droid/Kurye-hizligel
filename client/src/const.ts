@@ -13,12 +13,17 @@ export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 // with "invalid oauth state". It returns void by design, so there is no URL to
 // stash across renders.
 export const startLogin = () => {
-  const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
+  const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL; 
+  const secureCookie = window.location.protocol === "https:" ? "; Secure" : "";
+  const existingState = document.cookie.split(";").find(part => part.trim().startsWith(`${OAUTH_STATE_COOKIE}=`));
+  const pendingAt = Number(sessionStorage.getItem("run-kurye-oauth-pending-at") || 0);
+  if (existingState && pendingAt > Date.now() - 10 * 60 * 1000) return;
+  sessionStorage.setItem("run-kurye-oauth-pending-at", String(Date.now()));
   const appId = import.meta.env.VITE_APP_ID;
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
 
   const nonce = crypto.randomUUID();
-  document.cookie = `${OAUTH_STATE_COOKIE}=${nonce}; Path=/; Max-Age=600; SameSite=None; Secure`;
+  document.cookie = `${OAUTH_STATE_COOKIE}=${nonce}; Path=/; Max-Age=600; SameSite=None${secureCookie}`;
   const state = encodeOAuthState({ redirectUri, nonce });
 
   const url = new URL(`${oauthPortalUrl}/app-auth`);
