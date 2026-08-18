@@ -302,14 +302,14 @@
 
 
 ## End-to-end demo audit
-- [ ] Uygulamayı ve canlı sunucuyu çalıştırıp loglarda mevcut hataları tespit et
-- [ ] Demo müşteriyle İstanbul örnek adreslerini tek tek oluştur ve adres doğrulamasını denetle
-- [ ] Örnek sipariş oluştur, rota/fiyat/ödeme akışını doğrula ve takip kodunu kaydet
-- [ ] Demo kurye ile siparişi kabul et, alma/yolda/teslim durumlarını sırayla ilerlet
-- [ ] Müşteri-kurye uygulama içi mesajlaşmasını iki yönde doğrula
-- [ ] Demo muhasebe, puan/başarı ve bildirim kayıtlarını doğrula
-- [ ] Bulunan eksikleri düzelt, regresyon testleri ve production build çalıştır
-- [ ] Uçtan uca demo tekrarını ve mobil görsel denetimini tamamla
+- [x] Uygulamayı ve canlı sunucuyu çalıştırıp loglarda mevcut hataları tespit et
+- [x] Demo müşteriyle İstanbul örnek adreslerini tek tek oluştur ve adres doğrulamasını denetle
+- [x] Örnek sipariş oluştur, rota/fiyat/ödeme akışını doğrula ve takip kodunu kaydet
+- [x] Demo kurye ile siparişi kabul et, alma/yolda/teslim durumlarını sırayla ilerlet
+- [x] Müşteri-kurye uygulama içi mesajlaşmasını iki yönde doğrula
+- [x] Demo muhasebe, puan/başarı ve bildirim kayıtlarını doğrula
+- [x] Bulunan eksikleri düzelt, regresyon testleri ve production build çalıştır
+- [x] Uçtan uca demo tekrarını ve mobil görsel denetimini tamamla
 - [ ] Demo denetimi sonucunu yayınlanabilir checkpoint olarak kaydet
 
 
@@ -319,4 +319,4 @@
 - [x] Kart sandbox ve kapıda nakit yöntemlerini rol/muhasebe ekranlarında doğru göster
 - [x] Kapıda nakit ödeme için sipariş, teslimat ve muhasebe regresyon testleri ekle
 - [x] TypeScript, production build ve mobil görsel denetim yap
-- [ ] Kapıda nakit ödeme sürümünü checkpoint olarak kaydet
+- [x] Kapıda nakit ödeme sürümünü checkpoint olarak kaydet
