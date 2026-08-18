@@ -320,3 +320,11 @@
 - [x] Kapıda nakit ödeme için sipariş, teslimat ve muhasebe regresyon testleri ekle
 - [x] TypeScript, production build ve mobil görsel denetim yap
 - [x] Kapıda nakit ödeme sürümünü checkpoint olarak kaydet
+
+
+## Quick chat message templates
+- [x] Müşteri ve kurye için rol uyumlu hazır mesaj şablonları tanımla
+- [x] Şablonlara tıklayarak mevcut sohbet gönderim akışına mesaj gönder
+- [x] Şablonları çok dilli ve mobil erişilebilir arayüzde göster
+- [x] Hazır mesaj yardımcıları için Vitest, TypeScript, build ve mobil görsel doğrulama yap
+- [ ] Hazır mesaj sürümünü checkpoint olarak kaydet
