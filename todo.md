@@ -153,3 +153,10 @@
 - [x] ZIP/PMTiles import akışı için IndexedDB write/read ve ready state testini ekle
 - [x] Mevcut boş/eksik IndexedDB veritabanlarını version migration ile düzelt ve içe aktarma akışını tekrar doğrula
 - [ ] İBB için gerçek veri/katman same-origin proxy gereksinimini ayrıca değerlendir; mevcut entegrasyon iframe/embed ve offline OSM PMTiles fallback olarak belgelenmiştir
+- [x] TRPCProvider React hook çakışması sürerse React 18.3 uyumluluk seçeneğini izole bir denemeyle doğrula; başarılı olmazsa geri dön
+- [x] TRPCProvider ile React başlangıç runtime'ını minimal giriş akışında izole et ve boş ekranın kaynağını kesinleştir
+- [x] İzolasyon sonucuna göre React/tRPC provider başlatma akışını düzelt ve mobil preview'da render doğrula
+- [x] Runtime düzeltmesi sonrası İstanbul adres/cadde akışını ve mobil görünümü yeniden doğrula
+- [x] TRPCProvider/useState null hatasının kalıcı nedenini kodda gider; final main.tsx/Vite yapılandırmasında tekil ve doğrulanmış çözümü bırak
+- [x] Kalıcı runtime fix sonrası Home ve order mobil preview'da tarayıcı konsolunun hatasız olduğunu kanıtla
+- [x] Runtime fix sonrası İstanbul ilçe/mahalle/cadde akışını mobilde yeniden doğrula ve mümkünse bunu test/kanıtla destekle
