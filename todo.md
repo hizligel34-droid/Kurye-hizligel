@@ -134,3 +134,22 @@
 - [x] AddressPicker düzeltmesi için ilçe yüklemesi doğrudan çalışırken mahalle fallback'ini kapsayan özel test ekle
 - [x] Mobil viewport'ta sipariş formuna doğrudan geçiş sağlayıp AddressPicker alanlarını gerçek ekran üzerinde doğrula
 - [x] TürkiyeAPI CORS/erişim sorununu same-origin sunucu adres proxy'siyle gider ve AddressPicker'ı proxy üzerinden yükle
+- [x] İBB Şehir Haritası API uç noktalarını, teknik erişim modelini ve kullanım/lisans koşullarını doğrula
+- [x] İBB iframe/embed için güvenli kaynak/katman yapılandırması ekle; gerçek same-origin İBB veri proxy'si sonraki değerlendirmede
+- [ ] İBB İstanbul harita katmanını siteye bağla; izin verilen veriyi çevrimdışı önbelleğe al
+- [x] İBB harita kaynağı, attribution, offline açılış, mobil görünüm ve rota/fiyat sınırlarını test et
+- [x] İBB Şehir Haritası iframe gömmesini online modda ekle ve offline modda mevcut İstanbul PMTiles paketine güvenli fallback göster
+- [x] İBB harita atfı, API kaynak bağlantısı ve offline rota sınırlamasını arayüzde açıkça belirt
+- [x] İndirilen İstanbul PMTiles paketini okuyup offline modda gerçek harita katmanı/önizlemesi gösteren bir bileşen bağla
+- [x] IBB iframe erişilemediğinde cached paket ile harita açılış akışını ve kullanıcı durumlarını test et
+- [x] IBBMapEmbed offline ready/not-ready/error durumlarını saf durum yardımcısı ve Vitest testleriyle kapsa
+- [x] Tarayıcıda bağlantı kesildiğinde cached paket yok durumu ve PMTiles fallback açılış durumunu doğrula
+- [x] Tarayıcıda IndexedDB'ye hazır İstanbul PMTiles paketini seed ederek offline modda gerçek PMTiles haritasının açıldığını doğrula
+- [x] Cached paket yok ve cached paket hazır offline senaryolarını ayrı ayrı doğrula
+- [x] BBBike İstanbul PMTiles indirmesini same-origin proxy üzerinden tarayıcıya açarak gerçek cached paket seed doğrulamasını mümkün kıl
+- [x] İstanbul ZIP/PMTiles paketini dosya seçiciyle IndexedDB'ye içe aktarma seçeneği ekle ve gerçek PMTiles seed doğrulamasını tamamla
+- [x] Offline manifest testini same-origin İstanbul proxy URL'sini doğrulayacak şekilde güncelle
+- [x] ZIP/PMTiles dosya içe aktarma akışını tarayıcıda gerçekten doğrula: dosyayı seç, IndexedDB kaydını kontrol et ve offline PMTiles haritasının açıldığını kanıtla
+- [x] ZIP/PMTiles import akışı için IndexedDB write/read ve ready state testini ekle
+- [x] Mevcut boş/eksik IndexedDB veritabanlarını version migration ile düzelt ve içe aktarma akışını tekrar doğrula
+- [ ] İBB için gerçek veri/katman same-origin proxy gereksinimini ayrıca değerlendir; mevcut entegrasyon iframe/embed ve offline OSM PMTiles fallback olarak belgelenmiştir

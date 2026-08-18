@@ -20,7 +20,7 @@ describe("İstanbul-only adres kapsamı", () => {
   it("offline paket manifestinde yalnızca İstanbul bulunur", () => {
     expect(OFFLINE_MAP_PACKAGES).toHaveLength(1);
     expect(OFFLINE_MAP_PACKAGES[0]?.city).toBe("İstanbul");
-    expect(OFFLINE_MAP_PACKAGES[0]?.downloadUrl).toContain("Istanbul");
+    expect(OFFLINE_MAP_PACKAGES[0]?.downloadUrl).toBe("/api/offline-maps/istanbul");
   });
 
   it("AddressPicker render'ında il alanını İstanbul'a sabitler ve devre dışı bırakır", () => {
