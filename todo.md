@@ -310,7 +310,7 @@
 - [x] Demo muhasebe, puan/başarı ve bildirim kayıtlarını doğrula
 - [x] Bulunan eksikleri düzelt, regresyon testleri ve production build çalıştır
 - [x] Uçtan uca demo tekrarını ve mobil görsel denetimini tamamla
-- [ ] Demo denetimi sonucunu yayınlanabilir checkpoint olarak kaydet
+- [x] Demo denetimi sonucunu yayınlanabilir checkpoint olarak kaydet
 
 
 ## Cash on delivery
