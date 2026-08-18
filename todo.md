@@ -344,4 +344,4 @@
 - [x] Yakınlaştırma/küçültme, sıfırlama ve mobil dokunmatik kullanımını ekle
 - [x] Yetkili fotoğraf URL’si ve mevcut sohbet erişim kontrollerini koru
 - [x] Fotoğraf önizleme için test, TypeScript, production build ve mobil görsel denetim yap
-- [ ] Fotoğraf detay önizleme sürümünü checkpoint olarak kaydet
+- [x] Fotoğraf detay önizleme sürümünü checkpoint olarak kaydet
