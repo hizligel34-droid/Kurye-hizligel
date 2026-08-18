@@ -280,4 +280,4 @@
 - [x] Kullanıcı haritada gezinirken otomatik merkezlemeyi durdur, butonla yeniden etkinleştir
 - [x] Canlı kurye hareketinde takip modunu ve erişilebilir bağlantı durumunu göster
 - [x] Kuryeyi Bul davranışı için test, TypeScript, build ve mobil görsel doğrulama yap
-- [ ] Yeni harita kontrolü sürümünü checkpoint olarak kaydet
+- [x] Yeni harita kontrolü sürümünü checkpoint olarak kaydet
