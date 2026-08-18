@@ -58,7 +58,8 @@ export function calculateOrderFinancials(distanceKm: number) {
 
 export async function listOrders(userId: number, role: string) {
   const db = await getDb(); if (!db) return [];
-  if (role === 'admin' || role === 'accountant' || role === 'courier') return db.select().from(orders).orderBy(desc(orders.createdAt));
+  if (role === 'admin' || role === 'accountant') return db.select().from(orders).orderBy(desc(orders.createdAt));
+  if (role === 'courier') return db.select().from(orders).where(eq(orders.courierId, userId)).orderBy(desc(orders.createdAt));
   return db.select().from(orders).where(eq(orders.customerId, userId)).orderBy(desc(orders.createdAt));
 }
 

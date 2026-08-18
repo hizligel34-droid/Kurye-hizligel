@@ -34,10 +34,18 @@ async function resolveRoadRoute(pickupAddress: string, deliveryAddress: string):
   const directions = await makeRequest<DirectionsResult>("/maps/api/directions/json", { origin: `${pickup.lat},${pickup.lng}`, destination: `${delivery.lat},${delivery.lng}`, mode: "driving", units: "metric" });
   const leg = directions.routes?.[0]?.legs?.[0];
   if (!leg?.distance?.value || !leg.duration?.value) throw new Error("Araç rotası oluşturulamadı");
+  if (!isIstanbulCoordinate(pickup) || !isIstanbulCoordinate(delivery)) throw new Error("Run Kurye yalnızca İstanbul içinde rota oluşturur");
   return { distanceKm: Number((leg.distance.value / 1000).toFixed(2)), durationMinutes: Number((leg.duration.value / 60).toFixed(1)), pickup, delivery, status: "verified", provider: "google_driving" };
 }
 
 function addressPart(value: string | undefined) { return (value ?? "Belirtilmedi").trim().slice(0, 180) || "Belirtilmedi"; }
+export function isIstanbulCoordinate(point: { lat: number; lng: number }) { return point.lat >= 40.7 && point.lat <= 41.5 && point.lng >= 28.4 && point.lng <= 29.5; }
+export function validateIstanbulAddress(input: { pickupProvince?: string; pickupDistrict?: string; pickupNeighborhood?: string; deliveryProvince?: string; deliveryDistrict?: string; deliveryNeighborhood?: string }) {
+  const fields = [input.pickupProvince, input.deliveryProvince];
+  if (fields.some(value => value && value.trim().toLocaleLowerCase("tr-TR") !== "istanbul")) throw new Error("Run Kurye yalnızca İstanbul içinde hizmet verir");
+  const required = [input.pickupDistrict, input.pickupNeighborhood, input.deliveryDistrict, input.deliveryNeighborhood];
+  if (fields.some(Boolean) && required.some(value => !value?.trim())) throw new Error("İstanbul için ilçe ve mahalle bilgileri zorunludur");
+}
 async function translateSupportMessage(content: string, targetLanguage: string): Promise<TranslationResult> {
   const response = await invokeLLM({
     messages: [
@@ -53,15 +61,21 @@ async function translateSupportMessage(content: string, targetLanguage: string):
   return { sourceLanguage: targetLanguage, translatedText: content };
 }
 
+export function canAccessOrder(user: { id: number; role: string }, order: { customerId: number; courierId: number | null }) {
+  return user.role === "admin" || order.customerId === user.id || (user.role === "courier" && order.courierId === user.id);
+}
+
 async function getAccessibleOrder(orderId: number, user: { id: number; role: string }) {
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
   const result = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   const order = result[0];
   if (!order) throw new Error("Sipariş bulunamadı");
-  const allowed = user.role === "admin" || order.customerId === user.id || (user.role === "courier" && order.courierId === user.id);
+  const allowed = canAccessOrder(user, order);
   if (!allowed) throw new Error("Bu siparişe erişim yetkiniz yok");
   return { db, order };
 }
+
+export const orderCreateInputSchema = z.object({ pickupAddress: z.string().min(5), pickupProvince: z.string().min(1), pickupDistrict: z.string().min(1), pickupNeighborhood: z.string().min(1), pickupStreet: z.string().min(1), pickupAddressDetail: z.string().min(1), deliveryAddress: z.string().min(5), deliveryProvince: z.string().min(1), deliveryDistrict: z.string().min(1), deliveryNeighborhood: z.string().min(1), deliveryStreet: z.string().min(1), deliveryAddressDetail: z.string().min(1), productDescription: z.string().min(2), customerPhone: z.string().min(7) });
 
 export const appRouter = router({
   system: systemRouter,
@@ -81,7 +95,8 @@ export const appRouter = router({
     }),
   }),
   orders: router({
-    create: protectedProcedure.input(z.object({ pickupAddress: z.string().min(5), pickupProvince: z.string().optional(), pickupDistrict: z.string().optional(), pickupNeighborhood: z.string().optional(), pickupStreet: z.string().optional(), pickupAddressDetail: z.string().optional(), deliveryAddress: z.string().min(5), deliveryProvince: z.string().optional(), deliveryDistrict: z.string().optional(), deliveryNeighborhood: z.string().optional(), deliveryStreet: z.string().optional(), deliveryAddressDetail: z.string().optional(), productDescription: z.string().min(2), customerPhone: z.string().min(7) })).mutation(async ({ ctx, input }) => {
+    create: protectedProcedure.input(orderCreateInputSchema).mutation(async ({ ctx, input }) => {
+      validateIstanbulAddress(input);
       const db = await getDb(); if (!db) throw new Error("Database unavailable");
       const route = await resolveRoadRoute(input.pickupAddress, input.deliveryAddress);
       const financials = calculateOrderFinancials(route.distanceKm);

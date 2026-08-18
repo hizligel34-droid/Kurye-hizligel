@@ -172,3 +172,18 @@
 - [x] Valhalla provider için service URL yokluğu, başarılı JSON ve güvenli null fallback testlerini ekle
 - [x] Valhalla provider health-check yardımcı fonksiyonunu ve sağlıklı/erişilemez servis testlerini ekle
 - [x] Sipariş ekranında offline haritanın gerçek offline routing motoru olmadığını ve kesin km/fiyat için online doğrulama gerektiğini görünür durum kartıyla göster
+- [x] Kullanıcının işaret ettiği resmi İstanbul harita/adres kaynağının erişilebilir ilçe, mahalle ve cadde-sokak uç noktalarını doğrula
+- [ ] Resmi kaynaktan gelen adres verisini same-origin proxy ile normalize ederek AddressPicker sözleşmesine bağla
+- [ ] Kaynak erişilemezliği, eksik mahalle/cadde ve İstanbul dışı veriyi fallback ve güvenli hata durumlarıyla yönet
+- [ ] Gerçek resmi kaynak akışını mobil sipariş formu ve orders.create payload'ı üzerinde test et
+- [x] Müşteri rolü için giriş, sipariş oluşturma, adres seçimi, fiyat, takip, sohbet, bildirim ve geçmiş akışlarını uçtan uca denetle
+- [x] Kurye rolü için atanmış sipariş, durum güncelleme, müşteri sohbeti, bildirim ve kazanç görünümünü uçtan uca denetle
+- [x] Admin/operasyon rolü için sipariş listesi, kurye atama, durum, sohbet, muhasebe ve rol yetkilerini uçtan uca denetle
+- [x] Ücretlendirme, komisyon, rota doğrulama ve İstanbul adres payload'larını rol akışlarıyla birlikte tekrar doğrula
+- [x] Tüm rol ve temel iş akışlarının test, TypeScript, build ve mobil preview sonuçlarını kaydet
+- [x] pricing.estimate ve orders.create prosedürlerinde İstanbul dışı ilçe/mahalle/adres payload'larını server-side reddet
+- [x] Kurye orders.mine/listOrders sorgusunu yalnızca atanmış siparişlerle sınırla; admin/accountant görünümünü koru
+- [x] İstanbul server-side doğrulama ve kurye sipariş izolasyonu için procedure-level Vitest testleri ekle
+- [x] orders.create şemasında İstanbul ilçe, mahalle ve cadde/sokak alanlarını zorunlu doğrula; yalnızca serbest metinle sipariş açılmasını engelle
+- [x] Zorunlu adres hiyerarşisi değişikliğini mevcut müşteri sipariş, fiyat ve İstanbul kapsam testleriyle doğrula
+- [x] Müşteri, kurye ve admin order erişim yetkisini saf helper üzerinden test et; kurye yalnız atanmış order'ı, admin tüm order'ları görsün
