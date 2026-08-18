@@ -290,3 +290,12 @@
 - [x] Hız/ETA panelini mobil uyumlu, küçük ve erişilebilir tasarımla doğrula
 - [x] Hız ve ETA hesaplamaları için Vitest, TypeScript, build ve görsel denetim yap
 - [x] Yeni hız ve ETA paneli sürümünü checkpoint olarak kaydet
+
+
+## Dynamic traffic ETA
+- [x] Kalan mesafeyi kurye konumu ile teslimat konumundan hesapla veya güvenli rota verisiyle güncelle
+- [x] Anlık hız ve trafik katsayısını birleştirerek dinamik ETA üret
+- [x] Trafik verisi alınamadığında güvenli fallback ve kullanıcı açıklaması göster
+- [x] ETA panelinde kalan mesafe, trafik durumu ve son güncelleme zamanını göster
+- [x] Dinamik ETA için Vitest, TypeScript, build ve mobil görsel doğrulama yap
+- [ ] Yeni dinamik ETA sürümünü checkpoint olarak kaydet

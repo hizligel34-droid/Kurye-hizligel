@@ -66,6 +66,35 @@ async function resolveRoadRoute(pickupAddress: string, deliveryAddress: string):
 
 function addressPart(value: string | undefined) { return (value ?? "Belirtilmedi").trim().slice(0, 180) || "Belirtilmedi"; }
 export function isIstanbulCoordinate(point: { lat: number; lng: number }) { return point.lat >= 40.7 && point.lat <= 41.5 && point.lng >= 28.4 && point.lng <= 29.5; }
+
+function haversineDistanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const radians = (value: number) => value * Math.PI / 180;
+  const earthRadiusKm = 6371;
+  const dLat = radians(b.lat - a.lat);
+  const dLng = radians(b.lng - a.lng);
+  const sinLat = Math.sin(dLat / 2);
+  const sinLng = Math.sin(dLng / 2);
+  const arc = sinLat * sinLat + Math.cos(radians(a.lat)) * Math.cos(radians(b.lat)) * sinLng * sinLng;
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(arc), Math.sqrt(1 - arc));
+}
+
+export type LiveTrafficSnapshot = { remainingDistanceKm: number; etaMinutes: number | null; trafficLevel: "light" | "moderate" | "heavy" | "unknown"; trafficSource: "live_route" | "speed_fallback" | "unavailable" };
+
+export async function resolveLiveTrafficSnapshot(origin: { lat: number; lng: number }, destination: { lat: number; lng: number }, currentSpeedMps: number | null): Promise<LiveTrafficSnapshot> {
+  const fallbackDistance = Number(haversineDistanceKm(origin, destination).toFixed(2));
+  try {
+    const directions = await makeRequest<DirectionsResult>("/maps/api/directions/json", { origin: `${origin.lat},${origin.lng}`, destination: `${destination.lat},${destination.lng}`, mode: "driving", departure_time: "now", units: "metric" });
+    const leg = directions.routes?.[0]?.legs?.[0];
+    if (leg?.distance?.value && leg.duration?.value) {
+      const baseMinutes = leg.duration.value / 60;
+      const liveMinutes = (leg.duration_in_traffic?.value ?? leg.duration.value) / 60;
+      const ratio = liveMinutes / Math.max(baseMinutes, 1);
+      return { remainingDistanceKm: Number((leg.distance.value / 1000).toFixed(2)), etaMinutes: Math.max(1, Math.round(liveMinutes)), trafficLevel: ratio >= 1.35 ? "heavy" : ratio >= 1.12 ? "moderate" : "light", trafficSource: leg.duration_in_traffic ? "live_route" : "speed_fallback" };
+    }
+  } catch { /* live traffic is optional; use the safe local estimate below */ }
+  if (fallbackDistance > 0 && currentSpeedMps != null && currentSpeedMps > 0.5) return { remainingDistanceKm: fallbackDistance, etaMinutes: Math.max(1, Math.round((fallbackDistance / (currentSpeedMps * 3.6)) * 60)), trafficLevel: "unknown", trafficSource: "speed_fallback" };
+  return { remainingDistanceKm: fallbackDistance, etaMinutes: null, trafficLevel: "unknown", trafficSource: fallbackDistance > 0 ? "unavailable" : "unavailable" };
+}
 export function validateIstanbulAddress(input: { pickupProvince?: string; pickupDistrict?: string; pickupNeighborhood?: string; deliveryProvince?: string; deliveryDistrict?: string; deliveryNeighborhood?: string }) {
   const fields = [input.pickupProvince, input.deliveryProvince];
   if (fields.some(value => value && value.trim().toLocaleLowerCase("tr-TR") !== "istanbul")) throw new Error("Run Kurye yalnızca İstanbul içinde hizmet verir");
@@ -149,7 +178,11 @@ export const appRouter = router({
       if (ctx.user.role !== "courier" || order.courierId !== ctx.user.id) throw new Error("Konum yalnızca atanmış kurye tarafından paylaşılabilir");
       if (order.status !== "on_the_way") throw new Error("Konum paylaşımı yalnızca yoldaki siparişlerde açıktır");
       if (!isValidIstanbulLocation(input)) throw new Error("Konum İstanbul hizmet alanı dışında");
-      return publishCourierLocation({ orderId: order.id, trackingCode: order.trackingCode, lat: input.lat, lng: input.lng, accuracy: input.accuracy ?? null, heading: input.heading ?? null, speed: input.speed ?? null, updatedAt: Date.now() });
+      const delivery = { lat: Number(order.deliveryLatitude), lng: Number(order.deliveryLongitude) };
+      const traffic = Number.isFinite(delivery.lat) && Number.isFinite(delivery.lng)
+        ? await resolveLiveTrafficSnapshot({ lat: input.lat, lng: input.lng }, delivery, input.speed ?? null)
+        : { remainingDistanceKm: null, etaMinutes: null, trafficLevel: "unknown" as const, trafficSource: "unavailable" as const };
+      return publishCourierLocation({ orderId: order.id, trackingCode: order.trackingCode, lat: input.lat, lng: input.lng, accuracy: input.accuracy ?? null, heading: input.heading ?? null, speed: input.speed ?? null, remainingDistanceKm: traffic.remainingDistanceKm, trafficEtaMinutes: traffic.etaMinutes, trafficLevel: traffic.trafficLevel, trafficSource: traffic.trafficSource, updatedAt: Date.now() });
     }),
     updateStatus: protectedProcedure.input(z.object({ orderId: z.number(), status: z.enum(["received", "on_the_way", "delivered", "cancelled"]), courierId: z.number().optional() })).mutation(async ({ ctx, input }) => {
       if (!["admin", "courier"].includes(ctx.user.role)) throw new Error("Bu işlem için yetkiniz yok");

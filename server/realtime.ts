@@ -8,6 +8,10 @@ export type CourierLocation = {
   accuracy: number | null;
   heading: number | null;
   speed: number | null;
+  remainingDistanceKm?: number | null;
+  trafficEtaMinutes?: number | null;
+  trafficLevel?: "light" | "moderate" | "heavy" | "unknown";
+  trafficSource?: "live_route" | "speed_fallback" | "unavailable";
   updatedAt: number;
 };
 
