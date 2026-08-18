@@ -196,3 +196,6 @@
 - [x] Pasted_content.txt dosyasını sınıflandır: yalnızca 7 bölge sınırı GeoJSON'u, İstanbul ilçe/mahalle/cadde adres verisi değil
 - [x] Bölge sınırı GeoJSON'unu AddressPicker'a bağlamama ve mevcut İstanbul adres proxy/fallback mimarisini koruma kararını kaydet
 - [x] İstanbul adres proxy'sinde cadde/sokak önerisi, fallback ve kaynak erişilememe durumlarını yeniden denetle
+- [x] Mobil sipariş onayındaki backend validation hatasının gerçek hata mesajını log ve network payload'ından belirle
+- [x] orders.create input ile Home submit payload uyumsuzluğunu düzelt
+- [x] Mobil rota doğrulaması sonrası sipariş onayını başarı ve hata senaryolarıyla test et
