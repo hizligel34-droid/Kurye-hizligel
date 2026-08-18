@@ -3,6 +3,7 @@ export type AddressOption = { id: number; name: string; provinceId?: number; dis
 type ApiResponse<T> = { status: string; data: T };
 
 const API_BASE = "https://turkiyeapi.dev/api/v1";
+export const ISTANBUL_PROVINCE_ID = 34;
 const cache = new Map<string, AddressOption[]>();
 
 async function get<T>(path: string): Promise<T> {
@@ -13,9 +14,16 @@ async function get<T>(path: string): Promise<T> {
   return payload.data;
 }
 
+export function filterIstanbulProvince(provinces: AddressOption[]) {
+  return provinces.filter(province => province.id === ISTANBUL_PROVINCE_ID);
+}
+
 export async function getProvinces() {
-  const key = "provinces";
-  if (!cache.has(key)) cache.set(key, await get<AddressOption[]>("/provinces"));
+  const key = "provinces:istanbul-only";
+  if (!cache.has(key)) {
+    const provinces = await get<AddressOption[]>("/provinces");
+    cache.set(key, filterIstanbulProvince(provinces));
+  }
   return cache.get(key)!;
 }
 

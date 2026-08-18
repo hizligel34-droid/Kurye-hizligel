@@ -97,3 +97,34 @@
 - [x] orders.create sonrası gerçek orders.mine read-back yolunu mock bypass etmeden doğrula
 - [x] pickupAddressDetail ve deliveryAddressDetail kolon migration uyumsuzluğunu gider
 - [x] Gerçek DB transaction rollback içinde geçici orders kaydını oluşturup pickup/delivery detail alanlarını mock'suz read-back doğrula
+- [ ] Ücretsiz offline routing engine seçimini ve lisansını doğrula
+- [ ] İstanbul ve Ankara için routing engine'in okuyacağı indirilebilir yol ağı paket formatını belirle
+- [ ] Tarayıcıda veya yerel servis katmanında offline rota hesaplama modülünü entegre et
+- [ ] Offline rota çıktısından gerçek km, süre ve 600 TL + km bazlı fiyatı üret
+- [ ] İnternet yokken rota doğrulama, paket dışı koordinat ve hata durumlarını güvenli yönet
+- [ ] Offline routing engine için rota doğruluk, performans, fiyat ve mobil testlerini ekle
+- [ ] Kalıcı Valhalla servis URL'si ve health-check yapılandırmasını ekle
+- [ ] İstanbul ve Ankara Valhalla tile verilerinin sunucu depolama/yenileme stratejisini tanımla
+- [ ] Backend'de Valhalla route adaptörü ve online Google fallback önceliğini yapılandır
+- [ ] Valhalla route km/süre çıktısını mevcut 600 TL + km başı 100 TL ve %20 komisyon akışına bağla
+- [ ] Kalıcı servis erişilemezliği, şehir dışı koordinat ve stale tile durumlarını güvenli yönet
+- [ ] Valhalla bağlantısı, route doğruluğu, süre, fiyat ve health-check testlerini ekle
+- [ ] Ücretsiz OpenStreetMap şehir haritası paketlerinin indirilebilir manifestini doğrula
+- [ ] Harita paketini IndexedDB/Service Worker ile cihazda sakla ve internet yokken aç
+- [ ] Harita görüntüleme için offline paket okuyucu/harita katmanını bağla
+- [ ] OpenStreetMap/ODbL attribution ve veri kaynağı bağlantısını göster
+- [ ] Offline harita ile offline gerçek rota motorunun ayrı kapsamını kullanıcıya açıkça göster
+- [ ] Harita paketinin indirme, önbellek, offline açılış ve mobil performans testlerini ekle
+- [x] Adres seçiminde yalnızca İstanbul ilini sabitle
+- [x] İstanbul ilçe ve mahalle listesini kullan; diğer illeri gizle
+- [x] İstanbul cadde/sokak alanını ve açık adres girişini ekle
+- [x] Offline paket manifestinden Ankara ve diğer şehirleri kaldır
+- [x] İstanbul-only adres, rota, ücret ve mobil form testlerini güncelle
+- [x] İstanbul-only adres akışı için il sabitliği, başka il seçilememe ve ilçe/mahalle yüklenmesi testi ekle
+- [x] Offline paket manifestinin yalnızca İstanbul içerdiğini doğrulayan birim test ekle
+- [x] Mobil sipariş formunda İstanbul-only adres payload ve rota/fiyat akışını doğrulayan test ekle
+- [x] İstanbul-only AddressPicker için il sabitliği, başka il seçilememe, ilçe ve mahalle yüklenmesini gerçek yardımcı akışıyla test et
+- [x] Mobil sipariş formu/orders.create/pricing.estimate zincirinde İstanbul-only adres payload'ını ve rota-fiyat akışını entegrasyon testiyle doğrula
+- [x] AddressPicker bileşenini render ederek İstanbul il alanının devre dışı ve tek seçenek olduğunu doğrula
+- [x] AddressPicker çıktı akışını ve doğrulanmış rota/fiyat zincirini tRPC entegrasyon testiyle doğrula
+- [x] Offline şehir paketi bölümündeki Ankara metnini İstanbul-only kapsamına göre düzelt

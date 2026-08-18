@@ -63,6 +63,37 @@ describe("orders.create address and route persistence", () => {
     expect(readBack[0]).toMatchObject({ pickupAddressDetail: "No: 10", deliveryAddressDetail: "D: 4" });
   });
 
+  it("keeps the Istanbul-only payload consistent from estimate to order creation", async () => {
+    inserted.length = 0;
+    const caller = appRouter.createCaller({
+      user: { id: 8, openId: "customer-mobile", name: "Mobile Test", email: "mobile@example.com", loginMethod: "test", role: "user", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
+      req: { protocol: "https", headers: {} } as any,
+      res: {} as any,
+    });
+    const payload = {
+      pickupAddress: "Caferağa Mahallesi, Moda Caddesi, Kadıköy, İstanbul",
+      pickupProvince: "İstanbul",
+      pickupDistrict: "Kadıköy",
+      pickupNeighborhood: "Caferağa",
+      pickupStreet: "Moda Caddesi",
+      pickupAddressDetail: "No: 10",
+      deliveryAddress: "Vişnezade Mahallesi, Dolmabahçe Caddesi, Beşiktaş, İstanbul",
+      deliveryProvince: "İstanbul",
+      deliveryDistrict: "Beşiktaş",
+      deliveryNeighborhood: "Vişnezade",
+      deliveryStreet: "Dolmabahçe Caddesi",
+      deliveryAddressDetail: "D: 4",
+      productDescription: "Mobil sipariş",
+      customerPhone: "05550000008",
+    };
+    const estimate = await caller.pricing.estimate({ pickupAddress: payload.pickupAddress, deliveryAddress: payload.deliveryAddress });
+    const created = await caller.orders.create(payload);
+
+    expect(estimate).toMatchObject({ distanceKm: 8.4, total: 940, commission: 188, routeStatus: "verified" });
+    expect(created).toMatchObject({ distanceKm: estimate.distanceKm, total: estimate.total, commission: estimate.commission });
+    expect(inserted[0]).toMatchObject({ pickupProvince: "İstanbul", deliveryProvince: "İstanbul", pickupDistrict: "Kadıköy", deliveryDistrict: "Beşiktaş", routeStatus: "verified" });
+  });
+
   it("estimates a Turkey address route with the same fixed commission rule", async () => {
     const caller = appRouter.createCaller({ user: null, req: { protocol: "https", headers: {} } as any, res: {} as any });
     const estimate = await caller.pricing.estimate({ pickupAddress: "Caferağa Mahallesi, Kadıköy, İstanbul", deliveryAddress: "Vişnezade Mahallesi, Beşiktaş, İstanbul" });

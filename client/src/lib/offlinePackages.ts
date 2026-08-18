@@ -27,15 +27,6 @@ export const OFFLINE_MAP_PACKAGES: OfflineMapPackage[] = [
     attribution: "© OpenStreetMap katkıcıları · BBBike extract",
     checksum: { algorithm: "md5", value: "0c1a4f23c48150e2b73cb09515c58f9a" },
   },
-  {
-    id: "ankara-osm-shortbread",
-    city: "Ankara",
-    status: "preparing",
-    format: "pmtiles",
-    sourceUrl: "https://extract.bbbike.org/",
-    sizeLabel: "Özel şehir paketi hazırlanıyor",
-    attribution: "© OpenStreetMap katkıcıları",
-  },
 ];
 
 const DB_NAME = "run-kurye-offline";
