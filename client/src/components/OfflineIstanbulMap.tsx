@@ -2,18 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import { FileSource, PMTiles, Protocol } from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { getOfflinePmtilesFile, resolveOfflineMapViewState } from "@/lib/offlinePackages";
+import { getOfflinePmtilesFile } from "@/lib/offlinePackages";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPinned, Wifi, WifiOff } from "lucide-react";
 
-const IBB_MAP_URL = "https://sehirharitasiapi.ibb.gov.tr/";
-const IBB_API_URL = "https://sehirharitasiapi.ibb.gov.tr/developer/v1/";
 const OFFLINE_PACKAGE_ID = "istanbul-osm-shortbread";
 const offlineProtocol = new Protocol({ metadata: true });
 let protocolRegistered = false;
 
-type IBBMapEmbedProps = { offlinePackageReady?: boolean };
+type OfflineIstanbulMapProps = { offlinePackageReady?: boolean };
 
 function registerOfflineProtocol() {
   if (!protocolRegistered) {
@@ -22,11 +20,11 @@ function registerOfflineProtocol() {
   }
 }
 
-export function IBBMapEmbed({ offlinePackageReady = false }: IBBMapEmbedProps) {
+export function OfflineIstanbulMap({ offlinePackageReady = false }: OfflineIstanbulMapProps) {
   const [isOnline, setIsOnline] = useState(true);
   const [offlineFile, setOfflineFile] = useState<File | null>(null);
   const [offlineError, setOfflineError] = useState("");
-  const [isLoadingOffline, setIsLoadingOffline] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const mapContainer = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,19 +39,22 @@ export function IBBMapEmbed({ offlinePackageReady = false }: IBBMapEmbedProps) {
   }, []);
 
   useEffect(() => {
-    if (isOnline || !offlinePackageReady) return;
+    if (!offlinePackageReady) {
+      setOfflineFile(null);
+      return;
+    }
     let active = true;
     setOfflineError("");
-    setIsLoadingOffline(true);
+    setIsLoading(true);
     getOfflinePmtilesFile(OFFLINE_PACKAGE_ID)
       .then(file => { if (active) setOfflineFile(file); })
-      .catch(error => { if (active) setOfflineError(error instanceof Error ? error.message : "Offline harita paketi açılamadı"); })
-      .finally(() => { if (active) setIsLoadingOffline(false); });
+      .catch(error => { if (active) setOfflineError(error instanceof Error ? error.message : "İstanbul offline harita paketi açılamadı"); })
+      .finally(() => { if (active) setIsLoading(false); });
     return () => { active = false; };
-  }, [isOnline, offlinePackageReady]);
+  }, [offlinePackageReady]);
 
   useEffect(() => {
-    if (isOnline || !offlineFile || !mapContainer.current) return;
+    if (!offlineFile || !mapContainer.current) return;
     registerOfflineProtocol();
     const archive = new PMTiles(new FileSource(offlineFile));
     offlineProtocol.add(archive);
@@ -78,24 +79,24 @@ export function IBBMapEmbed({ offlinePackageReady = false }: IBBMapEmbedProps) {
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     return () => map.remove();
-  }, [isOnline, offlineFile]);
+  }, [offlineFile]);
 
-  const offlineState = resolveOfflineMapViewState(isOnline, Boolean(offlineFile), isLoadingOffline, offlineError);
-  const showOfflineMap = offlineState === "ready";
-
+  const showMap = Boolean(offlineFile);
   return (
     <Card className="overflow-hidden rounded-3xl border-0 bg-white shadow-sm">
       <CardHeader className="gap-3 border-b border-slate-100 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <CardTitle className="flex items-center gap-2 text-xl"><MapPinned className="text-[#e54725]" size={21} />İstanbul Şehir Haritası</CardTitle>
-          <p className="mt-1 text-sm text-slate-500">İBB Şehir Haritası ile adres çevresini kontrol edin.</p>
+          <CardTitle className="flex items-center gap-2 text-xl"><MapPinned className="text-[#e54725]" size={21} />İstanbul Offline Haritası</CardTitle>
+          <p className="mt-1 text-sm text-slate-500">İndirilen İstanbul PMTiles paketi cihazınızda açılır.</p>
         </div>
-        <Badge className={isOnline ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"}>{isOnline ? <><Wifi className="mr-1" size={14} />İBB haritası canlı</> : <><WifiOff className="mr-1" size={14} />Çevrim dışı mod</>}</Badge>
+        <Badge className={isOnline ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"}>{isOnline ? <><Wifi className="mr-1" size={14} />Çevrim içi</> : <><WifiOff className="mr-1" size={14} />Çevrim dışı</>}</Badge>
       </CardHeader>
       <CardContent className="p-0">
-        {isOnline ? <div className="relative h-[360px] bg-slate-100 sm:h-[440px]"><iframe title="İstanbul Büyükşehir Belediyesi Şehir Haritası" src={IBB_MAP_URL} className="h-full w-full border-0" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" /></div> : showOfflineMap ? <div ref={mapContainer} className="h-[360px] w-full bg-slate-100 sm:h-[440px]" aria-label="İstanbul offline PMTiles haritası" /> : <div className="flex min-h-[260px] flex-col items-center justify-center bg-slate-50 px-6 text-center"><WifiOff className="mb-3 text-slate-400" size={30} /><p className="font-bold text-slate-800">{offlineState === "loading" ? "Offline harita hazırlanıyor" : offlineState === "error" ? "Offline harita açılamadı" : "İBB canlı haritası bağlantı bekliyor"}</p><p className="mt-2 max-w-lg text-sm leading-6 text-slate-500">{offlineState === "loading" ? "Cihazdaki İstanbul PMTiles paketi okunuyor." : offlineState === "error" ? offlineError : "İndirilen İstanbul PMTiles paketi bulunamadı. Offline haritayı kullanmak için önce İstanbul paketini indirmeniz gerekir."}</p></div>}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 text-xs text-slate-500"><span>İstanbul Büyükşehir Belediyesi ©</span><a className="font-semibold text-[#c9381b] underline" href={IBB_API_URL} target="_blank" rel="noreferrer">İBB API bilgileri</a></div>
+        {showMap ? <div ref={mapContainer} className="h-[360px] w-full bg-slate-100 sm:h-[440px]" aria-label="İstanbul offline PMTiles haritası" /> : <div className="flex min-h-[260px] flex-col items-center justify-center bg-slate-50 px-6 text-center"><WifiOff className="mb-3 text-slate-400" size={30} /><p className="font-bold text-slate-800">{isLoading ? "İstanbul offline harita hazırlanıyor" : offlineError ? "İstanbul offline harita açılamadı" : "İstanbul harita paketi bekleniyor"}</p><p className="mt-2 max-w-lg text-sm leading-6 text-slate-500">{isLoading ? "Cihazdaki İstanbul PMTiles paketi okunuyor." : offlineError || "Haritayı çevrim dışı kullanmak için önce İstanbul paketini indirmeniz gerekir."}</p></div>}
+        <div className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500"><span>Harita verisi cihazdaki İstanbul PMTiles paketinden okunur. Bu paket tek başına offline rota veya kesin fiyat üretmez.</span></div>
       </CardContent>
     </Card>
   );
 }
+
+

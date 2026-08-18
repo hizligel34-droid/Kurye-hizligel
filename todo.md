@@ -187,3 +187,9 @@
 - [x] orders.create şemasında İstanbul ilçe, mahalle ve cadde/sokak alanlarını zorunlu doğrula; yalnızca serbest metinle sipariş açılmasını engelle
 - [x] Zorunlu adres hiyerarşisi değişikliğini mevcut müşteri sipariş, fiyat ve İstanbul kapsam testleriyle doğrula
 - [x] Müşteri, kurye ve admin order erişim yetkisini saf helper üzerinden test et; kurye yalnız atanmış order'ı, admin tüm order'ları görsün
+- [x] İBB iframe, harita başlıkları, kaynak bağlantıları ve İBB’ye özgü frontend kullanımını kaldır
+- [x] İBB’ye özel backend/provider ve dokümantasyon referanslarını kaldır veya kaldırılmış kapsam olarak güncelle
+- [x] İstanbul offline PMTiles haritasını İBB fallback olmadan çalışır varsayılan akış yap
+- [x] İBB kaldırma sonrası adres proxy’si, online rota/fiyat, offline harita ve mobil görünümü yeniden doğrula
+- [x] Sipariş, takip, sohbet, operasyon ve hesap bölümleri için doğrudan mobil URL deep-link rotalarını 404 vermeden Home section'larına bağla
+- [x] Deep-link rotalarını mobil tarayıcıda /order ve /track ile görsel olarak doğrula
