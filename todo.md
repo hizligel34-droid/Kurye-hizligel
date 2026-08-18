@@ -336,3 +336,12 @@
 - [x] Sohbet arayüzüne hızlı fotoğraf seçme, önizleme ve gönderme kontrolü ekle
 - [x] Fotoğraf erişim güvenliği, MIME/boyut doğrulaması, Vitest, TypeScript, build ve mobil görsel denetimini tamamla
 - [x] Fotoğraf sohbet sürümünü checkpoint olarak kaydet
+
+
+## Chat photo detail preview
+- [x] Sohbet fotoğraflarına tıklama ve klavye ile açma davranışı ekle
+- [x] Tam ekran fotoğraf detay modalı, kapatma ve erişilebilir etiketler ekle
+- [x] Yakınlaştırma/küçültme, sıfırlama ve mobil dokunmatik kullanımını ekle
+- [x] Yetkili fotoğraf URL’si ve mevcut sohbet erişim kontrollerini koru
+- [x] Fotoğraf önizleme için test, TypeScript, production build ve mobil görsel denetim yap
+- [ ] Fotoğraf detay önizleme sürümünü checkpoint olarak kaydet
