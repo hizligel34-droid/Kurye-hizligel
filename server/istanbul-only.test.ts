@@ -29,6 +29,9 @@ describe("İstanbul-only adres kapsamı", () => {
     expect(markup).toContain('value="34"');
     expect(markup).toContain("disabled");
     expect(markup).toContain(">İstanbul</option>");
+    expect(markup).toContain(">İlçe seçin</option>");
+    expect(markup).toContain(">Mahalle seçin</option>");
+    expect(markup).toContain('placeholder="Sokak / cadde"');
     expect(markup).not.toContain(">Ankara</option>");
   });
 
@@ -48,6 +51,24 @@ describe("İstanbul-only adres kapsamı", () => {
       expect(await getProvinces()).toEqual([{ id: 34, name: "İstanbul" }]);
       expect(await getDistricts(34)).toEqual([{ id: 101, name: "Kadıköy", provinceId: 34 }]);
       expect(await getNeighborhoods(101)).toEqual([{ id: 1001, name: "Caferağa", districtId: 101 }]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("ilçe yanıtındaki gömülü mahalleler, mahalle endpointi başarısız olduğunda yedeklenir", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("districts?provinceId=99")) {
+        return { ok: true, json: async () => ({ status: "OK", data: [{ id: 909, name: "Deneme", provinceId: 99, neighborhoods: [{ id: 9001, name: "Yedek Mahalle" }] }] }) } as Response;
+      }
+      return { ok: false, json: async () => ({ status: "ERROR", data: [] }) } as Response;
+    }) as typeof fetch;
+
+    try {
+      expect(await getDistricts(99)).toEqual([{ id: 909, name: "Deneme", provinceId: 99 }]);
+      expect(await getNeighborhoods(909)).toEqual([{ id: 9001, name: "Yedek Mahalle", districtId: 909 }]);
     } finally {
       globalThis.fetch = originalFetch;
     }

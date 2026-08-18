@@ -128,3 +128,9 @@
 - [x] AddressPicker bileşenini render ederek İstanbul il alanının devre dışı ve tek seçenek olduğunu doğrula
 - [x] AddressPicker çıktı akışını ve doğrulanmış rota/fiyat zincirini tRPC entegrasyon testiyle doğrula
 - [x] Offline şehir paketi bölümündeki Ankara metnini İstanbul-only kapsamına göre düzelt
+- [x] İlçe, mahalle ve cadde alanlarının görünmemesi sorununu AddressPicker veri ve arayüz akışında düzelt
+- [x] İlçe/mahalle/cadde görünürlüğü için test, build ve mobil görünüm doğrulaması yap
+- [x] Mobil viewport'ta sipariş formunu açıp AddressPicker'da ilçe, mahalle ve cadde alanlarının göründüğünü tarayıcı/screenshot ile doğrula
+- [x] AddressPicker düzeltmesi için ilçe yüklemesi doğrudan çalışırken mahalle fallback'ini kapsayan özel test ekle
+- [x] Mobil viewport'ta sipariş formuna doğrudan geçiş sağlayıp AddressPicker alanlarını gerçek ekran üzerinde doğrula
+- [x] TürkiyeAPI CORS/erişim sorununu same-origin sunucu adres proxy'siyle gider ve AddressPicker'ı proxy üzerinden yükle

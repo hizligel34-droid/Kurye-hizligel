@@ -1,0 +1,5155 @@
+{
+  "source": "turkey-neighbourhoods",
+  "license": "MIT",
+  "provinceId": 34,
+  "districts": [
+    {
+      "id": 340001,
+      "name": "Adalar",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34000001,
+          "name": "Burgazada Mah",
+          "districtId": 340001
+        },
+        {
+          "id": 34000002,
+          "name": "Maden Mah",
+          "districtId": 340001
+        },
+        {
+          "id": 34000003,
+          "name": "Nizam Mah",
+          "districtId": 340001
+        },
+        {
+          "id": 34000004,
+          "name": "Heybeliada Mah",
+          "districtId": 340001
+        },
+        {
+          "id": 34000005,
+          "name": "Kınalıada Mah",
+          "districtId": 340001
+        }
+      ]
+    },
+    {
+      "id": 340002,
+      "name": "Arnavutköy",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34010001,
+          "name": "Anadolu Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010002,
+          "name": "Arnavutköy Merkez Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010003,
+          "name": "İmrahor Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010004,
+          "name": "İslambey Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010005,
+          "name": "Mustafa Kemal Paşa Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010006,
+          "name": "Nenehatun Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010007,
+          "name": "Yavuz Selim Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010008,
+          "name": "Adnan Menderes Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010009,
+          "name": "Baklalı Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010010,
+          "name": "Balaban Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010011,
+          "name": "Boyalık Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010012,
+          "name": "Çilingir Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010013,
+          "name": "Dursunköy Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010014,
+          "name": "Durusu Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010015,
+          "name": "Fatih Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010016,
+          "name": "Hacımaşlı Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010017,
+          "name": "Karaburun Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010018,
+          "name": "Sazlıbosna Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010019,
+          "name": "Tayakadın Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010020,
+          "name": "Terkos Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010021,
+          "name": "Yassıören Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010022,
+          "name": "Yeniköy Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010023,
+          "name": "Atatürk Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010024,
+          "name": "Boğazköy İstiklal Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010025,
+          "name": "Yunus Emre Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010026,
+          "name": "Bolluca Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010027,
+          "name": "Hicret Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010028,
+          "name": "Mavigöl Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010029,
+          "name": "Deliklikaya Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010030,
+          "name": "Hadımköy Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010031,
+          "name": "Hastane Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010032,
+          "name": "Ömerli Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010033,
+          "name": "Yeşilbayır Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010034,
+          "name": "Haraççı Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010035,
+          "name": "Karlıbayır Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010036,
+          "name": "Mareşal Fevzi Çakmak Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010037,
+          "name": "Mehmet Akif Ersoy Mah",
+          "districtId": 340002
+        },
+        {
+          "id": 34010038,
+          "name": "Taşoluk Mah",
+          "districtId": 340002
+        }
+      ]
+    },
+    {
+      "id": 340003,
+      "name": "Ataşehir",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34020001,
+          "name": "Atatürk Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020002,
+          "name": "Ferhatpaşa Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020003,
+          "name": "İçerenköy Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020004,
+          "name": "İnönü Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020005,
+          "name": "Kayışdağı Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020006,
+          "name": "Küçükbakkalköy Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020007,
+          "name": "Aşıkveysel Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020008,
+          "name": "Mustafa Kemal Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020009,
+          "name": "Esatpaşa Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020010,
+          "name": "Fetih Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020011,
+          "name": "Örnek Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020012,
+          "name": "Mevlana Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020013,
+          "name": "Mimar Sinan Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020014,
+          "name": "Yeni Çamlıca Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020015,
+          "name": "Yenişehir Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020016,
+          "name": "Barbaros Mah",
+          "districtId": 340003
+        },
+        {
+          "id": 34020017,
+          "name": "Yenisahra Mah",
+          "districtId": 340003
+        }
+      ]
+    },
+    {
+      "id": 340004,
+      "name": "Avcılar",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34030001,
+          "name": "Ambarlı Mah",
+          "districtId": 340004
+        },
+        {
+          "id": 34030002,
+          "name": "Denizköşkler Mah",
+          "districtId": 340004
+        },
+        {
+          "id": 34030003,
+          "name": "Cihangir Mah",
+          "districtId": 340004
+        },
+        {
+          "id": 34030004,
+          "name": "Merkez Mah",
+          "districtId": 340004
+        },
+        {
+          "id": 34030005,
+          "name": "Firuzköy Mah",
+          "districtId": 340004
+        },
+        {
+          "id": 34030006,
+          "name": "Yeşilkent Mah",
+          "districtId": 340004
+        },
+        {
+          "id": 34030007,
+          "name": "Gümüşpala Mah",
+          "districtId": 340004
+        },
+        {
+          "id": 34030008,
+          "name": "Mustafa Kemalpaşa Mah",
+          "districtId": 340004
+        },
+        {
+          "id": 34030009,
+          "name": "Tahtakale Mah",
+          "districtId": 340004
+        },
+        {
+          "id": 34030010,
+          "name": "Üniversite Mah",
+          "districtId": 340004
+        }
+      ]
+    },
+    {
+      "id": 340005,
+      "name": "Bağcılar",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34040001,
+          "name": "Barbaros Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040002,
+          "name": "Çınar Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040003,
+          "name": "Fevzi Çakmak Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040004,
+          "name": "İnönü Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040005,
+          "name": "Kazım Karabekir Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040006,
+          "name": "Merkez Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040007,
+          "name": "Sancaktepe Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040008,
+          "name": "Yavuz Selim Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040009,
+          "name": "Yenigün Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040010,
+          "name": "Yıldıztepe Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040011,
+          "name": "15 Temmuz Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040012,
+          "name": "Bağlar Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040013,
+          "name": "Güneşli Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040014,
+          "name": "Hürriyet Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040015,
+          "name": "Kirazlı Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040016,
+          "name": "Yenimahalle Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040017,
+          "name": "100. Yıl Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040018,
+          "name": "Demirkapı Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040019,
+          "name": "Fatih Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040020,
+          "name": "Göztepe Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040021,
+          "name": "Kemalpaşa Mah",
+          "districtId": 340005
+        },
+        {
+          "id": 34040022,
+          "name": "Mahmutbey Mah",
+          "districtId": 340005
+        }
+      ]
+    },
+    {
+      "id": 340006,
+      "name": "Bahçelievler",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34050001,
+          "name": "Bahçelievler Mah",
+          "districtId": 340006
+        },
+        {
+          "id": 34050002,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340006
+        },
+        {
+          "id": 34050003,
+          "name": "Siyavuşpaşa Mah",
+          "districtId": 340006
+        },
+        {
+          "id": 34050004,
+          "name": "Soğanlı Mah",
+          "districtId": 340006
+        },
+        {
+          "id": 34050005,
+          "name": "Hürriyet Mah",
+          "districtId": 340006
+        },
+        {
+          "id": 34050006,
+          "name": "Kocasinan Merkez Mah",
+          "districtId": 340006
+        },
+        {
+          "id": 34050007,
+          "name": "Şirinevler Mah",
+          "districtId": 340006
+        },
+        {
+          "id": 34050008,
+          "name": "Çobançeşme Mah",
+          "districtId": 340006
+        },
+        {
+          "id": 34050009,
+          "name": "Fevzi Çakmak Mah",
+          "districtId": 340006
+        },
+        {
+          "id": 34050010,
+          "name": "Yenibosna Merkez Mah",
+          "districtId": 340006
+        },
+        {
+          "id": 34050011,
+          "name": "Zafer Mah",
+          "districtId": 340006
+        }
+      ]
+    },
+    {
+      "id": 340007,
+      "name": "Bakırköy",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34060001,
+          "name": "Ataköy 1. Kısım Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060002,
+          "name": "Ataköy 2-5-6. Kısım Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060003,
+          "name": "Ataköy 3-4-11. Kısım Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060004,
+          "name": "Ataköy 7-8-9-10. Kısım Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060005,
+          "name": "Cevizlik Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060006,
+          "name": "Sakızağacı Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060007,
+          "name": "Yenimahalle Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060008,
+          "name": "Basınköy Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060009,
+          "name": "Şenlikköy Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060010,
+          "name": "Kartaltepe Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060011,
+          "name": "Osmaniye Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060012,
+          "name": "Yeşilköy Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060013,
+          "name": "Yeşilköy Sb Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060014,
+          "name": "Yeşilyurt Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060015,
+          "name": "Zeytinlik Mah",
+          "districtId": 340007
+        },
+        {
+          "id": 34060016,
+          "name": "Zuhuratbaba Mah",
+          "districtId": 340007
+        }
+      ]
+    },
+    {
+      "id": 340008,
+      "name": "Başakşehir",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34070001,
+          "name": "Altınşehir Mah",
+          "districtId": 340008
+        },
+        {
+          "id": 34070002,
+          "name": "Güvercintepe Mah",
+          "districtId": 340008
+        },
+        {
+          "id": 34070003,
+          "name": "Kayabaşı Mah",
+          "districtId": 340008
+        },
+        {
+          "id": 34070004,
+          "name": "Şahintepe Mah",
+          "districtId": 340008
+        },
+        {
+          "id": 34070005,
+          "name": "Bahçeşehir 1. Kısım Mah",
+          "districtId": 340008
+        },
+        {
+          "id": 34070006,
+          "name": "Bahçeşehir 2. Kısım Mah",
+          "districtId": 340008
+        },
+        {
+          "id": 34070007,
+          "name": "Başak Mah",
+          "districtId": 340008
+        },
+        {
+          "id": 34070008,
+          "name": "Başakşehir Mah",
+          "districtId": 340008
+        },
+        {
+          "id": 34070009,
+          "name": "İkitelli Osb Mah",
+          "districtId": 340008
+        },
+        {
+          "id": 34070010,
+          "name": "Ziya Gökalp Mah",
+          "districtId": 340008
+        },
+        {
+          "id": 34070011,
+          "name": "Şamlar Mah",
+          "districtId": 340008
+        }
+      ]
+    },
+    {
+      "id": 340009,
+      "name": "Bayrampaşa",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34080001,
+          "name": "Altıntepsi Mah",
+          "districtId": 340009
+        },
+        {
+          "id": 34080002,
+          "name": "Terazidere Mah",
+          "districtId": 340009
+        },
+        {
+          "id": 34080003,
+          "name": "Vatan Mah",
+          "districtId": 340009
+        },
+        {
+          "id": 34080004,
+          "name": "İsmet Paşa Mah",
+          "districtId": 340009
+        },
+        {
+          "id": 34080005,
+          "name": "Kartaltepe Mah",
+          "districtId": 340009
+        },
+        {
+          "id": 34080006,
+          "name": "Muratpaşa Mah",
+          "districtId": 340009
+        },
+        {
+          "id": 34080007,
+          "name": "Orta Mah",
+          "districtId": 340009
+        },
+        {
+          "id": 34080008,
+          "name": "Yenidoğan Mah",
+          "districtId": 340009
+        },
+        {
+          "id": 34080009,
+          "name": "Cevatpaşa Mah",
+          "districtId": 340009
+        },
+        {
+          "id": 34080010,
+          "name": "Kocatepe Mah",
+          "districtId": 340009
+        },
+        {
+          "id": 34080011,
+          "name": "Yıldırım Mah",
+          "districtId": 340009
+        }
+      ]
+    },
+    {
+      "id": 340010,
+      "name": "Beşiktaş",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34090001,
+          "name": "Abbasağa Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090002,
+          "name": "Cihannüma Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090003,
+          "name": "Sinanpaşa Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090004,
+          "name": "Akat Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090005,
+          "name": "Arnavutköy Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090006,
+          "name": "Kuruçeşme Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090007,
+          "name": "Bebek Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090008,
+          "name": "Etiler Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090009,
+          "name": "Balmumcu Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090010,
+          "name": "Dikilitaş Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090011,
+          "name": "Gayrettepe Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090012,
+          "name": "Yıldız Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090013,
+          "name": "Kültür Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090014,
+          "name": "Levazım Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090015,
+          "name": "Nisbetiye Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090016,
+          "name": "Ulus Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090017,
+          "name": "Konaklar Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090018,
+          "name": "Levent Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090019,
+          "name": "Mecidiye Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090020,
+          "name": "Ortaköy Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090021,
+          "name": "Muradiye Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090022,
+          "name": "Türkali Mah",
+          "districtId": 340010
+        },
+        {
+          "id": 34090023,
+          "name": "Vişnezade Mah",
+          "districtId": 340010
+        }
+      ]
+    },
+    {
+      "id": 340011,
+      "name": "Beykoz",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34100001,
+          "name": "Anadolu Hisarı Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100002,
+          "name": "Kanlıca Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100003,
+          "name": "Kavacık Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100004,
+          "name": "Gümüşsuyu Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100005,
+          "name": "Merkez Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100006,
+          "name": "Yalıköy Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100007,
+          "name": "Baklacı Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100008,
+          "name": "Çengeldere Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100009,
+          "name": "Çiftlik Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100010,
+          "name": "Fatih Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100011,
+          "name": "Yavuz Selim Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100012,
+          "name": "Çubuklu Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100013,
+          "name": "Rüzgarlıbahçe Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100014,
+          "name": "Göksu Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100015,
+          "name": "Göztepe Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100016,
+          "name": "Yeni Mahalle Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100017,
+          "name": "Acarlar Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100018,
+          "name": "Çiğdem Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100019,
+          "name": "İncirköy Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100020,
+          "name": "Paşabahçe Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100021,
+          "name": "Soğuksu Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100022,
+          "name": "Alibahadır Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100023,
+          "name": "Anadolufeneri Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100024,
+          "name": "Bozhane Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100025,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100026,
+          "name": "Göllü Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100027,
+          "name": "İshaklı Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100028,
+          "name": "Kaynarca Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100029,
+          "name": "Kılıçlı Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100030,
+          "name": "Mahmutşevketpaşa Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100031,
+          "name": "Öğümce Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100032,
+          "name": "Paşamandıra Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100033,
+          "name": "Polonezköy Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100034,
+          "name": "Poyrazköy Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100035,
+          "name": "Riva Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100036,
+          "name": "Zerzavatçı Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100037,
+          "name": "Akbaba Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100038,
+          "name": "Anadolu Kavağı Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100039,
+          "name": "Çamlıbahçe Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100040,
+          "name": "Dereseki Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100041,
+          "name": "Elmalı Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100042,
+          "name": "Görele Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100043,
+          "name": "Ortaçeşme Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100044,
+          "name": "Örnekköy Mah",
+          "districtId": 340011
+        },
+        {
+          "id": 34100045,
+          "name": "Tokatköy Mah",
+          "districtId": 340011
+        }
+      ]
+    },
+    {
+      "id": 340012,
+      "name": "Beylikdüzü",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34110001,
+          "name": "Barış Mah",
+          "districtId": 340012
+        },
+        {
+          "id": 34110002,
+          "name": "Büyükşehir Mah",
+          "districtId": 340012
+        },
+        {
+          "id": 34110003,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340012
+        },
+        {
+          "id": 34110004,
+          "name": "Kavaklı Mah",
+          "districtId": 340012
+        },
+        {
+          "id": 34110005,
+          "name": "Adnan Kahveci Mah",
+          "districtId": 340012
+        },
+        {
+          "id": 34110006,
+          "name": "Dereağzı Mah",
+          "districtId": 340012
+        },
+        {
+          "id": 34110007,
+          "name": "Gürpınar Mah",
+          "districtId": 340012
+        },
+        {
+          "id": 34110008,
+          "name": "Beylikdüzüosb Mah",
+          "districtId": 340012
+        },
+        {
+          "id": 34110009,
+          "name": "Marmara Mah",
+          "districtId": 340012
+        },
+        {
+          "id": 34110010,
+          "name": "Sahil Mah",
+          "districtId": 340012
+        },
+        {
+          "id": 34110011,
+          "name": "Yakuplu Mah",
+          "districtId": 340012
+        }
+      ]
+    },
+    {
+      "id": 340013,
+      "name": "Beyoğlu",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34120001,
+          "name": "Arap Cami Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120002,
+          "name": "Bereketzade Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120003,
+          "name": "Emekyemez Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120004,
+          "name": "Şahkulu Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120005,
+          "name": "Cihangir Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120006,
+          "name": "Katipmustafa Çelebi Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120007,
+          "name": "Kılıçali Paşa Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120008,
+          "name": "Kuloğlu Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120009,
+          "name": "Tomtom Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120010,
+          "name": "Fetihtepe Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120011,
+          "name": "Halıcıoğlu Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120012,
+          "name": "Keçeci Piri Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120013,
+          "name": "Örnektepe Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120014,
+          "name": "Piripaşa Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120015,
+          "name": "Sütlüce Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120016,
+          "name": "Asmalı Mescit Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120017,
+          "name": "Çatma Mescit Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120018,
+          "name": "Evliya Çelebi Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120019,
+          "name": "Bedrettin Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120020,
+          "name": "Camiikebir Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120021,
+          "name": "Hacıahmet Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120022,
+          "name": "İstiklal Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120023,
+          "name": "Kadımehmet Efendi Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120024,
+          "name": "Kaptanpaşa Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120025,
+          "name": "Kulaksız Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120026,
+          "name": "Küçük Piyale Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120027,
+          "name": "Piyalepaşa Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120028,
+          "name": "Yahya Kahya Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120029,
+          "name": "Firuzağa Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120030,
+          "name": "Hacımimi Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120031,
+          "name": "Kemankeş Karamustafapaşa Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120032,
+          "name": "Müeyyetzade Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120033,
+          "name": "Ömer Avni Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120034,
+          "name": "Pürtelaş Hasan Efendi Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120035,
+          "name": "Gümüşsuyu Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120036,
+          "name": "Kocatepe Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120037,
+          "name": "Bostan Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120038,
+          "name": "Bülbül Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120039,
+          "name": "Çukur Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120040,
+          "name": "Hüseyinağa Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120041,
+          "name": "Kalyoncu Kulluğu Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120042,
+          "name": "Kamer Hatun Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120043,
+          "name": "Sururi Mehmet Efendi Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120044,
+          "name": "Şehit Muhtar Mah",
+          "districtId": 340013
+        },
+        {
+          "id": 34120045,
+          "name": "Yenişehir Mah",
+          "districtId": 340013
+        }
+      ]
+    },
+    {
+      "id": 340014,
+      "name": "Büyükçekmece",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34130001,
+          "name": "19 Mayıs Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130002,
+          "name": "Alkent 2000 Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130003,
+          "name": "Atatürk Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130004,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130005,
+          "name": "Çakmaklı Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130006,
+          "name": "Dizdariye Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130007,
+          "name": "Fatih Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130008,
+          "name": "Karaağaç Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130009,
+          "name": "Pınartepe Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130010,
+          "name": "Celaliye Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130011,
+          "name": "Kamiloba Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130012,
+          "name": "Bahçelievler Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130013,
+          "name": "Güzelce Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130014,
+          "name": "Kumburgaz Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130015,
+          "name": "Yenimahalle Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130016,
+          "name": "Ekinoba Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130017,
+          "name": "Mimaroba Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130018,
+          "name": "Mimarsinan Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130019,
+          "name": "Murat Çesme Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130020,
+          "name": "Sinanoba Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130021,
+          "name": "Ahmediye Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130022,
+          "name": "Hürriyet Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130023,
+          "name": "Türkoba Mah",
+          "districtId": 340014
+        },
+        {
+          "id": 34130024,
+          "name": "Ulus Mah",
+          "districtId": 340014
+        }
+      ]
+    },
+    {
+      "id": 340015,
+      "name": "Çatalca",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34140001,
+          "name": "Akalan Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140002,
+          "name": "Atatürk Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140003,
+          "name": "Aydınlar Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140004,
+          "name": "Bahşayiş Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140005,
+          "name": "Başak Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140006,
+          "name": "Belgrat Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140007,
+          "name": "Celepköy Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140008,
+          "name": "Çakıl Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140009,
+          "name": "Çanakça Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140010,
+          "name": "Çiftlikköy Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140011,
+          "name": "Dağyenice Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140012,
+          "name": "Elbasan Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140013,
+          "name": "Fatih Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140014,
+          "name": "Ferhatpaşa Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140015,
+          "name": "Ferhatpaşa Sb Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140016,
+          "name": "Gökçeali Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140017,
+          "name": "Gümüşpınar Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140018,
+          "name": "Hallaçlı Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140019,
+          "name": "Hisarbeyli Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140020,
+          "name": "İhsaniye Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140021,
+          "name": "İnceğiz Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140022,
+          "name": "İzzettin Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140023,
+          "name": "Kabakça Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140024,
+          "name": "Kaleiçi Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140025,
+          "name": "Kalfa Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140026,
+          "name": "Karacaköy Merkez Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140027,
+          "name": "Karamandere Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140028,
+          "name": "Kestanelik Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140029,
+          "name": "Kızılcaali Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140030,
+          "name": "Muratbey Merkez Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140031,
+          "name": "Nakkaş Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140032,
+          "name": "Oklalı Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140033,
+          "name": "Ormanlı Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140034,
+          "name": "Ovayenice Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140035,
+          "name": "Örcünlü Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140036,
+          "name": "Örencik Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140037,
+          "name": "Subaşı Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140038,
+          "name": "Yalıköy Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140039,
+          "name": "Yaylacık Mah",
+          "districtId": 340015
+        },
+        {
+          "id": 34140040,
+          "name": "Yazlık Mah",
+          "districtId": 340015
+        }
+      ]
+    },
+    {
+      "id": 340016,
+      "name": "Çekmeköy",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34150001,
+          "name": "Alemdağ Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150002,
+          "name": "Çatalmeşe Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150003,
+          "name": "Ekşioğlu Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150004,
+          "name": "Nişantepe Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150005,
+          "name": "Çamlık Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150006,
+          "name": "Hamidiye Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150007,
+          "name": "Mehmet Akif Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150008,
+          "name": "Merkez Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150009,
+          "name": "Mimar Sinan Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150010,
+          "name": "Hüseyinli Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150011,
+          "name": "Koçullu Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150012,
+          "name": "Ömerli Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150013,
+          "name": "Reşadiye Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150014,
+          "name": "Sırapınar Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150015,
+          "name": "Aydınlar Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150016,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150017,
+          "name": "Güngören Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150018,
+          "name": "Kirazlıdere Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150019,
+          "name": "Soğukpınar Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150020,
+          "name": "Sultançiftliği Mah",
+          "districtId": 340016
+        },
+        {
+          "id": 34150021,
+          "name": "Taşdelen Mah",
+          "districtId": 340016
+        }
+      ]
+    },
+    {
+      "id": 340017,
+      "name": "Esenler",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34160001,
+          "name": "15 Temmuz Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160002,
+          "name": "Birlik Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160003,
+          "name": "Havaalanı Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160004,
+          "name": "Kemer Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160005,
+          "name": "Çifte Havuzlar Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160006,
+          "name": "Davutpaşa Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160007,
+          "name": "Fevzi Çakmak Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160008,
+          "name": "Mimar Sinan Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160009,
+          "name": "Namık Kemal Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160010,
+          "name": "Nine Hatun Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160011,
+          "name": "Yavuz Selim Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160012,
+          "name": "Fatih Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160013,
+          "name": "Kazım Karabekir Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160014,
+          "name": "Menderes Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160015,
+          "name": "Tuna Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160016,
+          "name": "Oruçreis Mah",
+          "districtId": 340017
+        },
+        {
+          "id": 34160017,
+          "name": "Turgut Reis Mah",
+          "districtId": 340017
+        }
+      ]
+    },
+    {
+      "id": 340018,
+      "name": "Esenyurt",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34170001,
+          "name": "Bağlarçeşme Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170002,
+          "name": "Çınar Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170003,
+          "name": "Örnek Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170004,
+          "name": "Pınar Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170005,
+          "name": "Selahaddin Eyyubi Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170006,
+          "name": "Akşemseddin Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170007,
+          "name": "Ardıçlı Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170008,
+          "name": "Balıkyolu Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170009,
+          "name": "İncirtepe Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170010,
+          "name": "İnönü Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170011,
+          "name": "Sultaniye Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170012,
+          "name": "Süleymaniye Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170013,
+          "name": "Yenikent Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170014,
+          "name": "Yunus Emre Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170015,
+          "name": "Atatürk Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170016,
+          "name": "Barbaros Hayrettin Paşa Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170017,
+          "name": "Battalgazi Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170018,
+          "name": "Gökevler Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170019,
+          "name": "Hürriyet Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170020,
+          "name": "İstiklal Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170021,
+          "name": "Necip Fazıl Kısakürek Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170022,
+          "name": "Şehitler Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170023,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170024,
+          "name": "Güzelyurt Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170025,
+          "name": "Mehmet Akif Ersoy Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170026,
+          "name": "Mehterçeşme Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170027,
+          "name": "Mevlana Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170028,
+          "name": "Piri Reis Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170029,
+          "name": "Yeşilkent Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170030,
+          "name": "Akevler Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170031,
+          "name": "Fatih Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170032,
+          "name": "Namık Kemal Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170033,
+          "name": "Saadetdere Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170034,
+          "name": "Talatpaşa Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170035,
+          "name": "Turgut Özal Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170036,
+          "name": "Üçevler Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170037,
+          "name": "Zafer Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170038,
+          "name": "Akçaburgaz Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170039,
+          "name": "Aşık Veysel Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170040,
+          "name": "Esenkent Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170041,
+          "name": "Koza Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170042,
+          "name": "Orhan Gazi Mah",
+          "districtId": 340018
+        },
+        {
+          "id": 34170043,
+          "name": "Osmangazi Mah",
+          "districtId": 340018
+        }
+      ]
+    },
+    {
+      "id": 340019,
+      "name": "Eyüpsultan",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34180001,
+          "name": "5.levent Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180002,
+          "name": "Alibeyköy Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180003,
+          "name": "Emniyettepe Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180004,
+          "name": "Güzeltepe Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180005,
+          "name": "Akşemsettin Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180006,
+          "name": "Çırçır Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180007,
+          "name": "Defterdar Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180008,
+          "name": "İslambey Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180009,
+          "name": "Merkez Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180010,
+          "name": "Nişancı Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180011,
+          "name": "Sakarya Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180012,
+          "name": "Silahtarağa Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180013,
+          "name": "Göktürk Merkez Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180014,
+          "name": "Ağaçlı Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180015,
+          "name": "Akpınar Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180016,
+          "name": "Çiftalan Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180017,
+          "name": "Işıklar Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180018,
+          "name": "İhsaniye Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180019,
+          "name": "Odayeri Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180020,
+          "name": "Pirinççi Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180021,
+          "name": "Mimar Sinan Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180022,
+          "name": "Mithatpaşa Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180023,
+          "name": "Düğmeciler Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180024,
+          "name": "Rami Cuma Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180025,
+          "name": "Rami Yeni Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180026,
+          "name": "Topçular Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180027,
+          "name": "Esentepe Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180028,
+          "name": "Karadolap Mah",
+          "districtId": 340019
+        },
+        {
+          "id": 34180029,
+          "name": "Yeşilpınar Mah",
+          "districtId": 340019
+        }
+      ]
+    },
+    {
+      "id": 340020,
+      "name": "Fatih",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34190001,
+          "name": "Aksaray Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190002,
+          "name": "Haseki Sultan Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190003,
+          "name": "Atikali Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190004,
+          "name": "Ayvansaray Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190005,
+          "name": "Balat Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190006,
+          "name": "Derviş Ali Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190007,
+          "name": "Beyazıt Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190008,
+          "name": "Emin Sinan Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190009,
+          "name": "Mimar Hayrettin Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190010,
+          "name": "Şehsuvar Bey Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190011,
+          "name": "Alemdar Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190012,
+          "name": "Hocapaşa Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190013,
+          "name": "Akşemsettin Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190014,
+          "name": "İskenderpaşa Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190015,
+          "name": "Hırka-i Şerif Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190016,
+          "name": "Karagümrük Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190017,
+          "name": "Cerrahpaşa Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190018,
+          "name": "Koca Mustafapaşa Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190019,
+          "name": "Seyyid Ömer Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190020,
+          "name": "Katip Kasım Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190021,
+          "name": "Mesihpaşa Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190022,
+          "name": "Mimar Kemalettin Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190023,
+          "name": "Muhsine Hatun Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190024,
+          "name": "Nişanca Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190025,
+          "name": "Saraç İshak Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190026,
+          "name": "Molla Fenari Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190027,
+          "name": "Sururi Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190028,
+          "name": "Taya Hatun Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190029,
+          "name": "Hobyar Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190030,
+          "name": "Binbirdirek Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190031,
+          "name": "Cankurtaran Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190032,
+          "name": "Küçük Ayasofya Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190033,
+          "name": "Sultan Ahmet Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190034,
+          "name": "Mevlanakapı Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190035,
+          "name": "Şehremini Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190036,
+          "name": "Mercan Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190037,
+          "name": "Rüstempaşa Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190038,
+          "name": "Süleymaniye Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190039,
+          "name": "Tahtakale Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190040,
+          "name": "Molla Gürani Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190041,
+          "name": "Topkapı Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190042,
+          "name": "Balabanağa Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190043,
+          "name": "Demirtaş Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190044,
+          "name": "Hacı Kadın Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190045,
+          "name": "Hoca Gıyasettin Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190046,
+          "name": "Kalenderhane Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190047,
+          "name": "Kemalpaşa Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190048,
+          "name": "Molla Hüsrev Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190049,
+          "name": "Sarıdemir Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190050,
+          "name": "Yavuz Sinan Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190051,
+          "name": "Silivrikapı Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190052,
+          "name": "Sümbül Efendi Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190053,
+          "name": "Yedikule Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190054,
+          "name": "Ali Kuşçu Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190055,
+          "name": "Cibali Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190056,
+          "name": "Yavuz Sultan Selim Mah",
+          "districtId": 340020
+        },
+        {
+          "id": 34190057,
+          "name": "Zeyrek Mah",
+          "districtId": 340020
+        }
+      ]
+    },
+    {
+      "id": 340021,
+      "name": "Gaziosmanpaşa",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34200001,
+          "name": "Bağlarbaşı Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200002,
+          "name": "Merkez Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200003,
+          "name": "Sarıgöl Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200004,
+          "name": "Barbaros Hayrettin Paşa Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200005,
+          "name": "Hürriyet Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200006,
+          "name": "Karadeniz Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200007,
+          "name": "Şemsipaşa Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200008,
+          "name": "Yeni Mahalle Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200009,
+          "name": "Fevzi Çakmak Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200010,
+          "name": "Karayolları Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200011,
+          "name": "Kazım Karabekir Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200012,
+          "name": "Mevlana Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200013,
+          "name": "Karlıtepe Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200014,
+          "name": "Pazariçi Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200015,
+          "name": "Yenidoğan Mah",
+          "districtId": 340021
+        },
+        {
+          "id": 34200016,
+          "name": "Yıldıztabya Mah",
+          "districtId": 340021
+        }
+      ]
+    },
+    {
+      "id": 340022,
+      "name": "Güngören",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34210001,
+          "name": "Akıncılar Mah",
+          "districtId": 340022
+        },
+        {
+          "id": 34210002,
+          "name": "Güven Mah",
+          "districtId": 340022
+        },
+        {
+          "id": 34210003,
+          "name": "Haznedar Mah",
+          "districtId": 340022
+        },
+        {
+          "id": 34210004,
+          "name": "Mareşal Çakmak Mah",
+          "districtId": 340022
+        },
+        {
+          "id": 34210005,
+          "name": "Güneştepe Mah",
+          "districtId": 340022
+        },
+        {
+          "id": 34210006,
+          "name": "Merkez Mah",
+          "districtId": 340022
+        },
+        {
+          "id": 34210007,
+          "name": "Gençosman Mah",
+          "districtId": 340022
+        },
+        {
+          "id": 34210008,
+          "name": "Sanayi Mah",
+          "districtId": 340022
+        },
+        {
+          "id": 34210009,
+          "name": "Abdurrahman Nafiz Gürman Mah",
+          "districtId": 340022
+        },
+        {
+          "id": 34210010,
+          "name": "Mehmet Nesih Özmen Mah",
+          "districtId": 340022
+        },
+        {
+          "id": 34210011,
+          "name": "Tozkoparan Mah",
+          "districtId": 340022
+        }
+      ]
+    },
+    {
+      "id": 340023,
+      "name": "Kadıköy",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34220001,
+          "name": "Bostancı Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220002,
+          "name": "Caddebostan Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220003,
+          "name": "Caferağa Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220004,
+          "name": "Eğitim Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220005,
+          "name": "Hasanpaşa Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220006,
+          "name": "Erenköy Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220007,
+          "name": "Fenerbahçe Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220008,
+          "name": "Feneryolu Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220009,
+          "name": "Zühtüpaşa Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220010,
+          "name": "Dumlupınar Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220011,
+          "name": "Fikirtepe Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220012,
+          "name": "Göztepe Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220013,
+          "name": "Acıbadem Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220014,
+          "name": "Koşuyolu Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220015,
+          "name": "Kozyatağı Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220016,
+          "name": "Merdivenköy Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220017,
+          "name": "19 Mayıs Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220018,
+          "name": "Osmanağa Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220019,
+          "name": "Rasimpaşa Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220020,
+          "name": "Sahrayıcedit Mah",
+          "districtId": 340023
+        },
+        {
+          "id": 34220021,
+          "name": "Suadiye Mah",
+          "districtId": 340023
+        }
+      ]
+    },
+    {
+      "id": 340024,
+      "name": "Kağıthane",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34230001,
+          "name": "Çağlayan Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230002,
+          "name": "Hürriyet Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230003,
+          "name": "Çeliktepe Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230004,
+          "name": "Ortabayır Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230005,
+          "name": "Gültepe Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230006,
+          "name": "Harmantepe Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230007,
+          "name": "Telsizler Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230008,
+          "name": "Yahya Kemal Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230009,
+          "name": "Gürsel Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230010,
+          "name": "Mehmet Akif Ersoy Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230011,
+          "name": "Talatpaşa Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230012,
+          "name": "Hamidiye Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230013,
+          "name": "Merkez Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230014,
+          "name": "Nurtepe Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230015,
+          "name": "Seyrantepe Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230016,
+          "name": "Yeşilce Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230017,
+          "name": "Emniyet Evleri Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230018,
+          "name": "Sultan Selim Mah",
+          "districtId": 340024
+        },
+        {
+          "id": 34230019,
+          "name": "Şirintepe Mah",
+          "districtId": 340024
+        }
+      ]
+    },
+    {
+      "id": 340025,
+      "name": "Kartal",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34240001,
+          "name": "Atalar Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240002,
+          "name": "Petrol İş Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240003,
+          "name": "Esentepe Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240004,
+          "name": "Karlıktepe Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240005,
+          "name": "Kordonboyu Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240006,
+          "name": "Yukarı Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240007,
+          "name": "Cevizli Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240008,
+          "name": "Orhantepe Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240009,
+          "name": "Gümüşpınar Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240010,
+          "name": "Orta Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240011,
+          "name": "Soğanlık Yeni Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240012,
+          "name": "Çavuşoğlu Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240013,
+          "name": "Topselvi Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240014,
+          "name": "Yalı Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240015,
+          "name": "Yunus Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240016,
+          "name": "Uğur Mumcu Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240017,
+          "name": "Yakacık Yeni Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240018,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240019,
+          "name": "Hürriyet Mah",
+          "districtId": 340025
+        },
+        {
+          "id": 34240020,
+          "name": "Yakacık Çarşı Mah",
+          "districtId": 340025
+        }
+      ]
+    },
+    {
+      "id": 340026,
+      "name": "Küçükçekmece",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34250001,
+          "name": "Atakent Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250002,
+          "name": "Atatürk Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250003,
+          "name": "Küçükçekmece İkitelliosb Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250004,
+          "name": "Mehmet Akif Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250005,
+          "name": "Halkalı Merkez Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250006,
+          "name": "İstasyon Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250007,
+          "name": "Yarımburgaz Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250008,
+          "name": "Cennet Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250009,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250010,
+          "name": "Fatih Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250011,
+          "name": "Kanarya Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250012,
+          "name": "Yeni Mahalle Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250013,
+          "name": "Beşyol Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250014,
+          "name": "Fevzi Çakmak Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250015,
+          "name": "Gültepe Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250016,
+          "name": "İnönü Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250017,
+          "name": "Kartaltepe Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250018,
+          "name": "Kemalpaşa Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250019,
+          "name": "Söğütlü Çeşme Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250020,
+          "name": "Sultan Murat Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250021,
+          "name": "Tevfikbey Mah",
+          "districtId": 340026
+        },
+        {
+          "id": 34250022,
+          "name": "Yeşilova Mah",
+          "districtId": 340026
+        }
+      ]
+    },
+    {
+      "id": 340027,
+      "name": "Maltepe",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34260001,
+          "name": "Aydınevler Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260002,
+          "name": "Başıbüyük Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260003,
+          "name": "Fındıklı Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260004,
+          "name": "Büyükbakkalköy Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260005,
+          "name": "Cevizli Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260006,
+          "name": "Altayçeşme Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260007,
+          "name": "Feyzullah Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260008,
+          "name": "Esenkent Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260009,
+          "name": "Gülensu Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260010,
+          "name": "Gülsuyu Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260011,
+          "name": "Çınar Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260012,
+          "name": "İdealtepe Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260013,
+          "name": "Altıntepe Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260014,
+          "name": "Küçükyalı Merkez Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260015,
+          "name": "Bağlarbaşı Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260016,
+          "name": "Yalı Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260017,
+          "name": "Girne Mah",
+          "districtId": 340027
+        },
+        {
+          "id": 34260018,
+          "name": "Zümrütevler Mah",
+          "districtId": 340027
+        }
+      ]
+    },
+    {
+      "id": 340028,
+      "name": "Pendik",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34270001,
+          "name": "Bahçelievler Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270002,
+          "name": "Sapan Bağları Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270003,
+          "name": "Yeni Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270004,
+          "name": "Yeşilbağlar Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270005,
+          "name": "Çamçeşme Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270006,
+          "name": "Esenler Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270007,
+          "name": "Fevzi Çakmak Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270008,
+          "name": "Kavakpınar Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270009,
+          "name": "Batı Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270010,
+          "name": "Doğu Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270011,
+          "name": "Kaynarca Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270012,
+          "name": "Çınardere Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270013,
+          "name": "Dumlupınar Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270014,
+          "name": "Orta Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270015,
+          "name": "Velibaba Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270016,
+          "name": "Ahmet Yesevi Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270017,
+          "name": "Esenyalı Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270018,
+          "name": "Fatih Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270019,
+          "name": "Güzelyalı Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270020,
+          "name": "Orhangazi Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270021,
+          "name": "Ballıca Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270022,
+          "name": "Emirli Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270023,
+          "name": "Göçbeyli Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270024,
+          "name": "Kurna Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270025,
+          "name": "Kurtdoğmuş Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270026,
+          "name": "Güllü Bağlar Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270027,
+          "name": "Ramazanoğlu Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270028,
+          "name": "Sanayi Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270029,
+          "name": "Şeyhli Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270030,
+          "name": "Ertuğrul Gazi Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270031,
+          "name": "Sülüntepe Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270032,
+          "name": "Yayalar Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270033,
+          "name": "Çamlık Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270034,
+          "name": "Harmandere Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270035,
+          "name": "Kurtköy Mah",
+          "districtId": 340028
+        },
+        {
+          "id": 34270036,
+          "name": "Yenişehir Mah",
+          "districtId": 340028
+        }
+      ]
+    },
+    {
+      "id": 340029,
+      "name": "Sancaktepe",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34280001,
+          "name": "Akpınar Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280002,
+          "name": "Eyüp Sultan Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280003,
+          "name": "Fatih Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280004,
+          "name": "Veysel Karani Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280005,
+          "name": "Abdurrahmangazi Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280006,
+          "name": "Osmangazi Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280007,
+          "name": "Atatürk Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280008,
+          "name": "Emek Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280009,
+          "name": "İnönü Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280010,
+          "name": "Kemal Türkler Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280011,
+          "name": "Meclis Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280012,
+          "name": "Sarıgazi Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280013,
+          "name": "Hilal Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280014,
+          "name": "Merve Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280015,
+          "name": "Mevlana Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280016,
+          "name": "Paşaköy Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280017,
+          "name": "Safa Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280018,
+          "name": "Yenidoğan Mah",
+          "districtId": 340029
+        },
+        {
+          "id": 34280019,
+          "name": "Yunus Emre Mah",
+          "districtId": 340029
+        }
+      ]
+    },
+    {
+      "id": 340030,
+      "name": "Sarıyer",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34290001,
+          "name": "Bahçeköy Kemer Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290002,
+          "name": "Bahçeköy Merkez Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290003,
+          "name": "Bahçeköy Yeni Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290004,
+          "name": "Büyükdere Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290005,
+          "name": "Çayırbaşı Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290006,
+          "name": "Kocataş Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290007,
+          "name": "Ptt Evleri Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290008,
+          "name": "Emirgan Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290009,
+          "name": "Reşitpaşa Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290010,
+          "name": "İstinye Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290011,
+          "name": "Pınar Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290012,
+          "name": "Poligon Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290013,
+          "name": "Ayazağa Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290014,
+          "name": "Huzur Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290015,
+          "name": "Maslak Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290016,
+          "name": "Baltalimanı Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290017,
+          "name": "Fatih Sultan Mehmet Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290018,
+          "name": "Rumelihisarı Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290019,
+          "name": "Demirciköy Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290020,
+          "name": "Garipçe Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290021,
+          "name": "Gümüşdere Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290022,
+          "name": "Kazım Karabekir Paşa Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290023,
+          "name": "Kısırkaya Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290024,
+          "name": "Kumköy  Mah (kilyos Mah)",
+          "districtId": 340030
+        },
+        {
+          "id": 34290025,
+          "name": "Maden Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290026,
+          "name": "Rumelifeneri Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290027,
+          "name": "Rumelikavağı Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290028,
+          "name": "Sarıyer Merkez Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290029,
+          "name": "Uskumruköy Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290030,
+          "name": "Yeni Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290031,
+          "name": "Zekeriyaköy Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290032,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290033,
+          "name": "Çamlıtepe Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290034,
+          "name": "Darüşşafaka Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290035,
+          "name": "Ferahevler Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290036,
+          "name": "Kireçburnu Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290037,
+          "name": "Tarabya Mah",
+          "districtId": 340030
+        },
+        {
+          "id": 34290038,
+          "name": "Yeniköy Mah",
+          "districtId": 340030
+        }
+      ]
+    },
+    {
+      "id": 340031,
+      "name": "Silivri",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34300001,
+          "name": "Beyciler Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300002,
+          "name": "Büyük Çavuşlu Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300003,
+          "name": "Büyük Sinekli Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300004,
+          "name": "Çayırdere Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300005,
+          "name": "Danamandıra Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300006,
+          "name": "Küçük Sinekli Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300007,
+          "name": "Sayalar Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300008,
+          "name": "Çanta Balaban Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300009,
+          "name": "Çanta Sancaktepe Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300010,
+          "name": "Değirmenköy Fevzipaşa Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300011,
+          "name": "Değirmenköy İsmetpaşa Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300012,
+          "name": "Bekirli Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300013,
+          "name": "Büyük Kılıçlı Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300014,
+          "name": "Çeltik Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300015,
+          "name": "Fener Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300016,
+          "name": "Kurfallı Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300017,
+          "name": "Küçük Kılıçlı Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300018,
+          "name": "Seymen Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300019,
+          "name": "Yolçatı Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300020,
+          "name": "Gümüşyaka Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300021,
+          "name": "Kavaklı Hürriyet Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300022,
+          "name": "Kavaklı İstiklal Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300023,
+          "name": "Akören Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300024,
+          "name": "Gazitepe Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300025,
+          "name": "Kadıköy Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300026,
+          "name": "Ortaköy Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300027,
+          "name": "Selimpaşa Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300028,
+          "name": "Alibey Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300029,
+          "name": "Alipaşa Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300030,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300031,
+          "name": "Fatih Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300032,
+          "name": "Mimar Sinan Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300033,
+          "name": "Piri Mehmet Paşa Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300034,
+          "name": "Semizkumlar Mah",
+          "districtId": 340031
+        },
+        {
+          "id": 34300035,
+          "name": "Yeni Mah",
+          "districtId": 340031
+        }
+      ]
+    },
+    {
+      "id": 340032,
+      "name": "Sultanbeyli",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34310001,
+          "name": "Abdurrahmangazi Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310002,
+          "name": "Fatih Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310003,
+          "name": "Hasanpaşa Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310004,
+          "name": "Mehmet Akif Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310005,
+          "name": "Adil Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310006,
+          "name": "Battalgazi Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310007,
+          "name": "Mimar Sinan Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310008,
+          "name": "Akşemsettin Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310009,
+          "name": "Hamidiye Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310010,
+          "name": "Necip Fazıl Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310011,
+          "name": "Orhangazi Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310012,
+          "name": "Yavuz Selim Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310013,
+          "name": "Ahmet Yesevi Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310014,
+          "name": "Mecidiye Mah",
+          "districtId": 340032
+        },
+        {
+          "id": 34310015,
+          "name": "Turgut Reis Mah",
+          "districtId": 340032
+        }
+      ]
+    },
+    {
+      "id": 340033,
+      "name": "Sultangazi",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34320001,
+          "name": "50. Yıl Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320002,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320003,
+          "name": "Esentepe Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320004,
+          "name": "Sultançiftliği Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320005,
+          "name": "Uğur Mumcu Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320006,
+          "name": "Cebeci Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320007,
+          "name": "Eski Habipler Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320008,
+          "name": "Habibler Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320009,
+          "name": "İsmetpaşa Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320010,
+          "name": "Malkoçoğlu Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320011,
+          "name": "Yayla Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320012,
+          "name": "75. Yıl Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320013,
+          "name": "Gazi Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320014,
+          "name": "Yunus Emre Mah",
+          "districtId": 340033
+        },
+        {
+          "id": 34320015,
+          "name": "Zübeyde Hanım Mah",
+          "districtId": 340033
+        }
+      ]
+    },
+    {
+      "id": 340034,
+      "name": "Şile",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34330001,
+          "name": "Ağva Merkez Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330002,
+          "name": "Bucaklı Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330003,
+          "name": "Çataklı Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330004,
+          "name": "Çelebi Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330005,
+          "name": "Geredeli Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330006,
+          "name": "Göçe Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330007,
+          "name": "Gökmaşlı Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330008,
+          "name": "Göksu Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330009,
+          "name": "Hacıllı Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330010,
+          "name": "İsaköy Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330011,
+          "name": "Kadıköy Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330012,
+          "name": "Kalem Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330013,
+          "name": "Kurfallı Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330014,
+          "name": "Soğullu Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330015,
+          "name": "Şuayipli Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330016,
+          "name": "Ağaçdere Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330017,
+          "name": "Ahmetli Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330018,
+          "name": "Akçakese Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330019,
+          "name": "Alacalı Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330020,
+          "name": "Avcıkoru Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330021,
+          "name": "Bıçkıdere Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330022,
+          "name": "Bozgoca Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330023,
+          "name": "Çayırbaşı Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330024,
+          "name": "Çengilli Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330025,
+          "name": "Darlık Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330026,
+          "name": "Değirmençayırı Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330027,
+          "name": "Doğancılı Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330028,
+          "name": "Erenler Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330029,
+          "name": "Esenceli Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330030,
+          "name": "Hasanlı Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330031,
+          "name": "İmrendere Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330032,
+          "name": "İmrenli Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330033,
+          "name": "Kabakoz Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330034,
+          "name": "Karabeyli Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330035,
+          "name": "Karacaköy Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330036,
+          "name": "Karakiraz Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330037,
+          "name": "Karamandere Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330038,
+          "name": "Kervansaray Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330039,
+          "name": "Kızılca Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330040,
+          "name": "Korucu Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330041,
+          "name": "Kömürlük Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330042,
+          "name": "Kurna Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330043,
+          "name": "Meşrutiyet Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330044,
+          "name": "Oruçoğlu Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330045,
+          "name": "Osmanköy Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330046,
+          "name": "Ovacık Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330047,
+          "name": "Sahilköy Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330048,
+          "name": "Satmazlı Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330049,
+          "name": "Sofular Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330050,
+          "name": "Sortullu Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330051,
+          "name": "Teke Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330052,
+          "name": "Ulupelit Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330053,
+          "name": "Üvezli Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330054,
+          "name": "Yaka Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330055,
+          "name": "Yaylalı Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330056,
+          "name": "Yazımanayır Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330057,
+          "name": "Yeniköy Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330058,
+          "name": "Yeşilvadi Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330059,
+          "name": "Balibey Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330060,
+          "name": "Çavuş Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330061,
+          "name": "Hacı Kasım Mah",
+          "districtId": 340034
+        },
+        {
+          "id": 34330062,
+          "name": "Kumbaba Mah",
+          "districtId": 340034
+        }
+      ]
+    },
+    {
+      "id": 340035,
+      "name": "Şişli",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34340001,
+          "name": "Bozkurt Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340002,
+          "name": "Eskişehir Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340003,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340004,
+          "name": "Duatepe Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340005,
+          "name": "Paşa Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340006,
+          "name": "Esentepe Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340007,
+          "name": "Fulya Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340008,
+          "name": "Gülbahar Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340009,
+          "name": "Feriköy Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340010,
+          "name": "Yayla Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340011,
+          "name": "Halaskargazi Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340012,
+          "name": "Harbiye Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340013,
+          "name": "İzzet Paşa Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340014,
+          "name": "Kuştepe Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340015,
+          "name": "Mecidiyeköy Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340016,
+          "name": "19 Mayıs Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340017,
+          "name": "Meşrutiyet Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340018,
+          "name": "Halide Edip Adıvar Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340019,
+          "name": "Halil Rıfat Paşa Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340020,
+          "name": "Kaptanpaşa Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340021,
+          "name": "Mahmut Şevket Paşa Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340022,
+          "name": "Merkez Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340023,
+          "name": "Ergenekon Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340024,
+          "name": "İnönü Mah",
+          "districtId": 340035
+        },
+        {
+          "id": 34340025,
+          "name": "Teşvikiye Mah",
+          "districtId": 340035
+        }
+      ]
+    },
+    {
+      "id": 340036,
+      "name": "Tuzla",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34350001,
+          "name": "Akfırat Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350002,
+          "name": "Tepeoren İtosb Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350003,
+          "name": "Tepeören Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350004,
+          "name": "Aydınlı - Birlik Osb Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350005,
+          "name": "Aydınlı - İstanbul Ayosb Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350006,
+          "name": "Aydınlı Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350007,
+          "name": "Aydınlı Sb Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350008,
+          "name": "Aydınlı-kosb Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350009,
+          "name": "Cami Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350010,
+          "name": "İstasyon Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350011,
+          "name": "Postane Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350012,
+          "name": "Aydıntepe Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350013,
+          "name": "İçmeler Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350014,
+          "name": "Mimar Sinan Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350015,
+          "name": "Şifa Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350016,
+          "name": "Anadolu Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350017,
+          "name": "Deri Osb Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350018,
+          "name": "Fatih Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350019,
+          "name": "Mescit Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350020,
+          "name": "Orhanlı Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350021,
+          "name": "Orta Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350022,
+          "name": "Evliya Çelebi Mah",
+          "districtId": 340036
+        },
+        {
+          "id": 34350023,
+          "name": "Yayla Mah",
+          "districtId": 340036
+        }
+      ]
+    },
+    {
+      "id": 340037,
+      "name": "Ümraniye",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34360001,
+          "name": "Adem Yavuz Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360002,
+          "name": "Aşağı Dudullu Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360003,
+          "name": "Huzur Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360004,
+          "name": "Necip Fazıl Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360005,
+          "name": "Parseller Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360006,
+          "name": "Armağanevler Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360007,
+          "name": "Atakent Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360008,
+          "name": "Finanskent Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360009,
+          "name": "Site Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360010,
+          "name": "Yenişehir Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360011,
+          "name": "Atatürk Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360012,
+          "name": "Elmalıkent Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360013,
+          "name": "Tantavi Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360014,
+          "name": "Çakmak Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360015,
+          "name": "Çamlık Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360016,
+          "name": "Mehmet Akif Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360017,
+          "name": "Tatlısu Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360018,
+          "name": "Esenkent Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360019,
+          "name": "Esenşehir Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360020,
+          "name": "Madenler Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360021,
+          "name": "Cemil Meriç Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360022,
+          "name": "Fatih Sultan Mehmet Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360023,
+          "name": "Ihlamurkuyu Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360024,
+          "name": "Tepeüstü Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360025,
+          "name": "İnkılap Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360026,
+          "name": "Saray Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360027,
+          "name": "Yamanevler Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360028,
+          "name": "Dumlupınar Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360029,
+          "name": "Hekimbaşı Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360030,
+          "name": "Kazım Karabekir Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360031,
+          "name": "Topağacı Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360032,
+          "name": "Esenevler Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360033,
+          "name": "İstiklal Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360034,
+          "name": "Namık Kemal Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360035,
+          "name": "Altınşehir Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360036,
+          "name": "Dudullu Osb Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360037,
+          "name": "Şerifali Mah",
+          "districtId": 340037
+        },
+        {
+          "id": 34360038,
+          "name": "Yukarı Dudullu Mah",
+          "districtId": 340037
+        }
+      ]
+    },
+    {
+      "id": 340038,
+      "name": "Üsküdar",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34370001,
+          "name": "Acıbadem Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370002,
+          "name": "Altunizade Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370003,
+          "name": "Barbaros Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370004,
+          "name": "Bahçelievler Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370005,
+          "name": "Beylerbeyi Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370006,
+          "name": "Burhaniye Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370007,
+          "name": "Küplüce Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370008,
+          "name": "Bulgurlu Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370009,
+          "name": "Küçük Çamlıca Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370010,
+          "name": "Cumhuriyet Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370011,
+          "name": "Çengelköy Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370012,
+          "name": "Güzeltepe Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370013,
+          "name": "Ferah Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370014,
+          "name": "Kısıklı Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370015,
+          "name": "Kandilli Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370016,
+          "name": "Kuleli Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370017,
+          "name": "Küçüksu Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370018,
+          "name": "Kirazlıtepe Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370019,
+          "name": "Mehmet Akif Ersoy Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370020,
+          "name": "İcadiye Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370021,
+          "name": "Kuzguncuk Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370022,
+          "name": "Sultantepe Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370023,
+          "name": "Ahmediye Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370024,
+          "name": "Aziz Mahmut Hüdayi Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370025,
+          "name": "Mimar Sinan Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370026,
+          "name": "Muratreis Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370027,
+          "name": "Selami Ali Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370028,
+          "name": "Valide-i Atik Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370029,
+          "name": "Salacak Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370030,
+          "name": "Selimiye Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370031,
+          "name": "Zeynep Kamil Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370032,
+          "name": "Ünalan Mah",
+          "districtId": 340038
+        },
+        {
+          "id": 34370033,
+          "name": "Yavuztürk Mah",
+          "districtId": 340038
+        }
+      ]
+    },
+    {
+      "id": 340039,
+      "name": "Zeytinburnu",
+      "provinceId": 34,
+      "neighborhoods": [
+        {
+          "id": 34380001,
+          "name": "Çırpıcı Mah",
+          "districtId": 340039
+        },
+        {
+          "id": 34380002,
+          "name": "Nuripaşa Mah",
+          "districtId": 340039
+        },
+        {
+          "id": 34380003,
+          "name": "Sümer Mah",
+          "districtId": 340039
+        },
+        {
+          "id": 34380004,
+          "name": "Veliefendi Mah",
+          "districtId": 340039
+        },
+        {
+          "id": 34380005,
+          "name": "Yeşiltepe Mah",
+          "districtId": 340039
+        },
+        {
+          "id": 34380006,
+          "name": "Merkezefendi Mah",
+          "districtId": 340039
+        },
+        {
+          "id": 34380007,
+          "name": "Seyitnizam Mah",
+          "districtId": 340039
+        },
+        {
+          "id": 34380008,
+          "name": "Beştelsiz Mah",
+          "districtId": 340039
+        },
+        {
+          "id": 34380009,
+          "name": "Gökalp Mah",
+          "districtId": 340039
+        },
+        {
+          "id": 34380010,
+          "name": "Kazlıçeşme Mah",
+          "districtId": 340039
+        },
+        {
+          "id": 34380011,
+          "name": "Telsiz Mah",
+          "districtId": 340039
+        },
+        {
+          "id": 34380012,
+          "name": "Yenidoğan Mah",
+          "districtId": 340039
+        },
+        {
+          "id": 34380013,
+          "name": "Maltepe Mah",
+          "districtId": 340039
+        }
+      ]
+    }
+  ]
+}

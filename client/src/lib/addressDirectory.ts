@@ -2,9 +2,10 @@ export type AddressOption = { id: number; name: string; provinceId?: number; dis
 
 type ApiResponse<T> = { status: string; data: T };
 
-const API_BASE = "https://turkiyeapi.dev/api/v1";
+const API_BASE = "/api/address";
 export const ISTANBUL_PROVINCE_ID = 34;
 const cache = new Map<string, AddressOption[]>();
+const embeddedNeighborhoods = new Map<number, AddressOption[]>();
 
 async function get<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`);
@@ -30,8 +31,11 @@ export async function getProvinces() {
 export async function getDistricts(provinceId: number) {
   const key = `districts:${provinceId}`;
   if (!cache.has(key)) {
-    const districts = await get<Array<AddressOption & { provinceId: number }>>(`/districts?provinceId=${provinceId}`);
-    cache.set(key, districts.map(({ id, name, provinceId: parentId }) => ({ id, name, provinceId: parentId })));
+    const districts = await get<Array<AddressOption & { provinceId: number; neighborhoods?: Array<AddressOption & { districtId?: number }> }>>(`/districts?provinceId=${provinceId}`);
+    cache.set(key, districts.map(({ id, name, provinceId: parentId, neighborhoods }) => {
+      if (neighborhoods?.length) embeddedNeighborhoods.set(id, neighborhoods.map(item => ({ id: item.id, name: item.name, districtId: id })));
+      return { id, name, provinceId: parentId };
+    }));
   }
   return cache.get(key)!;
 }
@@ -39,8 +43,14 @@ export async function getDistricts(provinceId: number) {
 export async function getNeighborhoods(districtId: number) {
   const key = `neighborhoods:${districtId}`;
   if (!cache.has(key)) {
-    const neighborhoods = await get<Array<AddressOption & { districtId: number }>>(`/neighborhoods?districtId=${districtId}`);
-    cache.set(key, neighborhoods.map(({ id, name, districtId: parentId }) => ({ id, name, districtId: parentId })));
+    try {
+      const neighborhoods = await get<Array<AddressOption & { districtId: number }>>(`/neighborhoods?districtId=${districtId}`);
+      cache.set(key, neighborhoods.map(({ id, name, districtId: parentId }) => ({ id, name, districtId: parentId })));
+    } catch (error) {
+      const fallback = embeddedNeighborhoods.get(districtId);
+      if (!fallback) throw error;
+      cache.set(key, fallback);
+    }
   }
   return cache.get(key)!;
 }
