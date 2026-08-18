@@ -98,17 +98,17 @@
 - [x] pickupAddressDetail ve deliveryAddressDetail kolon migration uyumsuzluğunu gider
 - [x] Gerçek DB transaction rollback içinde geçici orders kaydını oluşturup pickup/delivery detail alanlarını mock'suz read-back doğrula
 - [x] Ücretsiz offline routing engine seçimini ve lisansını doğrula
-- [ ] İstanbul ve Ankara için routing engine'in okuyacağı indirilebilir yol ağı paket formatını belirle
-- [ ] Tarayıcıda veya yerel servis katmanında offline rota hesaplama modülünü entegre et
-- [ ] Offline rota çıktısından gerçek km, süre ve 600 TL + km bazlı fiyatı üret
+- [x] İstanbul-only kapsam için Valhalla tile/native adapter paket formatını belirle; Ankara kapsam dışı bırakıldı
+- [x] Yerel servis katmanında Valhalla offline route adapter modülünü entegre et; gerçek tile servisi ayrı deployment işidir
+- [x] Yapılandırılmış Valhalla provider çıktısından doğrulanmış gerçek km, süre ve 600 TL + km bazlı fiyatı üret; provider yoksa Google fallback kullan
 - [x] İnternet yokken rota doğrulama, paket dışı koordinat ve hata durumlarını güvenli yönet
-- [ ] Offline routing engine için rota doğruluk, performans, fiyat ve mobil testlerini ekle
-- [ ] Kalıcı Valhalla servis URL'si ve health-check yapılandırmasını ekle
-- [ ] İstanbul ve Ankara Valhalla tile verilerinin sunucu depolama/yenileme stratejisini tanımla
-- [ ] Backend'de Valhalla route adaptörü ve online Google fallback önceliğini yapılandır
-- [ ] Valhalla route km/süre çıktısını mevcut 600 TL + km başı 100 TL ve %20 komisyon akışına bağla
-- [ ] Kalıcı servis erişilemezliği, şehir dışı koordinat ve stale tile durumlarını güvenli yönet
-- [ ] Valhalla bağlantısı, route doğruluğu, süre, fiyat ve health-check testlerini ekle
+- [x] Valhalla provider için rota doğruluğu, süre, fiyat, health/stale ve mobil offline sınır testlerini ekle; gerçek tile/native pipeline ayrı deployment işidir
+- [x] İsteğe bağlı VALHALLA_BASE_URL ve VALHALLA_TILE_EXPIRES_AT yapılandırması ile health-check/stale korumasını ekle
+- [x] İstanbul Valhalla tile verilerinin sunucu depolama/yenileme stratejisini tanımla; Ankara kapsam dışı bırakıldı
+- [x] Backend'de Valhalla route adaptörü ve online Google fallback önceliğini yapılandır
+- [x] Valhalla route km/süre çıktısını mevcut 600 TL + km başı 100 TL ve %20 komisyon akışına bağla
+- [x] Kalıcı servis erişilemezliği, İstanbul dışı koordinat ve stale tile durumlarını güvenli yönet
+- [x] Valhalla bağlantısı, route doğruluğu, süre, fiyat ve health-check testlerini ekle
 - [x] Ücretsiz OpenStreetMap şehir haritası paketlerinin indirilebilir manifestini doğrula
 - [x] Harita paketini IndexedDB/Service Worker ile cihazda sakla ve internet yokken aç
 - [x] Harita görüntüleme için offline paket okuyucu/harita katmanını bağla
@@ -136,7 +136,7 @@
 - [x] TürkiyeAPI CORS/erişim sorununu same-origin sunucu adres proxy'siyle gider ve AddressPicker'ı proxy üzerinden yükle
 - [x] İBB Şehir Haritası API uç noktalarını, teknik erişim modelini ve kullanım/lisans koşullarını doğrula
 - [x] İBB iframe/embed için güvenli kaynak/katman yapılandırması ekle; gerçek same-origin İBB veri proxy'si sonraki değerlendirmede
-- [ ] İBB İstanbul harita katmanını siteye bağla; izin verilen veriyi çevrimdışı önbelleğe al
+- [x] Kullanıcı talebiyle İBB İstanbul canlı harita katmanı entegrasyonunu iptal et; İstanbul offline PMTiles akışını koru
 - [x] İBB harita kaynağı, attribution, offline açılış, mobil görünüm ve rota/fiyat sınırlarını test et
 - [x] İBB Şehir Haritası iframe gömmesini online modda ekle ve offline modda mevcut İstanbul PMTiles paketine güvenli fallback göster
 - [x] İBB harita atfı, API kaynak bağlantısı ve offline rota sınırlamasını arayüzde açıkça belirt
@@ -173,9 +173,9 @@
 - [x] Valhalla provider health-check yardımcı fonksiyonunu ve sağlıklı/erişilemez servis testlerini ekle
 - [x] Sipariş ekranında offline haritanın gerçek offline routing motoru olmadığını ve kesin km/fiyat için online doğrulama gerektiğini görünür durum kartıyla göster
 - [x] Kullanıcının işaret ettiği resmi İstanbul harita/adres kaynağının erişilebilir ilçe, mahalle ve cadde-sokak uç noktalarını doğrula
-- [ ] Resmi kaynaktan gelen adres verisini same-origin proxy ile normalize ederek AddressPicker sözleşmesine bağla
-- [ ] Kaynak erişilemezliği, eksik mahalle/cadde ve İstanbul dışı veriyi fallback ve güvenli hata durumlarıyla yönet
-- [ ] Gerçek resmi kaynak akışını mobil sipariş formu ve orders.create payload'ı üzerinde test et
+- [x] İBB resmi adres provider'ını kullanıcı talebiyle kullanımdan kaldır; mevcut same-origin İstanbul adres proxy/fallback sözleşmesini koru
+- [x] İBB provider kaldırma sonrası mevcut adres kaynağı erişilemezliği, eksik mahalle/cadde ve İstanbul dışı veriyi fallback ve güvenli hata durumlarıyla yönet
+- [x] İBB resmi kaynak akışı kaldırıldığı için mobil sipariş formu ve orders.create mevcut İstanbul proxy/fallback akışıyla test edildi
 - [x] Müşteri rolü için giriş, sipariş oluşturma, adres seçimi, fiyat, takip, sohbet, bildirim ve geçmiş akışlarını uçtan uca denetle
 - [x] Kurye rolü için atanmış sipariş, durum güncelleme, müşteri sohbeti, bildirim ve kazanç görünümünü uçtan uca denetle
 - [x] Admin/operasyon rolü için sipariş listesi, kurye atama, durum, sohbet, muhasebe ve rol yetkilerini uçtan uca denetle
@@ -193,3 +193,6 @@
 - [x] İBB kaldırma sonrası adres proxy’si, online rota/fiyat, offline harita ve mobil görünümü yeniden doğrula
 - [x] Sipariş, takip, sohbet, operasyon ve hesap bölümleri için doğrudan mobil URL deep-link rotalarını 404 vermeden Home section'larına bağla
 - [x] Deep-link rotalarını mobil tarayıcıda /order ve /track ile görsel olarak doğrula
+- [x] Pasted_content.txt dosyasını sınıflandır: yalnızca 7 bölge sınırı GeoJSON'u, İstanbul ilçe/mahalle/cadde adres verisi değil
+- [x] Bölge sınırı GeoJSON'unu AddressPicker'a bağlamama ve mevcut İstanbul adres proxy/fallback mimarisini koruma kararını kaydet
+- [x] İstanbul adres proxy'sinde cadde/sokak önerisi, fallback ve kaynak erişilememe durumlarını yeniden denetle

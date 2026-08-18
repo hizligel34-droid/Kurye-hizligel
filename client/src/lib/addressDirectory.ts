@@ -55,6 +55,16 @@ export async function getNeighborhoods(districtId: number) {
   return cache.get(key)!;
 }
 
+export async function getStreetSuggestions(params: { district: string; neighborhood: string; query?: string }) {
+  const query = params.query?.trim() ?? "";
+  const key = `streets:${params.district}:${params.neighborhood}:${query.toLocaleLowerCase("tr-TR")}`;
+  if (!cache.has(key)) {
+    const suggestions = await get<Array<AddressOption & { district: string; neighborhood: string }>>(`/streets?district=${encodeURIComponent(params.district)}&neighborhood=${encodeURIComponent(params.neighborhood)}&q=${encodeURIComponent(query)}`);
+    cache.set(key, suggestions.map(item => ({ id: item.id, name: item.name })));
+  }
+  return cache.get(key)!;
+}
+
 export function composeStructuredAddress(parts: { province: string; district: string; neighborhood: string; street: string; detail: string }) {
   return [parts.neighborhood, parts.street, parts.detail, parts.district, parts.province].filter(Boolean).join(", ");
 }

@@ -9,6 +9,8 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateOrderFinancials, canTransitionStatus, getDb, getMessages, getOrderByTrackingCode, listNotifications, listOrders, updateUserProfile } from "./db";
 import { orders } from "../drizzle/schema";
 import { nanoid } from "nanoid";
+import { createValhallaProvider } from "./valhallaAdapter";
+import { resolveOfflineRoute } from "@shared/offlineRouting";
 
 const statusLabels = { received: "Alındı", on_the_way: "Yolda", delivered: "Teslim Edildi", cancelled: "İptal Edildi" } as const;
 export const supportedLanguages = ["tr", "en", "de", "ru", "ar", "zh", "el"] as const;
@@ -21,7 +23,7 @@ export function selectSupportReplyLanguage(customerLanguage: string | null | und
 
 type TranslationResult = { sourceLanguage: string; translatedText: string };
 
-type RoadRoute = { distanceKm: number; durationMinutes: number; pickup: { lat: number; lng: number }; delivery: { lat: number; lng: number }; status: "verified"; provider: "google_driving" };
+type RoadRoute = { distanceKm: number; durationMinutes: number; pickup: { lat: number; lng: number }; delivery: { lat: number; lng: number }; status: "verified"; provider: "google_driving" | "valhalla_offline" };
 
 async function resolveRoadRoute(pickupAddress: string, deliveryAddress: string): Promise<RoadRoute> {
   const [pickupGeo, deliveryGeo] = await Promise.all([
@@ -31,6 +33,13 @@ async function resolveRoadRoute(pickupAddress: string, deliveryAddress: string):
   const pickup = pickupGeo.results?.[0]?.geometry?.location;
   const delivery = deliveryGeo.results?.[0]?.geometry?.location;
   if (!pickup || !delivery) throw new Error("Adreslerden biri haritada bulunamadı");
+  const offlineRoute = await resolveOfflineRoute(
+    createValhallaProvider(process.env.VALHALLA_BASE_URL, fetch, process.env.VALHALLA_TILE_EXPIRES_AT),
+    pickup,
+    delivery,
+  );
+  if (offlineRoute) return offlineRoute;
+
   const directions = await makeRequest<DirectionsResult>("/maps/api/directions/json", { origin: `${pickup.lat},${pickup.lng}`, destination: `${delivery.lat},${delivery.lng}`, mode: "driving", units: "metric" });
   const leg = directions.routes?.[0]?.legs?.[0];
   if (!leg?.distance?.value || !leg.duration?.value) throw new Error("Araç rotası oluşturulamadı");

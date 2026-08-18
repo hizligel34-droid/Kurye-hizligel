@@ -38,11 +38,14 @@ export async function checkValhallaHealth(
 export function createValhallaProvider(
   baseUrl: string | undefined,
   fetchImpl: ValhallaFetch = fetch,
+  tileExpiresAt?: string,
 ): OfflineRouteProvider {
   const normalized = baseUrl?.replace(/\/$/, "");
+  const expiresAt = tileExpiresAt ? Date.parse(tileExpiresAt) : Number.NaN;
+  const isStale = Number.isFinite(expiresAt) && expiresAt <= Date.now();
 
   return {
-    state: normalized ? "ready" : "unavailable",
+    state: isStale ? "stale" : normalized ? "ready" : "unavailable",
     async route({ pickup, delivery }): Promise<OfflineRouteResult | null> {
       if (!normalized || !validPoint(pickup) || !validPoint(delivery)) return null;
 

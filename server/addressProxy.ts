@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import istanbulFallback from "./istanbulAddressFallback.json";
 
 const TURKIYE_API_BASE = "https://turkiyeapi.dev/api/v1";
+const NOMINATIM_BASE = "https://nominatim.openstreetmap.org/search";
 
 type ApiResponse<T> = { status: string; data: T };
 
@@ -30,6 +31,28 @@ function positiveInteger(value: unknown) {
 }
 
 export function registerAddressProxy(app: Express) {
+  app.get("/api/address/streets", async (req: Request, res: Response) => {
+    const district = String(req.query.district ?? "").trim();
+    const neighborhood = String(req.query.neighborhood ?? "").trim();
+    const query = String(req.query.q ?? "").trim();
+    if (!district || !neighborhood) return res.status(400).json({ error: "İlçe ve mahalle bağlamı gerekli" });
+    if (query.length > 80) return res.status(400).json({ error: "Cadde araması çok uzun" });
+    try {
+      const search = new URL(NOMINATIM_BASE);
+      search.searchParams.set("format", "jsonv2");
+      search.searchParams.set("q", [query, neighborhood, district, "İstanbul", "Türkiye"].filter(Boolean).join(", "));
+      search.searchParams.set("featuretype", "street");
+      search.searchParams.set("addressdetails", "1");
+      search.searchParams.set("limit", "8");
+      const upstream = await fetch(search, { headers: { accept: "application/json", "user-agent": "RunKurye/1.0 address search" } });
+      if (!upstream.ok) return res.json({ status: "OK", data: [] });
+      const payload = (await upstream.json()) as Array<{ osm_id?: number; display_name?: string; name?: string; type?: string }>;
+      const data = payload.map((item, index) => ({ id: item.osm_id ?? index + 1, name: item.name ?? item.display_name?.split(",")[0] ?? "", district, neighborhood })).filter(item => item.name);
+      return res.json({ status: "OK", data });
+    } catch {
+      return res.json({ status: "OK", data: [] });
+    }
+  });
   app.get("/api/address/provinces", (_req: Request, res: Response) => proxyJson("/provinces", res));
   app.get("/api/address/districts", (req: Request, res: Response) => {
     const provinceId = positiveInteger(req.query.provinceId);
