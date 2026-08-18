@@ -289,4 +289,4 @@
 - [x] Konum veya rota verisi eksik olduğunda güvenli bekleme durumunu göster
 - [x] Hız/ETA panelini mobil uyumlu, küçük ve erişilebilir tasarımla doğrula
 - [x] Hız ve ETA hesaplamaları için Vitest, TypeScript, build ve görsel denetim yap
-- [ ] Yeni hız ve ETA paneli sürümünü checkpoint olarak kaydet
+- [x] Yeni hız ve ETA paneli sürümünü checkpoint olarak kaydet
