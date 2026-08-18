@@ -299,3 +299,24 @@
 - [x] ETA panelinde kalan mesafe, trafik durumu ve son güncelleme zamanını göster
 - [x] Dinamik ETA için Vitest, TypeScript, build ve mobil görsel doğrulama yap
 - [x] Yeni dinamik ETA sürümünü checkpoint olarak kaydet
+
+
+## End-to-end demo audit
+- [ ] Uygulamayı ve canlı sunucuyu çalıştırıp loglarda mevcut hataları tespit et
+- [ ] Demo müşteriyle İstanbul örnek adreslerini tek tek oluştur ve adres doğrulamasını denetle
+- [ ] Örnek sipariş oluştur, rota/fiyat/ödeme akışını doğrula ve takip kodunu kaydet
+- [ ] Demo kurye ile siparişi kabul et, alma/yolda/teslim durumlarını sırayla ilerlet
+- [ ] Müşteri-kurye uygulama içi mesajlaşmasını iki yönde doğrula
+- [ ] Demo muhasebe, puan/başarı ve bildirim kayıtlarını doğrula
+- [ ] Bulunan eksikleri düzelt, regresyon testleri ve production build çalıştır
+- [ ] Uçtan uca demo tekrarını ve mobil görsel denetimini tamamla
+- [ ] Demo denetimi sonucunu yayınlanabilir checkpoint olarak kaydet
+
+
+## Cash on delivery
+- [x] Sipariş formuna kapıda nakit ödeme seçeneği ekle
+- [x] Sipariş backend’inde ödeme yöntemini ve teslimatta tahsil edilecek durumunu kaydet
+- [x] Kart sandbox ve kapıda nakit yöntemlerini rol/muhasebe ekranlarında doğru göster
+- [x] Kapıda nakit ödeme için sipariş, teslimat ve muhasebe regresyon testleri ekle
+- [x] TypeScript, production build ve mobil görsel denetim yap
+- [ ] Kapıda nakit ödeme sürümünü checkpoint olarak kaydet

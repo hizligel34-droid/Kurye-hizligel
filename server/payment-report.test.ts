@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { evaluateSandboxPayment, filterAndSortCourierReport } from "./db";
+import { orderCreateInputSchema } from "./routers";
 
 describe("sandbox payment", () => {
   it("approves a valid test card without real collection", () => {
@@ -7,6 +8,18 @@ describe("sandbox payment", () => {
   });
   it("declines the documented decline card", () => {
     expect(evaluateSandboxPayment({ cardNumber: "4000000000000002", amount: 600 }).status).toBe("declined");
+  });
+});
+
+describe("order payment method validation", () => {
+  const addresses = { pickupAddress: "İstanbul Kadıköy Bostancı Bağdat Caddesi 10", pickupProvince: "İstanbul", pickupDistrict: "Kadıköy", pickupNeighborhood: "Bostancı", pickupStreet: "Bağdat Caddesi", pickupAddressDetail: "No:10", deliveryAddress: "İstanbul Beşiktaş Abbasağa Ihlamur Yolu 20", deliveryProvince: "İstanbul", deliveryDistrict: "Beşiktaş", deliveryNeighborhood: "Abbasağa", deliveryStreet: "Ihlamur Yolu", deliveryAddressDetail: "No:20", productDescription: "Demo paket", customerPhone: "05550000000" };
+  it("accepts cash on delivery without a card reference", () => {
+    expect(orderCreateInputSchema.safeParse({ ...addresses, paymentMethod: "cash_on_delivery" }).success).toBe(true);
+  });
+  it("requires a sandbox reference for card orders and rejects it for cash", () => {
+    expect(orderCreateInputSchema.safeParse({ ...addresses, paymentMethod: "sandbox_card" }).success).toBe(false);
+    expect(orderCreateInputSchema.safeParse({ ...addresses, paymentMethod: "sandbox_card", paymentReference: "SANDBOX-ABC1234567" }).success).toBe(true);
+    expect(orderCreateInputSchema.safeParse({ ...addresses, paymentMethod: "cash_on_delivery", paymentReference: "SANDBOX-ABC1234567" }).success).toBe(false);
   });
 });
 
