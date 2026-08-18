@@ -6,7 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { makeRequest, type DirectionsResult, type GeocodingResult } from "./_core/map";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
+import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
 import { orders } from "../drizzle/schema";
 import { nanoid } from "nanoid";
 import { RUN_KURYE_CONTRACT_VERSION, runKuryeContractNotice, runKuryeContractSections } from "@shared/courierContract";
@@ -119,6 +119,12 @@ export const appRouter = router({
       throw new Error("Rota adresleri veya mesafe gerekli");
     }),
   }),
+  payments: router({
+    sandbox: protectedProcedure.input(z.object({ cardNumber: z.string().regex(/^[0-9 ]{12,19}$/), expiry: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/), cvv: z.string().regex(/^\d{3,4}$/), amount: z.number().positive() })).mutation(({ input }) => {
+      const result = evaluateSandboxPayment(input);
+      return result.status === "approved" ? { ...result, reference: `SANDBOX-${nanoid(10).toUpperCase()}` } : result;
+    }),
+  }),
   orders: router({
     create: protectedProcedure.input(orderCreateInputSchema).mutation(async ({ ctx, input }) => {
       validateIstanbulAddress(input);
@@ -135,7 +141,7 @@ export const appRouter = router({
     track: publicProcedure.input(z.object({ trackingCode: z.string().min(4) })).query(async ({ input }) => {
       const order = await getOrderByTrackingCode(input.trackingCode);
       if (!order) return null;
-      return { trackingCode: order.trackingCode, status: order.status, distanceKm: order.distanceKm, totalPrice: order.totalPrice, createdAt: order.createdAt, updatedAt: order.updatedAt };
+      return { trackingCode: order.trackingCode, status: order.status, distanceKm: order.distanceKm, totalPrice: order.totalPrice, routeDurationMinutes: order.routeDurationMinutes, routeStatus: order.routeStatus, createdAt: order.createdAt, updatedAt: order.updatedAt };
     }),
     updateStatus: protectedProcedure.input(z.object({ orderId: z.number(), status: z.enum(["received", "on_the_way", "delivered", "cancelled"]), courierId: z.number().optional() })).mutation(async ({ ctx, input }) => {
       if (!["admin", "courier"].includes(ctx.user.role)) throw new Error("Bu işlem için yetkiniz yok");
@@ -183,6 +189,13 @@ send: protectedProcedure.input(z.object({ orderId: z.number(), content: z.string
       if (ctx.user.role !== "courier") throw new Error("Bu başarı profili yalnızca kuryeler içindir");
       const rows = await listOrders(ctx.user.id, ctx.user.role);
       return calculateCourierAchievement(rows);
+    }),
+    report: protectedProcedure.input(z.object({ status: z.enum(["all", "received", "on_the_way", "delivered", "cancelled"]).default("all"), from: z.string().optional(), to: z.string().optional(), sortBy: z.enum(["date", "earning", "status"]).default("date"), direction: z.enum(["asc", "desc"]).default("desc") })).query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "courier") throw new Error("Detaylı rapor yalnızca kuryeler içindir");
+      const rows = await listOrders(ctx.user.id, ctx.user.role);
+      const filtered = filterAndSortCourierReport(rows, { ...input, status: input.status === "all" ? undefined : input.status });
+      const totals = filtered.reduce((sum, row) => ({ orders: sum.orders + 1, earnings: sum.earnings + Number(row.courierEarning), gross: sum.gross + Number(row.totalPrice) }), { orders: 0, earnings: 0, gross: 0 });
+      return { rows: filtered, totals };
     }),
     leaderboard: protectedProcedure.query(async ({ ctx }) => {
       if (!["admin", "accountant", "courier"].includes(ctx.user.role)) throw new Error("Liderlik tablosuna erişim yetkiniz yok");

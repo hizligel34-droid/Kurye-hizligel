@@ -250,3 +250,17 @@
 - [x] Sıralı tamamlamada çalışan kurye/müşteri paneli maddelerini kapat
 - [x] Sıralı tamamlamada takip, bildirim, dil ve hata akışlarını doğrula
 - [x] Sıralı tamamlamada yatırımcı sunumu, tam test, skill validation ve checkpoint’i kapat
+- [x] Müşteri paneline canlı sipariş durum animasyonları ve durum bildirimleri ekle
+- [x] Gerçek ödeme almayan sandbox kredi kartı test formu ve ödeme sonucu akışını ekle
+- [x] Kurye geçmiş sipariş ve kazanç raporlarını filtreleme/sıralama arayüzüyle ekle
+- [x] Üç yeni akışı güvenlik, Vitest, TypeScript, build ve mobil görsel denetiminden geçir
+
+
+## Current feature expansion
+- [x] Canlı takipte hareket/ilerleme animasyonu ve rota meta bilgilerini görünür kıl
+- [x] Sipariş akışına gerçek tahsilat yapmayan sandbox kredi kartı formu bağla
+- [x] Kurye paneline tarih/durum aralığı, sıralama ve özet metriklerle detaylı rapor ekle
+- [x] Investor deck finansal model slaytlarını final varsayımlar ve kaynak notlarıyla güncelle
+- [x] Çok dilli akış, sandbox ödeme ve canlı takip için uçtan uca regresyon denetimi
+- [x] Yeni özellikler için Vitest testleri ve production build doğrulaması
+- [ ] Yeni sürümü checkpoint olarak kaydet ve yayınlanan sürümü kullanıcıya ilet

@@ -88,6 +88,13 @@ export function canTransitionStatus(from: string, to: string) {
   return from === to;
 }
 
+export function evaluateSandboxPayment(input: { cardNumber: string; amount: number }) {
+  const digits = input.cardNumber.replace(/\s/g, "");
+  if (digits === "4000000000000002") return { status: "declined" as const, message: "Sandbox kartı reddedildi." };
+  if (digits.length < 16) return { status: "declined" as const, message: "Sandbox kart numarası geçersiz." };
+  return { status: "approved" as const, message: "Sandbox ödeme başarılı. Gerçek tahsilat yapılmadı.", amount: Number(input.amount.toFixed(2)) };
+}
+
 export function calculateOrderFinancials(distanceKm: number) {
   const safeDistance = Math.max(0, Number(distanceKm) || 0);
   const total = 600 + Math.max(0, safeDistance - 5) * 100;
@@ -100,6 +107,23 @@ export async function listOrders(userId: number, role: string) {
   if (role === 'admin' || role === 'accountant') return db.select().from(orders).orderBy(desc(orders.createdAt));
   if (role === 'courier') return db.select().from(orders).where(eq(orders.courierId, userId)).orderBy(desc(orders.createdAt));
   return db.select().from(orders).where(eq(orders.customerId, userId)).orderBy(desc(orders.createdAt));
+}
+
+export type CourierReportRow = { id: number; trackingCode: string; status: string; totalPrice: string | number; courierEarning: string | number; createdAt: Date | string | number };
+
+export function filterAndSortCourierReport(rows: CourierReportRow[], input: { status?: string; from?: string; to?: string; sortBy?: "date" | "earning" | "status"; direction?: "asc" | "desc" }) {
+  const from = input.from ? new Date(`${input.from}T00:00:00`) : null;
+  const to = input.to ? new Date(`${input.to}T23:59:59.999`) : null;
+  const filtered = rows.filter(row => {
+    const date = new Date(row.createdAt);
+    return (!input.status || row.status === input.status) && (!from || date >= from) && (!to || date <= to);
+  });
+  const direction = input.direction === "asc" ? 1 : -1;
+  return [...filtered].sort((a, b) => {
+    if (input.sortBy === "earning") return (Number(a.courierEarning) - Number(b.courierEarning)) * direction;
+    if (input.sortBy === "status") return a.status.localeCompare(b.status, "tr") * direction;
+    return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * direction;
+  });
 }
 
 export function summarizeAccountingRows(rows: Array<{ totalPrice: string | number; commission: string | number; courierEarning: string | number; companyRevenue: string | number }>, role: string) {
