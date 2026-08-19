@@ -26,4 +26,15 @@ describe("orders.create address schema", () => {
     expect(orderCreateInputSchema.safeParse({ ...valid, pickupStreet: "" }).success).toBe(false);
     expect(orderCreateInputSchema.safeParse({ ...valid, deliveryNeighborhood: "" }).success).toBe(false);
   });
+
+  it("accepts an order while a postal code lookup is unavailable", () => {
+    const parsed = orderCreateInputSchema.safeParse({
+      ...valid,
+      pickupPostalCode: "",
+      deliveryPostalCode: "",
+      paymentMethod: "cash_on_delivery",
+    });
+
+    expect(parsed.success).toBe(true);
+  });
 });

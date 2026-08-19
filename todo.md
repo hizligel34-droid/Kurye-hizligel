@@ -438,3 +438,8 @@
 - [x] Kurye profil sayfasında geçmiş teslimat tablosu ve kazanç özetini oluştur
 - [x] Kurye performans metrikleri, filtreleme ve mobil responsive görünümü ekle
 - [x] Kurye profili için test, TypeScript, production build ve görsel doğrulama yap
+
+- [x] Siteye giriş sonrası sipariş oluşturma akışındaki hatayı yeniden üret ve kök nedeni bul
+- [x] Adres, rota/fiyat ve orders.create zincirindeki sipariş gönderim hatasını düzelt
+- [x] Sipariş oluşturma regresyon testleri, TypeScript ve production build doğrulaması yap
+- [x] Tarayıcıda giriş yönlendirmesi ile sunucu tarafı örnek sipariş akışını yeniden doğrula
