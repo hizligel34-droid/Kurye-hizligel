@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isIstanbulCoordinate, validateIstanbulAddress } from "./routers";
+import { validateDeliveryAddress } from "./routers";
+import { isValidTurkeyLocation } from "./realtime";
 
-describe("İstanbul server-side scope", () => {
-  it("accepts a complete Istanbul address hierarchy", () => {
-    expect(() => validateIstanbulAddress({
+describe("Türkiye geneli adres sözleşmesi", () => {
+  it("tam bir İstanbul adres hiyerarşisini kabul eder", () => {
+    expect(() => validateDeliveryAddress({
       pickupProvince: "İstanbul",
       pickupDistrict: "Kadıköy",
       pickupNeighborhood: "Caferağa",
@@ -13,23 +14,24 @@ describe("İstanbul server-side scope", () => {
     })).not.toThrow();
   });
 
-  it("rejects a non-Istanbul province", () => {
-    expect(() => validateIstanbulAddress({
+  it("tam bir Ankara adres hiyerarşisini kabul eder", () => {
+    expect(() => validateDeliveryAddress({
       pickupProvince: "Ankara",
       pickupDistrict: "Çankaya",
       pickupNeighborhood: "Kızılay",
       deliveryProvince: "İstanbul",
       deliveryDistrict: "Beşiktaş",
       deliveryNeighborhood: "Vişnezade",
-    })).toThrow("yalnızca İstanbul");
+    })).not.toThrow();
   });
 
-  it("rejects an incomplete Istanbul hierarchy when province is supplied", () => {
-    expect(() => validateIstanbulAddress({ pickupProvince: "İstanbul", deliveryProvince: "İstanbul" })).toThrow("ilçe ve mahalle");
+  it("il seçildiğinde eksik ilçe veya mahalle bilgisini reddeder", () => {
+    expect(() => validateDeliveryAddress({ pickupProvince: "İstanbul", deliveryProvince: "İstanbul" })).toThrow("İl, ilçe ve mahalle");
   });
 
-  it("recognizes Istanbul route coordinates and rejects outside coordinates", () => {
-    expect(isIstanbulCoordinate({ lat: 41.01, lng: 28.97 })).toBe(true);
-    expect(isIstanbulCoordinate({ lat: 39.93, lng: 32.85 })).toBe(false);
+  it("Türkiye içi rota koordinatlarını kabul eder ve ülke dışını reddeder", () => {
+    expect(isValidTurkeyLocation({ lat: 41.01, lng: 28.97 })).toBe(true);
+    expect(isValidTurkeyLocation({ lat: 39.93, lng: 32.85 })).toBe(true);
+    expect(isValidTurkeyLocation({ lat: 48.85, lng: 2.35 })).toBe(false);
   });
 });

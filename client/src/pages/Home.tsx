@@ -669,8 +669,18 @@ export default function Home() {
     },
     { enabled: isOnline && routeAddressComplete }
   );
+  const deliveryCoverage = trpc.coverage.check.useQuery(
+    {
+      pickupProvince: form.pickupProvince || "Seçilmedi",
+      deliveryProvince: form.deliveryProvince || "Seçilmedi",
+      serviceType: form.serviceType,
+      routeDurationMinutes: routeEstimate.data?.durationMinutes ?? null,
+    },
+    { enabled: Boolean(form.pickupProvince && form.deliveryProvince) }
+  );
   const orderFormComplete = isOrderFormComplete(form);
-  const routeConfirmed = canConfirmOrder(routeEstimate.data?.routeStatus);
+  const coverageAvailable = deliveryCoverage.data?.isAvailable === true;
+  const routeConfirmed = canConfirmOrder(routeEstimate.data?.routeStatus) && coverageAvailable;
   const weightSurcharge = getWeightSurcharge(form.packageWeightKg);
   useEffect(() => {
     const hint = document.getElementById("weight-surcharge-hint");
@@ -715,6 +725,10 @@ export default function Home() {
   const handleCreateOrder = () => {
     if (!orderFormComplete) {
       toast.error(ORDER_FORM_INCOMPLETE_MESSAGE);
+      return;
+    }
+    if (!coverageAvailable) {
+      toast.error(deliveryCoverage.data?.message ?? "Seçilen bölgeler için hizmet kapsamı doğrulanıyor.");
       return;
     }
     createOrder.mutate({
@@ -2301,20 +2315,28 @@ export default function Home() {
                     İl, ilçe, mahalle ve sokak bilgileri araç yolundan
                     doğrulanır; kuş uçuşu mesafe kullanılmaz.
                   </p>
-                  {canConfirmOrder(routeEstimate.data?.routeStatus) ? (
+                  {canConfirmOrder(routeEstimate.data?.routeStatus) && coverageAvailable ? (
                     <p className="mt-2 font-bold text-slate-900">
                       {routeEstimate.data.distanceKm} km · yaklaşık{" "}
                       {routeEstimate.data.durationMinutes} dk · rota doğrulandı
+                      {deliveryCoverage.data?.estimatedDeliveryMinutes ? ` · teslimat yaklaşık ${deliveryCoverage.data.estimatedDeliveryMinutes} dk` : ""}
                     </p>
                   ) : (
                     <p className="mt-2 font-bold text-amber-700">
-                      {!routeAddressComplete
+                      {deliveryCoverage.data && !coverageAvailable
+                        ? deliveryCoverage.data.message
+                        : !routeAddressComplete
                         ? "Önce iki adres için ilçe, mahalle, cadde/sokak ve açık adres alanlarını doldurun."
                         : !isOnline
                           ? "Çevrim dışı: rota doğrulanmadan sipariş onaylanamaz."
                           : routeEstimate.isError
                             ? "Bu adreslerle araç rotası oluşturulamadı. Cadde/sokak ve açık adres bilgilerini kontrol edin."
                             : "Adresleri seçin; kesin fiyat için araç rotası doğrulanmalı."}
+                    </p>
+                  )}
+                  {deliveryCoverage.data && !coverageAvailable && (
+                    <p role="alert" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold leading-5 text-amber-900">
+                      Sipariş onayı bu bölge için kapalıdır. Desteklenen bir il seçin veya hizmet saatlerinde tekrar deneyin.
                     </p>
                   )}
                 </div>
@@ -2401,7 +2423,7 @@ export default function Home() {
                         variant="outline"
                         disabled={
                           !orderFormComplete ||
-                          !canConfirmOrder(routeEstimate.data?.routeStatus) ||
+                          !routeConfirmed ||
                           sandboxPayment.isPending
                         }
                         onClick={() =>
@@ -2437,13 +2459,9 @@ export default function Home() {
                         </p>
                       </div>
                       <Badge className="bg-orange-100 text-[#c9381b]">
-                        {
-                          getDeliveryEstimate({
-                            serviceType: form.serviceType,
-                            routeDurationMinutes:
-                              routeEstimate.data?.durationMinutes,
-                          }).label
-                        }
+                        {deliveryCoverage.data?.isAvailable && deliveryCoverage.data.estimatedDeliveryMinutes
+                          ? `Tahmini ${deliveryCoverage.data.estimatedDeliveryMinutes} dk`
+                          : getDeliveryEstimate({ serviceType: form.serviceType, routeDurationMinutes: routeEstimate.data?.durationMinutes }).label}
                       </Badge>
                     </div>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -2533,15 +2551,17 @@ export default function Home() {
                       createOrder.isPending ||
                       !paymentApproved ||
                       !orderFormComplete ||
-                      !canConfirmOrder(routeEstimate.data?.routeStatus)
+                      !routeConfirmed
                     }
                     onClick={handleCreateOrder}
                     className="h-12 w-full rounded-xl bg-[#e54725] text-base font-bold"
                   >
                     Siparişi onayla ·{" "}
-                    {canConfirmOrder(routeEstimate.data?.routeStatus)
-                      ? money(routeEstimate.data.total)
-                      : "rota bekleniyor"}
+                    {routeConfirmed
+                      ? money(routeEstimate.data?.total ?? 0)
+                      : coverageAvailable === false && deliveryCoverage.data
+                        ? "bölge uygun değil"
+                        : "rota bekleniyor"}
                   </Button>
                 </div>
               </CardContent>

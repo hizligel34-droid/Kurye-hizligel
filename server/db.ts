@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { CourierContract, CourierDocument, CourierOperation, InsertUser, Message, courierContracts, courierDocuments, courierOperations, messages, notifications, orders, platformSettings, savedAddresses, users } from "../drizzle/schema";
+import { CourierContract, CourierDocument, CourierOperation, InsertUser, Message, ProvinceCoverage, courierContracts, courierDocuments, courierOperations, messages, notifications, orders, platformSettings, provinceCoverage, savedAddresses, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -155,6 +155,54 @@ export async function updatePlatformFeatureSettings(userId: number, changes: Par
   };
   await db.insert(platformSettings).values({ id: 1 }).onDuplicateKeyUpdate({ set: values });
   return getPlatformFeatureSettings();
+}
+
+export type ProvinceCoverageInput = {
+  provinceName: string;
+  isEnabled: boolean;
+  operatingStart: string;
+  operatingEnd: string;
+  etaBufferMinutes: number;
+};
+
+async function ensureInitialProvinceCoverage() {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(provinceCoverage).values({ provinceName: "İstanbul", isEnabled: 1, operatingStart: "07:00", operatingEnd: "23:00", etaBufferMinutes: 25 }).onDuplicateKeyUpdate({ set: { provinceName: "İstanbul" } });
+}
+
+export async function listProvinceCoverage(): Promise<ProvinceCoverage[]> {
+  const db = await getDb();
+  if (!db) return [];
+  await ensureInitialProvinceCoverage();
+  return db.select().from(provinceCoverage).orderBy(provinceCoverage.provinceName);
+}
+
+export async function getProvinceCoverage(provinceName: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(provinceCoverage).where(eq(provinceCoverage.provinceName, provinceName.trim())).limit(1);
+  return rows[0];
+}
+
+export async function getProvinceCoverages(provinceNames: string[]) {
+  const uniqueNames = Array.from(new Set(provinceNames.map(name => name.trim()).filter(Boolean)));
+  const rows = await Promise.all(uniqueNames.map(name => getProvinceCoverage(name)));
+  return Object.fromEntries(rows.filter((row): row is ProvinceCoverage => Boolean(row)).map(row => [row.provinceName, row]));
+}
+
+export async function upsertProvinceCoverage(userId: number, input: ProvinceCoverageInput) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  const values = {
+    provinceName: input.provinceName.trim(),
+    isEnabled: input.isEnabled ? 1 : 0,
+    operatingStart: input.operatingStart,
+    operatingEnd: input.operatingEnd,
+    etaBufferMinutes: input.etaBufferMinutes,
+    updatedBy: userId,
+  };
+  await db.insert(provinceCoverage).values(values).onDuplicateKeyUpdate({ set: values });
+  return getProvinceCoverage(values.provinceName);
 }
 
 export async function listUsersForAdmin() {

@@ -112,6 +112,17 @@ export const platformSettings = mysqlTable("platformSettings", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const provinceCoverage = mysqlTable("provinceCoverage", {
+  id: int("id").autoincrement().primaryKey(),
+  provinceName: varchar("provinceName", { length: 80 }).notNull().unique(),
+  isEnabled: int("isEnabled").default(0).notNull(),
+  operatingStart: varchar("operatingStart", { length: 5 }).default("08:00").notNull(),
+  operatingEnd: varchar("operatingEnd", { length: 5 }).default("22:00").notNull(),
+  etaBufferMinutes: int("etaBufferMinutes").default(30).notNull(),
+  updatedBy: int("updatedBy"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const courierOperations = mysqlTable("courierOperations", {
   courierId: int("courierId").primaryKey(),
   availability: mysqlEnum("availability", ["offline", "available", "busy", "break"]).default("offline").notNull(),
@@ -186,6 +197,7 @@ export type Order = typeof orders.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type PricingSettings = typeof pricingSettings.$inferSelect;
 export type PlatformSettings = typeof platformSettings.$inferSelect;
+export type ProvinceCoverage = typeof provinceCoverage.$inferSelect;
 export type CourierOperation = typeof courierOperations.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type CourierContract = typeof courierContracts.$inferSelect;

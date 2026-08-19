@@ -489,3 +489,12 @@
 - [x] Eski İstanbul adres kaynaklarını kaldır ve mevcut tüm kayıtlı kullanıcı adreslerini sıfırla
 - [x] Yeni Türkiye geneli adres verisini güvenli biçimde içe aktar ve adres seçiciyi bağla
 - [x] Adres arama, posta kodu, sipariş oluşturma, test ve mobil görünüm akışlarını doğrula
+
+- [x] Sipariş, adres kaynağı ve kurye operasyon akışlarında kapsam/çalışma saati bağımlılıklarını envanterle
+- [x] İl bazlı hizmet kapsamı, çalışma saatleri ve teslimat süresi için veri modelini oluştur
+- [x] Desteklenmeyen veya kapalı bölge seçimini anında açıklayan sipariş uyarısını ekle
+- [x] Adres kaynağı güncelliği, sağlık denetimi ve güvenli manuel yenileme için yönetici ekranı ekle
+- [x] Yöneticiye il bazlı kurye kapsama alanı ve çalışma saatleri yönetimi ekle
+- [x] Sipariş sırasında il kapsamı ve çalışma saatine göre dinamik teslimat süresi göster
+- [x] Türkiye adres kapsam yönetimi sürecini yeniden kullanılabilir bir beceri paketi olarak oluştur ve doğrula
+- [x] Yeni kapsam, yönetim ve süre akışları için Vitest, TypeScript, production build ve responsive görsel doğrulama yap

@@ -2,7 +2,7 @@ export const COURIER_SERVICE_TYPES = ["standard", "pharmacy_on_call", "vip", "ma
 export type CourierServiceType = typeof COURIER_SERVICE_TYPES[number];
 
 export const COURIER_SERVICES: Record<CourierServiceType, { label: string; description: string; deliveryTargetMinutes: number; assignmentMinutes: number }> = {
-  standard: { label: "Standart kurye", description: "İstanbul içi planlı teslimat", deliveryTargetMinutes: 180, assignmentMinutes: 20 },
+  standard: { label: "Standart kurye", description: "Planlı teslimat", deliveryTargetMinutes: 180, assignmentMinutes: 20 },
   pharmacy_on_call: { label: "Nöbetçi eczane", description: "İlaç ve reçete teslimatı", deliveryTargetMinutes: 120, assignmentMinutes: 15 },
   vip: { label: "VIP kurye", description: "Öncelikli kurye ataması", deliveryTargetMinutes: 60, assignmentMinutes: 10 },
   mall: { label: "AVM kurye", description: "Mağaza ve AVM teslimatları", deliveryTargetMinutes: 180, assignmentMinutes: 20 },

@@ -20,8 +20,8 @@ type Subscriber = { response: Response; heartbeat: NodeJS.Timeout };
 const latestLocations = new Map<number, CourierLocation>();
 const subscribers = new Map<number, Set<Subscriber>>();
 
-export function isValidIstanbulLocation(location: Pick<CourierLocation, "lat" | "lng">) {
-  return Number.isFinite(location.lat) && Number.isFinite(location.lng) && location.lat >= 40.7 && location.lat <= 41.5 && location.lng >= 28.4 && location.lng <= 29.5;
+export function isValidTurkeyLocation(location: Pick<CourierLocation, "lat" | "lng">) {
+  return Number.isFinite(location.lat) && Number.isFinite(location.lng) && location.lat >= 35.5 && location.lat <= 42.5 && location.lng >= 25.5 && location.lng <= 45.5;
 }
 
 export function publishCourierLocation(location: CourierLocation) {

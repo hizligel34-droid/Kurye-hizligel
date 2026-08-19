@@ -13,6 +13,8 @@ type CacheEntry<T> = { value: T; expiresAt: number };
 
 const directoryCache = new Map<string, CacheEntry<unknown>>();
 const streetCache = new Map<string, CacheEntry<SourceStreet[]>>();
+let addressSourceLastSuccessAt: Date | null = null;
+let addressSourceLastError = "";
 
 function positiveInteger(value: unknown) {
   const parsed = Number(value);
@@ -44,7 +46,44 @@ async function fetchJsonLines<T>(path: string, cache: Map<string, CacheEntry<unk
   const body = await upstream.text();
   const rows = body.split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line) as T);
   writeCache(cache, path, rows, max);
+  addressSourceLastSuccessAt = new Date();
+  addressSourceLastError = "";
   return rows;
+}
+
+export function clearAddressSourceCache() {
+  directoryCache.clear();
+  streetCache.clear();
+}
+
+export async function getAddressSourceHealth(forceRefresh = false) {
+  if (forceRefresh) clearAddressSourceCache();
+  const checkedAt = new Date();
+  try {
+    const provinces = await getProvinces();
+    return {
+      status: "healthy" as const,
+      sourceUrl: SOURCE_BASE,
+      checkedAt,
+      lastSuccessAt: addressSourceLastSuccessAt ?? checkedAt,
+      provinceCount: provinces.length,
+      directoryCacheEntries: directoryCache.size,
+      streetCacheEntries: streetCache.size,
+      message: forceRefresh ? "Adres verisi önbelleği temizlendi ve kaynak yeniden doğrulandı." : "Adres kaynağı erişilebilir durumda.",
+    };
+  } catch (error) {
+    addressSourceLastError = error instanceof Error ? error.message : "Adres kaynağına ulaşılamadı";
+    return {
+      status: "unhealthy" as const,
+      sourceUrl: SOURCE_BASE,
+      checkedAt,
+      lastSuccessAt: addressSourceLastSuccessAt,
+      provinceCount: null,
+      directoryCacheEntries: directoryCache.size,
+      streetCacheEntries: streetCache.size,
+      message: addressSourceLastError,
+    };
+  }
 }
 
 async function getProvinces() {

@@ -134,6 +134,13 @@
       "when": 1787136321418,
       "tag": "0018_premium_paladin",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1787138852982,
+      "tag": "0019_messy_ben_grimm",
+      "breakpoints": true
     }
   ]
 }

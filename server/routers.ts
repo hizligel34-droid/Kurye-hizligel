@@ -8,15 +8,17 @@ import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { makeRequest, type DirectionsResult, type GeocodingResult } from "./_core/map";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, createSavedAddress, deleteSavedAddress, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, getPlatformFeatureSettings, getSavedAddressPreferences, listCourierOperations, listSavedAddresses, listUsersForAdmin, roadApproxDistanceKm, setSavedAddressDefault, setSavedAddressFavorite, updatePlatformFeatureSettings, updateUserRole, upsertCourierOperation, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
+import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, createSavedAddress, deleteSavedAddress, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, getPlatformFeatureSettings, getProvinceCoverages, getSavedAddressPreferences, listCourierOperations, listProvinceCoverage, listSavedAddresses, listUsersForAdmin, roadApproxDistanceKm, setSavedAddressDefault, setSavedAddressFavorite, updatePlatformFeatureSettings, updateUserRole, upsertCourierOperation, upsertProvinceCoverage, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
 import { orders, users } from "../drizzle/schema";
 import { nanoid } from "nanoid";
 import { RUN_KURYE_CONTRACT_VERSION, runKuryeContractNotice, runKuryeContractSections } from "@shared/courierContract";
 import { createValhallaProvider } from "./valhallaAdapter";
 import { resolveOfflineRoute } from "@shared/offlineRouting";
 import { storageGetSignedUrl, storagePut } from "./storage";
-import { isValidIstanbulLocation, publishCourierLocation } from "./realtime";
+import { isValidTurkeyLocation, publishCourierLocation } from "./realtime";
 import { arePickupAndDeliveryDifferent, isValidBuildingNo, isValidTurkishMobilePhone, isValidTurkishPostalCode, normalizeTurkishMobilePhone } from "@shared/orderValidation";
+import { evaluateDeliveryCoverage } from "@shared/deliveryCoverage";
+import { getAddressSourceHealth } from "./addressProxy";
 
 const courierDocumentTypes = ["identity", "license", "vehicle_registration"] as const;
 const courierDocumentContentTypes = ["image/jpeg", "image/png", "application/pdf"] as const;
@@ -88,7 +90,6 @@ async function resolveRoadRoute(pickupAddress: string, deliveryAddress: string):
   const directions = await makeRequest<DirectionsResult>("/maps/api/directions/json", { origin: `${pickup.lat},${pickup.lng}`, destination: `${delivery.lat},${delivery.lng}`, mode: "driving", units: "metric" });
   const leg = directions.routes?.[0]?.legs?.[0];
   if (!leg?.distance?.value || !leg.duration?.value) throw new Error("Araç rotası oluşturulamadı");
-  if (!isIstanbulCoordinate(pickup) || !isIstanbulCoordinate(delivery)) throw new Error("Run Courier yalnızca İstanbul içinde rota oluşturur");
   return { distanceKm: Number((leg.distance.value / 1000).toFixed(2)), durationMinutes: Number((leg.duration.value / 60).toFixed(1)), pickup, delivery, status: "verified", provider: "google_driving" };
 }
 
@@ -123,11 +124,10 @@ export async function resolveLiveTrafficSnapshot(origin: { lat: number; lng: num
   if (fallbackDistance > 0 && currentSpeedMps != null && currentSpeedMps > 0.5) return { remainingDistanceKm: fallbackDistance, etaMinutes: Math.max(1, Math.round((fallbackDistance / (currentSpeedMps * 3.6)) * 60)), trafficLevel: "unknown", trafficSource: "speed_fallback" };
   return { remainingDistanceKm: fallbackDistance, etaMinutes: null, trafficLevel: "unknown", trafficSource: fallbackDistance > 0 ? "unavailable" : "unavailable" };
 }
-export function validateIstanbulAddress(input: { pickupProvince?: string; pickupDistrict?: string; pickupNeighborhood?: string; deliveryProvince?: string; deliveryDistrict?: string; deliveryNeighborhood?: string }) {
+export function validateDeliveryAddress(input: { pickupProvince?: string; pickupDistrict?: string; pickupNeighborhood?: string; deliveryProvince?: string; deliveryDistrict?: string; deliveryNeighborhood?: string }) {
   const fields = [input.pickupProvince, input.deliveryProvince];
-  if (fields.some(value => value && value.trim().toLocaleLowerCase("tr-TR") !== "istanbul")) throw new Error("Run Courier yalnızca İstanbul içinde hizmet verir");
   const required = [input.pickupDistrict, input.pickupNeighborhood, input.deliveryDistrict, input.deliveryNeighborhood];
-  if (fields.some(Boolean) && required.some(value => !value?.trim())) throw new Error("İstanbul için ilçe ve mahalle bilgileri zorunludur");
+  if (fields.some(Boolean) && required.some(value => !value?.trim())) throw new Error("İl, ilçe ve mahalle bilgileri zorunludur");
 }
 async function translateSupportMessage(content: string, targetLanguage: string): Promise<TranslationResult> {
   const response = await invokeLLM({
@@ -179,6 +179,12 @@ export const appRouter = router({
   platform: router({
     features: publicProcedure.query(() => getPlatformFeatureSettings()),
   }),
+  coverage: router({
+    check: publicProcedure.input(z.object({ pickupProvince: z.string().trim().min(1), deliveryProvince: z.string().trim().min(1), serviceType: z.enum(["standard", "pharmacy_on_call", "vip", "mall", "airport", "express"]), routeDurationMinutes: z.number().nonnegative().nullable().optional() })).query(async ({ input }) => {
+      const coverages = await getProvinceCoverages([input.pickupProvince, input.deliveryProvince]);
+      return evaluateDeliveryCoverage({ pickupProvince: input.pickupProvince, deliveryProvince: input.deliveryProvince, pickupCoverage: coverages[input.pickupProvince], deliveryCoverage: coverages[input.deliveryProvince], serviceType: input.serviceType, routeDurationMinutes: input.routeDurationMinutes ?? null });
+    }),
+  }),
   profile: router({
     update: protectedProcedure.input(z.object({ name: z.string().min(2), phone: z.string().min(7) })).mutation(({ ctx, input }) => updateUserProfile(ctx.user.id, input)),
     addressPreferences: protectedProcedure.query(({ ctx }) => getSavedAddressPreferences(ctx.user.id)),
@@ -202,6 +208,23 @@ export const appRouter = router({
     setMemberRole: protectedProcedure.input(z.object({ userId: z.number().int().positive(), role: z.enum(["user", "courier", "store", "accountant"]) })).mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new Error("Bu işlem yalnızca yöneticiye açıktır");
       return updateUserRole(input.userId, input.role);
+    }),
+    provinceCoverage: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new Error("Bu alan yalnızca yöneticiye açıktır");
+      return listProvinceCoverage();
+    }),
+    setProvinceCoverage: protectedProcedure.input(z.object({ provinceName: z.string().trim().min(1).max(80), isEnabled: z.boolean(), operatingStart: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), operatingEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), etaBufferMinutes: z.number().int().min(0).max(180) })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new Error("Bu işlem yalnızca yöneticiye açıktır");
+      if (input.operatingStart === input.operatingEnd) throw new Error("Açılış ve kapanış saati aynı olamaz");
+      return upsertProvinceCoverage(ctx.user.id, input);
+    }),
+    addressSourceHealth: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new Error("Bu alan yalnızca yöneticiye açıktır");
+      return getAddressSourceHealth(false);
+    }),
+    refreshAddressSource: protectedProcedure.mutation(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new Error("Bu işlem yalnızca yöneticiye açıktır");
+      return getAddressSourceHealth(true);
     }),
   }),
   savedAddresses: router({
@@ -231,9 +254,13 @@ export const appRouter = router({
     create: protectedProcedure.input(orderCreateInputSchema).mutation(async ({ ctx, input }) => {
       const featureSettings = await getPlatformFeatureSettings();
       if (!featureSettings.ordersEnabled) throw new Error("Yeni sipariş alımı yönetici tarafından geçici olarak kapatıldı");
-      validateIstanbulAddress(input);
+      validateDeliveryAddress(input);
+      const coverages = await getProvinceCoverages([input.pickupProvince, input.deliveryProvince]);
+      const preflightCoverage = evaluateDeliveryCoverage({ pickupProvince: input.pickupProvince, deliveryProvince: input.deliveryProvince, pickupCoverage: coverages[input.pickupProvince], deliveryCoverage: coverages[input.deliveryProvince], serviceType: input.serviceType });
+      if (!preflightCoverage.isAvailable) throw new Error(preflightCoverage.message);
       const db = await getDb(); if (!db) throw new Error("Database unavailable");
       const route = await resolveRoadRoute(input.pickupAddress, input.deliveryAddress);
+      const deliveryCoverage = evaluateDeliveryCoverage({ pickupProvince: input.pickupProvince, deliveryProvince: input.deliveryProvince, pickupCoverage: coverages[input.pickupProvince], deliveryCoverage: coverages[input.deliveryProvince], serviceType: input.serviceType, routeDurationMinutes: route.durationMinutes });
       const financials = calculateOrderFinancials(route.distanceKm, input.packageWeightKg);
       const addressDetails = buildOrderAddressDetails(input);
       const paymentStatus = input.paymentMethod === "cash_on_delivery" ? "collect_on_delivery" as const : "paid" as const;
@@ -241,7 +268,7 @@ export const appRouter = router({
       const deliveryOtp = createDeliveryOtp();
       await db.insert(orders).values({ trackingCode, customerId: ctx.user.id, pickupAddress: input.pickupAddress, pickupProvince: addressPart(input.pickupProvince), pickupDistrict: addressPart(input.pickupDistrict), pickupNeighborhood: addressPart(input.pickupNeighborhood), pickupStreet: addressPart(input.pickupStreet), ...addressDetails, deliveryAddress: input.deliveryAddress, deliveryProvince: addressPart(input.deliveryProvince), deliveryDistrict: addressPart(input.deliveryDistrict), deliveryNeighborhood: addressPart(input.deliveryNeighborhood), deliveryStreet: addressPart(input.deliveryStreet), productDescription: input.productDescription, serviceType: input.serviceType, packageWeightKg: input.packageWeightKg.toFixed(2), customerPhone: normalizeTurkishMobilePhone(input.customerPhone), distanceKm: financials.distanceKm.toFixed(2), routeDurationMinutes: route.durationMinutes.toFixed(1), routeStatus: route.status, routeProvider: route.provider, pickupLatitude: route.pickup.lat.toFixed(7), pickupLongitude: route.pickup.lng.toFixed(7), deliveryLatitude: route.delivery.lat.toFixed(7), deliveryLongitude: route.delivery.lng.toFixed(7), totalPrice: financials.total.toFixed(2), paymentMethod: input.paymentMethod, paymentStatus, paymentReference: input.paymentReference ?? null, commission: financials.commission.toFixed(2), courierEarning: financials.courierEarning.toFixed(2), companyRevenue: financials.companyRevenue.toFixed(2), deliveryOtpHash: hashDeliveryOtp(deliveryOtp), status: "received" });
       await addNotification({ userId: ctx.user.id, title: "Siparişiniz alındı", content: `${trackingCode} numaralı siparişiniz oluşturuldu. Teslimat doğrulama kodunuz: ${deliveryOtp}. Bu kodu yalnızca paketi teslim alırken kuryeyle paylaşın. ${input.paymentMethod === "cash_on_delivery" ? "Ödeme teslimatta nakit tahsil edilecektir." : "Sandbox kart ödemesi onaylandı."}` });
-      return { trackingCode, deliveryOtp, ...financials, durationMinutes: route.durationMinutes, routeStatus: route.status, paymentMethod: input.paymentMethod, paymentStatus, status: "received" as const };
+      return { trackingCode, deliveryOtp, ...financials, durationMinutes: route.durationMinutes, deliveryEstimateMinutes: deliveryCoverage.estimatedDeliveryMinutes, routeStatus: route.status, paymentMethod: input.paymentMethod, paymentStatus, status: "received" as const };
     }),
     mine: protectedProcedure.query(({ ctx }) => listOrders(ctx.user.id, ctx.user.role)),
     track: publicProcedure.input(z.object({ trackingCode: z.string().min(4) })).query(async ({ input }) => {
@@ -253,7 +280,7 @@ export const appRouter = router({
       const { order } = await getAccessibleOrder(input.orderId, ctx.user);
       if (ctx.user.role !== "courier" || order.courierId !== ctx.user.id) throw new Error("Konum yalnızca atanmış kurye tarafından paylaşılabilir");
       if (order.status !== "on_the_way") throw new Error("Konum paylaşımı yalnızca yoldaki siparişlerde açıktır");
-      if (!isValidIstanbulLocation(input)) throw new Error("Konum İstanbul hizmet alanı dışında");
+      if (!isValidTurkeyLocation(input)) throw new Error("Konum Türkiye sınırları dışında");
       const delivery = { lat: Number(order.deliveryLatitude), lng: Number(order.deliveryLongitude) };
       const traffic = Number.isFinite(delivery.lat) && Number.isFinite(delivery.lng)
         ? await resolveLiveTrafficSnapshot({ lat: input.lat, lng: input.lng }, delivery, input.speed ?? null)
@@ -345,7 +372,7 @@ send: protectedProcedure.input(z.object({ orderId: z.number(), content: z.string
     }),
     setAvailability: protectedProcedure.input(z.object({ availability: z.enum(["offline", "available", "break"]), lat: z.number().optional(), lng: z.number().optional(), accuracy: z.number().nullable().optional() })).mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "courier") throw new Error("Müsaitlik durumunu yalnızca kurye değiştirebilir");
-      if ((input.lat != null || input.lng != null) && (!Number.isFinite(input.lat) || !Number.isFinite(input.lng) || !isValidIstanbulLocation({ lat: input.lat!, lng: input.lng! }))) throw new Error("Kurye konumu İstanbul hizmet alanı dışında");
+      if ((input.lat != null || input.lng != null) && (!Number.isFinite(input.lat) || !Number.isFinite(input.lng) || !isValidTurkeyLocation({ lat: input.lat!, lng: input.lng! }))) throw new Error("Kurye konumu Türkiye sınırları dışında");
       return upsertCourierOperation({ courierId: ctx.user.id, availability: input.availability, lat: input.lat, lng: input.lng, accuracy: input.accuracy ?? null });
     }),
     operations: protectedProcedure.query(async ({ ctx }) => {

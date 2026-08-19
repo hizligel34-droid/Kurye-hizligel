@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { getLatestCourierLocation, isValidIstanbulLocation, publishCourierLocation, subscribeToCourierLocation } from "./realtime";
+import { getLatestCourierLocation, isValidTurkeyLocation, publishCourierLocation, subscribeToCourierLocation } from "./realtime";
 
 describe("realtime courier location", () => {
-  it("yalnızca İstanbul hizmet alanındaki koordinatları kabul eder", () => {
-    expect(isValidIstanbulLocation({ lat: 41.0082, lng: 28.9784 })).toBe(true);
-    expect(isValidIstanbulLocation({ lat: 39.9334, lng: 32.8597 })).toBe(false);
-    expect(isValidIstanbulLocation({ lat: Number.NaN, lng: 28.9784 })).toBe(false);
+  it("Türkiye sınırlarındaki koordinatları kabul eder", () => {
+    expect(isValidTurkeyLocation({ lat: 41.0082, lng: 28.9784 })).toBe(true);
+    expect(isValidTurkeyLocation({ lat: 39.9334, lng: 32.8597 })).toBe(true);
+    expect(isValidTurkeyLocation({ lat: 48.8566, lng: 2.3522 })).toBe(false);
+    expect(isValidTurkeyLocation({ lat: Number.NaN, lng: 28.9784 })).toBe(false);
   });
 
   it("son konumu yayınlar ve sonraki SSE abonelerine hazırlar", () => {
