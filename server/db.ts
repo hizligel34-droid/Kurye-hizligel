@@ -236,10 +236,21 @@ export async function getMessages(orderId: number) {
   return db.select().from(messages).where(eq(messages.orderId, orderId)).orderBy(messages.createdAt);
 }
 
-export function buildOrderAddressDetails(input: { pickupAddressDetail?: string; deliveryAddressDetail?: string; pickupBuildingNo?: string; deliveryBuildingNo?: string }) {
+export function buildOrderAddressDetails(input: { pickupAddressDetail?: string; deliveryAddressDetail?: string; pickupBuildingNo?: string; deliveryBuildingNo?: string; pickupApartmentNo?: string; deliveryApartmentNo?: string; pickupFloor?: string; deliveryFloor?: string; pickupCourierNote?: string; deliveryCourierNote?: string }) {
   const normalize = (value: string | undefined) => (value ?? "Belirtilmedi").trim().slice(0, 240) || "Belirtilmedi";
-  const building = (value: string | undefined) => (value ?? "").trim().slice(0, 30);
-  return { pickupAddressDetail: normalize(input.pickupAddressDetail), deliveryAddressDetail: normalize(input.deliveryAddressDetail), pickupBuildingNo: building(input.pickupBuildingNo), deliveryBuildingNo: building(input.deliveryBuildingNo) };
+  const optional = (value: string | undefined, max: number) => (value ?? "").trim().slice(0, max);
+  return {
+    pickupAddressDetail: normalize(input.pickupAddressDetail),
+    deliveryAddressDetail: normalize(input.deliveryAddressDetail),
+    pickupBuildingNo: optional(input.pickupBuildingNo, 30),
+    deliveryBuildingNo: optional(input.deliveryBuildingNo, 30),
+    pickupApartmentNo: optional(input.pickupApartmentNo, 30),
+    deliveryApartmentNo: optional(input.deliveryApartmentNo, 30),
+    pickupFloor: optional(input.pickupFloor, 20),
+    deliveryFloor: optional(input.deliveryFloor, 20),
+    pickupCourierNote: optional(input.pickupCourierNote, 500),
+    deliveryCourierNote: optional(input.deliveryCourierNote, 500),
+  };
 }
 
 export function buildSupportMessagePayload(input: { orderId: number; senderId?: number; senderRole: Message['senderRole']; content: string; detectedLanguage: string; translatedContent: string; attachmentKey?: string | null; attachmentUrl?: string | null; attachmentContentType?: string | null; attachmentName?: string | null; attachmentSizeBytes?: number | null }) {

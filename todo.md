@@ -384,3 +384,8 @@
 - [x] v7 adres dizini ile mevcut İstanbul-only adres akışı arasındaki farkları incele
 - [x] Uyarlanabilir v7 adres dizini özelliklerini adres seçimi ve rota akışına entegre et
 - [x] v7 adres dizini için adres, rota/fiyat, test, TypeScript, build ve mobil doğrulama yap
+
+- [x] Alış ve teslim adreslerine daire numarası, kat bilgisi ve kurye özel teslimat notu alanlarını ekle
+- [x] Yeni alanları orders şeması, sipariş doğrulaması ve backend kayıt akışına bağla
+- [x] Yeni adres alanlarını mobil formda göster ve sipariş özetinde doğru taşı
+- [x] Yeni alanlar için migration, test, TypeScript, build ve mobil görsel doğrulaması yap

@@ -5,6 +5,9 @@ export type OrderFormFields = {
   pickupNeighborhood: string;
   pickupStreet: string;
   pickupBuildingNo: string;
+  pickupApartmentNo: string;
+  pickupFloor: string;
+  pickupCourierNote: string;
   pickupAddressDetail: string;
   deliveryAddress: string;
   deliveryProvince: string;
@@ -12,6 +15,9 @@ export type OrderFormFields = {
   deliveryNeighborhood: string;
   deliveryStreet: string;
   deliveryBuildingNo: string;
+  deliveryApartmentNo: string;
+  deliveryFloor: string;
+  deliveryCourierNote: string;
   deliveryAddressDetail: string;
   productDescription: string;
   customerPhone: string;
@@ -20,6 +26,9 @@ export type OrderFormFields = {
 export const ORDER_PRODUCT_DESCRIPTION_MAX = 500;
 export const ORDER_ADDRESS_DETAIL_MAX = 240;
 export const ORDER_BUILDING_NO_MAX = 30;
+export const ORDER_APARTMENT_NO_MAX = 30;
+export const ORDER_FLOOR_MAX = 20;
+export const ORDER_COURIER_NOTE_MAX = 500;
 
 export function normalizeTurkishMobilePhone(value: string) {
   const digits = value.replace(/\D/g, "");
@@ -63,6 +72,12 @@ export function isOrderFormComplete(form: OrderFormFields) {
   return required.every(value => value.trim().length > 0)
     && isValidBuildingNo(form.pickupBuildingNo)
     && isValidBuildingNo(form.deliveryBuildingNo)
+    && (form.pickupApartmentNo ?? "").length <= ORDER_APARTMENT_NO_MAX
+    && (form.deliveryApartmentNo ?? "").length <= ORDER_APARTMENT_NO_MAX
+    && (form.pickupFloor ?? "").length <= ORDER_FLOOR_MAX
+    && (form.deliveryFloor ?? "").length <= ORDER_FLOOR_MAX
+    && (form.pickupCourierNote ?? "").length <= ORDER_COURIER_NOTE_MAX
+    && (form.deliveryCourierNote ?? "").length <= ORDER_COURIER_NOTE_MAX
     && form.pickupAddressDetail.length <= ORDER_ADDRESS_DETAIL_MAX
     && form.deliveryAddressDetail.length <= ORDER_ADDRESS_DETAIL_MAX
     && form.productDescription.trim().length >= 2

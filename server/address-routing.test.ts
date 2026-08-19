@@ -16,8 +16,8 @@ describe("Run Kurye address and offline routing", () => {
   });
 
   it("keeps pickup and delivery detail fields in the order persistence payload", () => {
-    expect(buildOrderAddressDetails({ pickupAddressDetail: "No: 10", deliveryAddressDetail: "D: 4", pickupBuildingNo: "10", deliveryBuildingNo: "4" })).toEqual({ pickupAddressDetail: "No: 10", deliveryAddressDetail: "D: 4", pickupBuildingNo: "10", deliveryBuildingNo: "4" });
-    expect(buildOrderAddressDetails({})).toEqual({ pickupAddressDetail: "Belirtilmedi", deliveryAddressDetail: "Belirtilmedi", pickupBuildingNo: "", deliveryBuildingNo: "" });
+    expect(buildOrderAddressDetails({ pickupAddressDetail: "No: 10", deliveryAddressDetail: "D: 4", pickupBuildingNo: "10", deliveryBuildingNo: "4", pickupApartmentNo: "2", deliveryFloor: "5", deliveryCourierNote: "Güvenliğe bırakmayın" })).toEqual({ pickupAddressDetail: "No: 10", deliveryAddressDetail: "D: 4", pickupBuildingNo: "10", deliveryBuildingNo: "4", pickupApartmentNo: "2", deliveryApartmentNo: "", pickupFloor: "", deliveryFloor: "5", pickupCourierNote: "", deliveryCourierNote: "Güvenliğe bırakmayın" });
+    expect(buildOrderAddressDetails({})).toEqual({ pickupAddressDetail: "Belirtilmedi", deliveryAddressDetail: "Belirtilmedi", pickupBuildingNo: "", deliveryBuildingNo: "", pickupApartmentNo: "", deliveryApartmentNo: "", pickupFloor: "", deliveryFloor: "", pickupCourierNote: "", deliveryCourierNote: "" });
   });
 
   it("combines verified road distance pricing with the fixed 20 percent commission", () => {
