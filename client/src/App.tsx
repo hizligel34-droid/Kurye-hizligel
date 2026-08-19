@@ -7,9 +7,10 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Demo from "@/pages/Demo";
 import AdsReport from "@/pages/AdsReport";
+import CourierProfile from "@/pages/CourierProfile";
 
 function Router() {
-  return <Switch><Route path="/" component={Home}/><Route path="/order" component={Home}/><Route path="/track" component={Home}/><Route path="/demo" component={Demo}/><Route path="/ads-report" component={AdsReport}/><Route path="/chat" component={Home}/><Route path="/panel" component={Home}/><Route path="/account" component={Home}/><Route path="/404" component={NotFound}/><Route component={NotFound}/></Switch>;
+  return <Switch><Route path="/" component={Home}/><Route path="/order" component={Home}/><Route path="/track" component={Home}/><Route path="/demo" component={Demo}/><Route path="/ads-report" component={AdsReport}/><Route path="/courier-profile" component={CourierProfile}/><Route path="/chat" component={Home}/><Route path="/panel" component={Home}/><Route path="/account" component={Home}/><Route path="/404" component={NotFound}/><Route component={NotFound}/></Switch>;
 }
 
 export default function App() {

@@ -158,7 +158,7 @@ export async function listOrders(userId: number, role: string) {
   return db.select().from(orders).where(eq(orders.customerId, userId)).orderBy(desc(orders.createdAt));
 }
 
-export type CourierReportRow = { id: number; trackingCode: string; status: string; totalPrice: string | number; courierEarning: string | number; createdAt: Date | string | number };
+export type CourierReportRow = { id: number; trackingCode: string; status: string; totalPrice: string | number; courierEarning: string | number; createdAt: Date | string | number; pickupAddress?: string; deliveryAddress?: string; routeDurationMinutes?: string | number | null };
 
 export function filterAndSortCourierReport(rows: CourierReportRow[], input: { status?: string; from?: string; to?: string; sortBy?: "date" | "earning" | "status"; direction?: "asc" | "desc" }) {
   const from = input.from ? new Date(`${input.from}T00:00:00`) : null;

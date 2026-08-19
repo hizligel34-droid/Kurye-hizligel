@@ -433,3 +433,8 @@
 - [x] Mevcut Run Courier sürümünü boş Kurye-hizligel GitHub deposuna aktar
 - [x] Aktarılan depoda bağımlılık, test ve production build doğrulaması yap
 - [x] GitHub commit/push ve canlı dağıtım durumunu doğrula
+
+- [x] Kurye profil özeti için teslimat, kazanç ve performans veri akışını ekle
+- [x] Kurye profil sayfasında geçmiş teslimat tablosu ve kazanç özetini oluştur
+- [x] Kurye performans metrikleri, filtreleme ve mobil responsive görünümü ekle
+- [x] Kurye profili için test, TypeScript, production build ve görsel doğrulama yap
