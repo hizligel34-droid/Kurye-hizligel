@@ -404,17 +404,17 @@
 - [x] Posta kodu alanını kayıtlı adres, sipariş doğrulaması ve adres formuna entegre et
 - [x] Veri aktarımı, test, TypeScript, production build ve mobil adres akışını doğrula
 
-- [ ] İlçe ve mahalle seçimine göre Kaggle posta kodu eşleştirme yardımcısı oluştur
-- [ ] Adres formunda eşleşen posta kodunu otomatik doldur ve manuel fallback’i koru
-- [ ] Otomatik posta kodu akışı için test, TypeScript, production build ve mobil görünüm doğrulaması yap
+- [x] İlçe ve mahalle seçimine göre Kaggle posta kodu eşleştirme yardımcısı oluştur
+- [x] Adres formunda eşleşen posta kodunu otomatik doldur ve manuel fallback’i koru
+- [x] Otomatik posta kodu akışı için test, TypeScript, production build ve mobil görünüm doğrulaması yap
 
-- [ ] Google Workspace bağlayıcısını Run Courier çalışma akışı için etkinleştir ve yetkilendir
-- [ ] Drive/Docs/Sheets salt-okuma örnek verisiyle bağlantıyı test et
-- [ ] Run Courier için güvenli bir Workspace kullanım senaryosu ve doğrulama notu hazırla
+- [x] Google Workspace bağlayıcısını Run Courier çalışma akışı için etkinleştir ve yetkilendir
+- [x] Drive/Docs/Sheets salt-okuma örnek verisiyle bağlantıyı test et
+- [x] Run Courier için güvenli bir Workspace kullanım senaryosu ve doğrulama notu hazırla
 
-- [ ] Google Ads bağlayıcısının etkinlik ve yetkilendirme durumunu kontrol et
-- [ ] Run Courier bağlamında Google Ads salt-okuma hesap/kampanya sorgusu çalıştır
-- [ ] Google Ads kabiliyetleri ve test sonucunu Run Courier kullanım örneğiyle belgele
+- [x] Google Ads bağlayıcısının etkinlik ve yetkilendirme durumunu kontrol et
+- [x] Run Courier bağlamında Google Ads salt-okuma hesap/kampanya sorgusunu dene ve NOT_ADS_USER yetki hatasını doğrula
+- [x] Google Ads kabiliyetleri ve test sonucunu Run Courier kullanım örneğiyle belgele
 
 - [x] Run Courier için Google Ads performans KPI’larını ve geçerli GAQL alanlarını belirle
 - [x] Günlük kampanya performansı için tarih parametreli salt-okuma GAQL sorgusu hazırla
