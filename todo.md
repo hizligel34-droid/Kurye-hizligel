@@ -353,19 +353,19 @@
 
 
 ## Uploaded secure-delivery archive adaptation
-- [ ] Yüklenen run-kurye-v5-guvenli-teslimat.zip arşivini güvenli biçimde aç ve dosya envanteri çıkar
-- [ ] Arşivdeki güvenli teslimat modüllerini mevcut proje ile karşılaştır
-- [ ] Uyarlanabilir güvenli teslimat özelliklerini Run Kurye’ye entegre et
-- [ ] Uyarlanan özellikleri güvenlik, test, TypeScript, build ve görsel denetimden geçir
-- [ ] Uyarlanmış sürümü checkpoint olarak kaydet
+- [x] Yüklenen run-kurye-v5-guvenli-teslimat.zip arşivini güvenli biçimde aç ve dosya envanteri çıkar
+- [x] Arşivdeki güvenli teslimat modüllerini mevcut proje ile karşılaştır
+- [x] Uyarlanabilir güvenli teslimat özelliklerini Run Kurye’ye entegre et
+- [x] Uyarlanan özellikleri güvenlik, test, TypeScript, build ve görsel denetimden geçir
+- [x] Uyarlanmış sürümü checkpoint olarak kaydet
 
 
 ## Uploaded secure-delivery archive adaptation
-- [ ] Yüklenen run-kurye-v5-guvenli-teslimat.zip arşivini güvenli biçimde aç ve dosya envanteri çıkar
-- [ ] Arşivdeki güvenli teslimat modüllerini mevcut proje ile karşılaştır
-- [ ] Uyarlanabilir güvenli teslimat özelliklerini Run Kurye’ye entegre et
-- [ ] Uyarlanan özellikleri güvenlik, test, TypeScript, build ve görsel denetimden geçir
-- [ ] Uyarlanmış sürümü checkpoint olarak kaydet
+- [x] Yüklenen run-kurye-v5-guvenli-teslimat.zip arşivini güvenli biçimde aç ve dosya envanteri çıkar
+- [x] Arşivdeki güvenli teslimat modüllerini mevcut proje ile karşılaştır
+- [x] Uyarlanabilir güvenli teslimat özelliklerini Run Kurye’ye entegre et
+- [x] Uyarlanan özellikleri güvenlik, test, TypeScript, build ve görsel denetimden geçir
+- [x] Uyarlanmış sürümü checkpoint olarak kaydet
 
 - [x] Secure Delivery: arşivdeki OTP, teslim fotoğrafı ve teslim kanıtı alanlarını mevcut sipariş şemasına uyarlama
 - [x] Secure Delivery: teslim fotoğrafı yükleme ve OTP doğrulamalı teslim tamamlama prosedürlerini ekleme
