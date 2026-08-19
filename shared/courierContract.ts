@@ -3,11 +3,11 @@ export const RUN_KURYE_CONTRACT_VERSION = "2026-08-18-v1";
 export const runKuryeContractSections = [
   {
     title: "1. Taraflar",
-    body: "Hizmet Alan: Run Kurye platformunu işleten firma. Hizmet Veren: Kurye üyeliği kapsamında kendi adına hizmet sunan bağımsız kurye.",
+    body: "Hizmet Alan: Run Courier platformunu işleten firma. Hizmet Veren: Kurye üyeliği kapsamında kendi adına hizmet sunan bağımsız kurye.",
   },
   {
     title: "2. Sözleşmenin konusu",
-    body: "Bu sözleşme, İstanbul ili sınırları içinde Run Kurye üzerinden yönlendirilen paket, evrak, gıda ve benzeri gönderilerin alınması, taşınması ve alıcıya teslim edilmesine ilişkin hizmet koşullarını düzenler.",
+    body: "Bu sözleşme, İstanbul ili sınırları içinde Run Courier üzerinden yönlendirilen paket, evrak, gıda ve benzeri gönderilerin alınması, taşınması ve alıcıya teslim edilmesine ilişkin hizmet koşullarını düzenler.",
   },
   {
     title: "3. Kuryenin yükümlülükleri",
@@ -15,11 +15,11 @@ export const runKuryeContractSections = [
   },
   {
     title: "4. Firma ve platform yükümlülükleri",
-    body: "Run Kurye, doğrulanmış sipariş bilgilerini ve teslimat akışını kurye hesabına sunar. Paketlerin dağıtıma uygun hazırlanması ve müşteri bilgilerinin yalnızca teslimat amacıyla kullanılması esastır.",
+    body: "Run Courier, doğrulanmış sipariş bilgilerini ve teslimat akışını kurye hesabına sunar. Paketlerin dağıtıma uygun hazırlanması ve müşteri bilgilerinin yalnızca teslimat amacıyla kullanılması esastır.",
   },
   {
     title: "5. Hizmet bedeli ve ödeme",
-    body: "Kurye kazancı, Run Kurye sipariş kaydında hesaplanan hizmet bedeli ve platformun yürürlükteki komisyon/ödeme kuralları üzerinden belirlenir. Ödeme dönemi ve faturalandırma bilgileri kurye hesabında ayrıca gösterilir. Vergi, fatura ve sosyal güvenlik yükümlülükleri tarafların hukuki statüsüne göre ilgili tarafa aittir.",
+    body: "Kurye kazancı, Run Courier sipariş kaydında hesaplanan hizmet bedeli ve platformun yürürlükteki komisyon/ödeme kuralları üzerinden belirlenir. Ödeme dönemi ve faturalandırma bilgileri kurye hesabında ayrıca gösterilir. Vergi, fatura ve sosyal güvenlik yükümlülükleri tarafların hukuki statüsüne göre ilgili tarafa aittir.",
   },
   {
     title: "6. Gizlilik ve kişisel veriler",
@@ -31,8 +31,8 @@ export const runKuryeContractSections = [
   },
   {
     title: "8. Yetki ve kapsam",
-    body: "Hizmet alanı İstanbul ili sınırlarıyla sınırlıdır. Uyuşmazlıklarda, emredici yetki kuralları saklı kalmak üzere Run Kurye işletmesinin kayıtlı merkezinin bulunduğu yer mahkemeleri ve icra daireleri yetkilidir.",
+    body: "Hizmet alanı İstanbul ili sınırlarıyla sınırlıdır. Uyuşmazlıklarda, emredici yetki kuralları saklı kalmak üzere Run Courier işletmesinin kayıtlı merkezinin bulunduğu yer mahkemeleri ve icra daireleri yetkilidir.",
   },
 ] as const;
 
-export const runKuryeContractNotice = "Bu metin Run Kurye için çalışma taslağıdır; yürürlüğe almadan önce Türkiye’de sözleşmeler ve kişisel veriler konusunda yetkin bir avukat tarafından incelenmelidir.";
+export const runKuryeContractNotice = "Bu metin Run Courier için çalışma taslağıdır; yürürlüğe almadan önce Türkiye’de sözleşmeler ve kişisel veriler konusunda yetkin bir avukat tarafından incelenmelidir.";

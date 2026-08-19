@@ -394,3 +394,7 @@
 - [x] Kayıtlı adresleri listeleme, ekleme ve silme tRPC prosedürlerini yetki kontrolleriyle ekle
 - [x] Sipariş formuna kaydetme seçeneği ve kayıtlı adresleri tek tıkla seçme arayüzü ekle
 - [x] Kayıtlı adres defteri için doğrulama, test, TypeScript, build ve mobil görünüm doğrulaması yap
+
+- [x] Site marka adını Run Courier olarak güncelle
+- [x] Logo metni, tarayıcı başlığı ve uygulama görünen adını Run Courier ile senkronize et
+- [x] Marka değişikliğini test, build ve başlık doğrulamasıyla kontrol et

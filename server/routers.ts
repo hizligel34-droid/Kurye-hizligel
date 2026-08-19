@@ -87,7 +87,7 @@ async function resolveRoadRoute(pickupAddress: string, deliveryAddress: string):
   const directions = await makeRequest<DirectionsResult>("/maps/api/directions/json", { origin: `${pickup.lat},${pickup.lng}`, destination: `${delivery.lat},${delivery.lng}`, mode: "driving", units: "metric" });
   const leg = directions.routes?.[0]?.legs?.[0];
   if (!leg?.distance?.value || !leg.duration?.value) throw new Error("Araç rotası oluşturulamadı");
-  if (!isIstanbulCoordinate(pickup) || !isIstanbulCoordinate(delivery)) throw new Error("Run Kurye yalnızca İstanbul içinde rota oluşturur");
+  if (!isIstanbulCoordinate(pickup) || !isIstanbulCoordinate(delivery)) throw new Error("Run Courier yalnızca İstanbul içinde rota oluşturur");
   return { distanceKm: Number((leg.distance.value / 1000).toFixed(2)), durationMinutes: Number((leg.duration.value / 60).toFixed(1)), pickup, delivery, status: "verified", provider: "google_driving" };
 }
 
@@ -124,14 +124,14 @@ export async function resolveLiveTrafficSnapshot(origin: { lat: number; lng: num
 }
 export function validateIstanbulAddress(input: { pickupProvince?: string; pickupDistrict?: string; pickupNeighborhood?: string; deliveryProvince?: string; deliveryDistrict?: string; deliveryNeighborhood?: string }) {
   const fields = [input.pickupProvince, input.deliveryProvince];
-  if (fields.some(value => value && value.trim().toLocaleLowerCase("tr-TR") !== "istanbul")) throw new Error("Run Kurye yalnızca İstanbul içinde hizmet verir");
+  if (fields.some(value => value && value.trim().toLocaleLowerCase("tr-TR") !== "istanbul")) throw new Error("Run Courier yalnızca İstanbul içinde hizmet verir");
   const required = [input.pickupDistrict, input.pickupNeighborhood, input.deliveryDistrict, input.deliveryNeighborhood];
   if (fields.some(Boolean) && required.some(value => !value?.trim())) throw new Error("İstanbul için ilçe ve mahalle bilgileri zorunludur");
 }
 async function translateSupportMessage(content: string, targetLanguage: string): Promise<TranslationResult> {
   const response = await invokeLLM({
     messages: [
-      { role: "system", content: `You are Run Kurye's professional support translator. Detect the source language and translate faithfully into the target language code. Supported codes: tr Turkish, en English, de German, ru Russian, ar Arabic, zh Simplified Chinese, el Greek. Preserve order numbers, prices, addresses, names, and formatting. Return JSON only.` },
+      { role: "system", content: `You are Run Courier's professional support translator. Detect the source language and translate faithfully into the target language code. Supported codes: tr Turkish, en English, de German, ru Russian, ar Arabic, zh Simplified Chinese, el Greek. Preserve order numbers, prices, addresses, names, and formatting. Return JSON only.` },
       { role: "user", content: `Target language: ${targetLanguage}\nMessage: ${content}` },
     ],
     response_format: { type: "json_schema", json_schema: { name: "support_translation", strict: true, schema: { type: "object", properties: { sourceLanguage: { type: "string" }, translatedText: { type: "string" } }, required: ["sourceLanguage", "translatedText"], additionalProperties: false } } },
@@ -291,11 +291,11 @@ send: protectedProcedure.input(z.object({ orderId: z.number(), content: z.string
     assistant: publicProcedure.input(z.object({ question: z.string().min(2), trackingCode: z.string().optional() })).mutation(async ({ input }) => {
       const context = input.trackingCode ? await getOrderByTrackingCode(input.trackingCode) : undefined;
       const response = await invokeLLM({ messages: [
-        { role: "system", content: "Sen Run Kurye müşteri destek asistanısın. Türkçe yanıt ver. Fiyatlandırma değişmez: 600 TL açılış ücreti ilk 5 km dahil, 5 km sonrası her km 100 TL. Komisyon oranı sistemde sabit %20'dir. Sipariş durumunu yalnızca verilen veriden söyle; kişisel veri isteme ve kesin olmayan teslimat süresi için tahmin olduğunu belirt." },
+        { role: "system", content: "Sen Run Courier müşteri destek asistanısın. Türkçe yanıt ver. Fiyatlandırma değişmez: 600 TL açılış ücreti ilk 5 km dahil, 5 km sonrası her km 100 TL. Komisyon oranı sistemde sabit %20'dir. Sipariş durumunu yalnızca verilen veriden söyle; kişisel veri isteme ve kesin olmayan teslimat süresi için tahmin olduğunu belirt." },
         { role: "user", content: `Müşteri sorusu: ${input.question}\nSipariş verisi: ${context ? JSON.stringify({ trackingCode: context.trackingCode, status: statusLabels[context.status], distanceKm: context.distanceKm, totalPrice: context.totalPrice }) : "Yok"}` },
       ] });
       const content = response.choices?.[0]?.message?.content;
-      return { answer: typeof content === "string" ? content : "Run Kurye destek ekibi size yardımcı olacaktır." };
+      return { answer: typeof content === "string" ? content : "Run Courier destek ekibi size yardımcı olacaktır." };
     }),
   }),
   notifications: router({ list: protectedProcedure.query(({ ctx }) => listNotifications(ctx.user.id)) }),
