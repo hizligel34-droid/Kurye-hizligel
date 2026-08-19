@@ -424,3 +424,12 @@
 - [x] Kampanya KPI kartları, günlük performans grafiği ve detay tablosu oluştur
 - [x] Dashboard route/navigation, hata/boş/yetki durumları ve mobil uyumluluğu ekle
 - [x] Google Ads dashboardu için Vitest, TypeScript, production build ve görsel doğrulama yap
+
+- [x] Kurye-hizligel GitHub deposunu klonla ve teknoloji/çalıştırma yapısını incele
+- [x] Depodaki bağımlılık, derleme ve çalışma hatalarını tespit et
+- [x] Tespit edilen hataları düzeltip test ve production build çalıştır
+- [x] Düzeltilmiş depoyu çalıştırıp erişilebilirlik ve dağıtım durumunu doğrula
+
+- [x] Mevcut Run Courier sürümünü boş Kurye-hizligel GitHub deposuna aktar
+- [x] Aktarılan depoda bağımlılık, test ve production build doğrulaması yap
+- [x] GitHub commit/push ve canlı dağıtım durumunu doğrula
