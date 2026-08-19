@@ -2,57 +2,427 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { OFFLINE_MAP_PACKAGES, downloadOfflinePackage, getOfflinePackageDownloadUrl, getOfflinePackageInfo, hasOfflinePackage, storeOfflinePackage } from "@/lib/offlinePackages";
-import { composeStructuredAddress, getDistricts, getNeighborhoods, getPostalCodeForNeighborhood, getStreetSuggestions, ISTANBUL_PROVINCE_ID, type AddressOption } from "@/lib/addressDirectory";
+import {
+  OFFLINE_MAP_PACKAGES,
+  downloadOfflinePackage,
+  getOfflinePackageDownloadUrl,
+  getOfflinePackageInfo,
+  hasOfflinePackage,
+  storeOfflinePackage,
+} from "@/lib/offlinePackages";
+import {
+  composeStructuredAddress,
+  getDistricts,
+  getNeighborhoods,
+  getPostalCodeForAddressOption,
+  getProvinces,
+  getStreetSuggestions,
+  type AddressOption,
+} from "@/lib/addressDirectory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowRight, Award, Bell, Bike, Calculator, CheckCircle2, Clock3, FileUp, Headphones, MapPin, MessageCircle, Package, RotateCcw, ShieldCheck, Sparkles, Star, Truck, WalletCards, X, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ArrowRight,
+  Award,
+  Bell,
+  Bike,
+  Calculator,
+  CheckCircle2,
+  Clock3,
+  FileUp,
+  Headphones,
+  MapPin,
+  MessageCircle,
+  Package,
+  RotateCcw,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Truck,
+  WalletCards,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import { toast } from "sonner";
 import { canConfirmOrder } from "@shared/routing";
-import { isOrderFormComplete, isRouteAddressComplete, isValidTurkishMobilePhone, normalizeTurkishMobilePhone, ORDER_ADDRESS_DETAIL_MAX, ORDER_BUILDING_NO_MAX, ORDER_FORM_INCOMPLETE_MESSAGE, ORDER_PRODUCT_DESCRIPTION_MAX } from "@shared/orderValidation";
+import {
+  isOrderFormComplete,
+  isRouteAddressComplete,
+  isValidTurkishMobilePhone,
+  normalizeTurkishMobilePhone,
+  ORDER_ADDRESS_DETAIL_MAX,
+  ORDER_BUILDING_NO_MAX,
+  ORDER_FORM_INCOMPLETE_MESSAGE,
+  ORDER_PRODUCT_DESCRIPTION_MAX,
+} from "@shared/orderValidation";
 import { OfflineIstanbulMap } from "@/components/OfflineIstanbulMap";
 import { Progress } from "@/components/ui/progress";
-import { getStoredLanguage, supportedLanguages, translations, type LanguageCode } from "@/lib/i18n";
+import {
+  getStoredLanguage,
+  supportedLanguages,
+  translations,
+  type LanguageCode,
+} from "@/lib/i18n";
 import { getChatTemplates } from "@/lib/chatTemplates";
-import { etaMinutesFromRoute, speedKmhFromMetersPerSecond } from "@/lib/courierEta";
-import { getOrderProgressPercent, getOrderProgressSteps } from "@shared/orderExperience";
-import { COURIER_SERVICES, COURIER_SERVICE_TYPES, getDeliveryEstimate, getWeightSurcharge, type CourierServiceType } from "@shared/courierServices";
+import {
+  etaMinutesFromRoute,
+  speedKmhFromMetersPerSecond,
+} from "@/lib/courierEta";
+import {
+  getOrderProgressPercent,
+  getOrderProgressSteps,
+} from "@shared/orderExperience";
+import {
+  COURIER_SERVICES,
+  COURIER_SERVICE_TYPES,
+  getDeliveryEstimate,
+  getWeightSurcharge,
+  type CourierServiceType,
+} from "@shared/courierServices";
 
-const statusText = { received: "Alındı", on_the_way: "Yolda", delivered: "Teslim Edildi", cancelled: "İptal Edildi" } as const;
-const money = (value: number | string) => `${Number(value).toLocaleString("tr-TR")} TL`;
+const statusText = {
+  received: "Alındı",
+  on_the_way: "Yolda",
+  delivered: "Teslim Edildi",
+  cancelled: "İptal Edildi",
+} as const;
+const money = (value: number | string) =>
+  `${Number(value).toLocaleString("tr-TR")} TL`;
 
-type AddressValue = { provinceId: string; districtId: string; neighborhoodId: string; province: string; district: string; neighborhood: string; postalCode: string; street: string; buildingNo: string; apartmentNo: string; floor: string; courierNote: string; detail: string };
-export function AddressPicker({ label, onChange, initialValue }: { label: string; onChange: (address: string, value: AddressValue) => void; initialValue?: Partial<AddressValue> }) {
+type AddressValue = {
+  provinceId: string;
+  districtId: string;
+  neighborhoodId: string;
+  province: string;
+  district: string;
+  neighborhood: string;
+  postalCode: string;
+  street: string;
+  buildingNo: string;
+  apartmentNo: string;
+  floor: string;
+  courierNote: string;
+  detail: string;
+};
+export function AddressPicker({
+  label,
+  onChange,
+  initialValue,
+}: {
+  label: string;
+  onChange: (address: string, value: AddressValue) => void;
+  initialValue?: Partial<AddressValue>;
+}) {
+  const [provinces, setProvinces] = useState<AddressOption[]>([]);
   const [districts, setDistricts] = useState<AddressOption[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<AddressOption[]>([]);
-  const [streetSuggestions, setStreetSuggestions] = useState<AddressOption[]>([]);
-  const [value, setValue] = useState<AddressValue>({ provinceId: String(ISTANBUL_PROVINCE_ID), districtId: "", neighborhoodId: "", province: "İstanbul", district: "", neighborhood: "", postalCode: "", street: "", buildingNo: "", apartmentNo: "", floor: "", courierNote: "", detail: "", ...initialValue });
-  const [loading, setLoading] = useState<"provinces" | "districts" | "neighborhoods" | "streets" | "">("");
+  const [streetSuggestions, setStreetSuggestions] = useState<AddressOption[]>(
+    []
+  );
+  const [value, setValue] = useState<AddressValue>({
+    provinceId: "",
+    districtId: "",
+    neighborhoodId: "",
+    province: "",
+    district: "",
+    neighborhood: "",
+    postalCode: "",
+    street: "",
+    buildingNo: "",
+    apartmentNo: "",
+    floor: "",
+    courierNote: "",
+    detail: "",
+    ...initialValue,
+  });
+  const [loading, setLoading] = useState<
+    "provinces" | "districts" | "neighborhoods" | "streets" | ""
+  >("");
   const [error, setError] = useState("");
   const [streetError, setStreetError] = useState("");
-  useEffect(() => { let active = true; setLoading("districts"); getDistricts(ISTANBUL_PROVINCE_ID).then(items => { if (active) { setDistricts(items); onChange(composeStructuredAddress(value), value); } }).catch(() => { if (active) setError("İstanbul ilçe listesi alınamadı. Tekrar deneyin."); }).finally(() => { if (active) setLoading(""); }); return () => { active = false; }; }, []);
-  const update = (next: Partial<AddressValue>) => { const merged = { ...value, ...next }; setValue(merged); onChange(composeStructuredAddress(merged), merged); };
-  const searchStreets = async (query: string) => { if (!value.district || !value.neighborhood || query.trim().length < 2) { setStreetSuggestions([]); setStreetError(""); return; } setLoading("streets"); setStreetError(""); try { setStreetSuggestions(await getStreetSuggestions({ district: value.district, neighborhood: value.neighborhood, query })); } catch { setStreetSuggestions([]); setStreetError("Cadde önerileri alınamadı; caddeyi elle yazabilirsiniz."); } finally { setLoading(""); } };
-  return <div className="space-y-2"><p className="text-sm font-bold">{label}</p><div className="grid gap-2 sm:grid-cols-3"><select className="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold" value={String(ISTANBUL_PROVINCE_ID)} disabled aria-label="İl"><option value={String(ISTANBUL_PROVINCE_ID)}>İstanbul</option></select><select className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm" value={value.districtId} disabled={!value.provinceId || loading === "districts"} onChange={async e => { const district = districts.find(item => item.id === Number(e.target.value)); setError(""); setStreetSuggestions([]); setLoading("neighborhoods"); try { setNeighborhoods(district ? await getNeighborhoods(district.id) : []); update({ districtId: e.target.value, district: district?.name ?? "", neighborhoodId: "", neighborhood: "", postalCode: "", street: "" }); } catch { setError("Mahalle listesi alınamadı."); } finally { setLoading(""); } }}><option value="">{loading === "districts" ? "İlçeler yükleniyor…" : "İlçe seçin"}</option>{districts.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select><select className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm" value={value.neighborhoodId} disabled={!value.districtId || loading === "neighborhoods"} onChange={e => { setStreetSuggestions([]); const neighborhood = neighborhoods.find(item => item.id === Number(e.target.value)); update({ neighborhoodId: e.target.value, neighborhood: neighborhood?.name ?? "", postalCode: getPostalCodeForNeighborhood(value.district, neighborhood?.name ?? ""), street: "" }); }}><option value="">{loading === "neighborhoods" ? "Mahalleler yükleniyor…" : "Mahalle seçin"}</option>{neighborhoods.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div><div className="grid gap-2 sm:grid-cols-2"><div className="relative"><Input placeholder="Sokak / cadde" value={value.street} disabled={!value.neighborhoodId} onChange={e => { update({ street: e.target.value }); void searchStreets(e.target.value); }}/>{loading === "streets" && <p className="mt-1 text-xs text-slate-500">Cadde önerileri aranıyor…</p>}{streetSuggestions.length > 0 && <div className="mt-1 max-h-36 overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm">{streetSuggestions.map(item => <button type="button" key={item.id} className="block w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-orange-50" onClick={() => { update({ street: item.name }); setStreetSuggestions([]); }}>{item.name}</button>)}</div>}{streetError && <p className="mt-1 text-xs font-semibold text-amber-700">{streetError}</p>}</div><Input placeholder="Açık adres / tarif" value={value.detail} onChange={e => update({ detail: e.target.value })}/></div><div className="grid gap-2 sm:grid-cols-3"><Input placeholder="Bina no" value={value.buildingNo} onChange={e => update({ buildingNo: e.target.value })}/><Input placeholder="Daire no (isteğe bağlı)" value={value.apartmentNo} onChange={e => update({ apartmentNo: e.target.value })}/><Input placeholder="Kat (isteğe bağlı)" value={value.floor} onChange={e => update({ floor: e.target.value })}/></div><Textarea className="min-h-20" placeholder="Courier için özel teslimat notu (isteğe bağlı)" value={value.courierNote} maxLength={500} onChange={e => update({ courierNote: e.target.value })}/>{error && <p className="text-xs font-semibold text-red-600">{error}</p>}{!loading && !error && districts.length === 0 && <p className="text-xs text-slate-500">İstanbul ilçe listesi boş görünüyor.</p>}</div>;
+  useEffect(() => {
+    let active = true;
+    setLoading("provinces");
+    getProvinces()
+      .then(items => {
+        if (active) {
+          setProvinces(items);
+          onChange(composeStructuredAddress(value), value);
+        }
+      })
+      .catch(() => {
+        if (active)
+          setError("Türkiye il listesi alınamadı. Tekrar deneyin.");
+      })
+      .finally(() => {
+        if (active) setLoading("");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const update = (next: Partial<AddressValue>) => {
+    const merged = { ...value, ...next };
+    setValue(merged);
+    onChange(composeStructuredAddress(merged), merged);
+  };
+  const searchStreets = async (query: string) => {
+    const provinceId = Number(value.provinceId);
+    const districtId = Number(value.districtId);
+    const neighborhoodId = Number(value.neighborhoodId);
+    if (!provinceId || !districtId || !neighborhoodId || query.trim().length < 2) {
+      setStreetSuggestions([]);
+      setStreetError("");
+      return;
+    }
+    setLoading("streets");
+    setStreetError("");
+    try {
+      setStreetSuggestions(
+        await getStreetSuggestions({
+          provinceId,
+          districtId,
+          neighborhoodId,
+          query,
+        })
+      );
+    } catch {
+      setStreetSuggestions([]);
+      setStreetError("Cadde önerileri alınamadı; caddeyi elle yazabilirsiniz.");
+    } finally {
+      setLoading("");
+    }
+  };
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-bold">{label}</p>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <select
+          className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold"
+          value={value.provinceId}
+          disabled={loading === "provinces"}
+          aria-label="İl"
+          onChange={async e => {
+            const province = provinces.find(item => item.id === Number(e.target.value));
+            setError("");
+            setStreetSuggestions([]);
+            setNeighborhoods([]);
+            setLoading("districts");
+            try {
+              setDistricts(province ? await getDistricts(province.id) : []);
+              update({ provinceId: e.target.value, province: province?.name ?? "", districtId: "", district: "", neighborhoodId: "", neighborhood: "", postalCode: province?.postalCode ?? "", street: "" });
+            } catch {
+              setError("İlçe listesi alınamadı.");
+            } finally {
+              setLoading("");
+            }
+          }}
+        >
+          <option value="">{loading === "provinces" ? "İller yükleniyor…" : "İl seçin"}</option>
+          {value.provinceId.startsWith("saved-") && <option value={value.provinceId}>{value.province}</option>}
+          {provinces.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </select>
+        <select
+          className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm"
+          value={value.districtId}
+          disabled={!value.provinceId || loading === "districts"}
+          onChange={async e => {
+            const district = districts.find(
+              item => item.id === Number(e.target.value)
+            );
+            setError("");
+            setStreetSuggestions([]);
+            setLoading("neighborhoods");
+            try {
+              setNeighborhoods(
+                district ? await getNeighborhoods(Number(value.provinceId), district.id) : []
+              );
+              update({
+                districtId: e.target.value,
+                district: district?.name ?? "",
+                neighborhoodId: "",
+                neighborhood: "",
+                postalCode: "",
+                street: "",
+              });
+            } catch {
+              setError("Mahalle listesi alınamadı.");
+            } finally {
+              setLoading("");
+            }
+          }}
+        >
+          <option value="">
+            {loading === "districts" ? "İlçeler yükleniyor…" : "İlçe seçin"}
+          </option>
+          {districts.map(item => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+        <select
+          className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm"
+          value={value.neighborhoodId}
+          disabled={!value.districtId || loading === "neighborhoods"}
+          onChange={e => {
+            setStreetSuggestions([]);
+            const neighborhood = neighborhoods.find(
+              item => item.id === Number(e.target.value)
+            );
+            update({
+              neighborhoodId: e.target.value,
+              neighborhood: neighborhood?.name ?? "",
+              postalCode: getPostalCodeForAddressOption(neighborhood) || districts.find(item => item.id === Number(value.districtId))?.postalCode || "",
+              street: "",
+            });
+          }}
+        >
+          <option value="">
+            {loading === "neighborhoods"
+              ? "Mahalleler yükleniyor…"
+              : "Mahalle seçin"}
+          </option>
+          {neighborhoods.map(item => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="relative">
+          <Input
+            placeholder="Sokak / cadde"
+            value={value.street}
+            disabled={!value.neighborhoodId}
+            onChange={e => {
+              update({ street: e.target.value });
+              void searchStreets(e.target.value);
+            }}
+          />
+          {loading === "streets" && (
+            <p className="mt-1 text-xs text-slate-500">
+              Cadde önerileri aranıyor…
+            </p>
+          )}
+          {streetSuggestions.length > 0 && (
+            <div className="mt-1 max-h-36 overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+              {streetSuggestions.map(item => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-orange-50"
+                  onClick={() => {
+                    update({ street: item.name });
+                    setStreetSuggestions([]);
+                  }}
+                >
+                  {item.name}
+                </button>
+              ))}
+            </div>
+          )}
+          {streetError && (
+            <p className="mt-1 text-xs font-semibold text-amber-700">
+              {streetError}
+            </p>
+          )}
+        </div>
+        <Input
+          placeholder="Açık adres / tarif"
+          value={value.detail}
+          onChange={e => update({ detail: e.target.value })}
+        />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <Input
+          placeholder="Bina no"
+          value={value.buildingNo}
+          onChange={e => update({ buildingNo: e.target.value })}
+        />
+        <Input
+          placeholder="Daire no (isteğe bağlı)"
+          value={value.apartmentNo}
+          onChange={e => update({ apartmentNo: e.target.value })}
+        />
+        <Input
+          placeholder="Kat (isteğe bağlı)"
+          value={value.floor}
+          onChange={e => update({ floor: e.target.value })}
+        />
+      </div>
+      <Textarea
+        className="min-h-20"
+        placeholder="Courier için özel teslimat notu (isteğe bağlı)"
+        value={value.courierNote}
+        maxLength={500}
+        onChange={e => update({ courierNote: e.target.value })}
+      />
+      {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
+      {!loading && !error && value.provinceId && districts.length === 0 && (
+        <p className="text-xs text-slate-500">
+          Bu il için ilçe kaydı bulunamadı.
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default function Home() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [section, setSection] = useState<"home" | "order" | "track" | "chat" | "panel" | "account">(() => {
+  const [section, setSection] = useState<
+    "home" | "order" | "track" | "chat" | "panel" | "account"
+  >(() => {
     if (typeof window === "undefined") return "home";
-    const requested = new URLSearchParams(window.location.search).get("section");
+    const requested = new URLSearchParams(window.location.search).get(
+      "section"
+    );
     const pathSection = window.location.pathname.replace(/^\//, "");
-    const validSections = new Set(["home", "order", "track", "chat", "panel", "account"]);
-    if (requested && validSections.has(requested)) return requested as "home" | "order" | "track" | "chat" | "panel" | "account";
-    return validSections.has(pathSection) ? pathSection as "home" | "order" | "track" | "chat" | "panel" | "account" : "home";
+    const validSections = new Set([
+      "home",
+      "order",
+      "track",
+      "chat",
+      "panel",
+      "account",
+    ]);
+    if (requested && validSections.has(requested))
+      return requested as
+        | "home"
+        | "order"
+        | "track"
+        | "chat"
+        | "panel"
+        | "account";
+    return validSections.has(pathSection)
+      ? (pathSection as
+          | "home"
+          | "order"
+          | "track"
+          | "chat"
+          | "panel"
+          | "account")
+      : "home";
   });
-  const [language, setLanguage] = useState<LanguageCode>(() => getStoredLanguage());
+  const [language, setLanguage] = useState<LanguageCode>(() =>
+    getStoredLanguage()
+  );
   const t = translations[language];
-  const selectedLanguage = supportedLanguages.find(item => item.code === language) ?? supportedLanguages[0];
+  const selectedLanguage =
+    supportedLanguages.find(item => item.code === language) ??
+    supportedLanguages[0];
   const customerChatTemplates = getChatTemplates("customer", language);
   const courierChatTemplates = getChatTemplates("courier", language);
   useEffect(() => {
@@ -65,61 +435,240 @@ export default function Home() {
   const panelPhotoInputRef = useRef<HTMLInputElement>(null);
   const [profileForm, setProfileForm] = useState({ name: "", phone: "" });
   const [contractAccepted, setContractAccepted] = useState(false);
-  const [contractForm, setContractForm] = useState({ courierFullName: "", identityNumber: "", residenceAddress: "", taxOffice: "", taxNumber: "", vehiclePlate: "", iban: "" });
-  const [documentUploadState, setDocumentUploadState] = useState<Record<string, boolean>>({});
+  const [contractForm, setContractForm] = useState({
+    courierFullName: "",
+    identityNumber: "",
+    residenceAddress: "",
+    taxOffice: "",
+    taxNumber: "",
+    vehiclePlate: "",
+    iban: "",
+  });
+  const [documentUploadState, setDocumentUploadState] = useState<
+    Record<string, boolean>
+  >({});
   const [profileView, setProfileView] = useState(user);
   const [assignCourierId, setAssignCourierId] = useState("");
   const [panelOrderId, setPanelOrderId] = useState(0);
   const [panelMessage, setPanelMessage] = useState("");
-  const [photoPreview, setPhotoPreview] = useState<{ url: string; alt: string } | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<{
+    url: string;
+    alt: string;
+  } | null>(null);
   const [photoZoom, setPhotoZoom] = useState(1);
   const [distance, setDistance] = useState(5);
-  const [packageState, setPackageState] = useState<Record<string, "idle" | "checking" | "downloading" | "ready" | "error">>({});
-  const [packageProgress, setPackageProgress] = useState<Record<string, number>>({});
-  const [packageInfo, setPackageInfo] = useState<Record<string, { sizeBytes: number; savedAt: number }>>({});
-  const [packageErrors, setPackageErrors] = useState<Record<string, string>>({});
+  const [packageState, setPackageState] = useState<
+    Record<string, "idle" | "checking" | "downloading" | "ready" | "error">
+  >({});
+  const [packageProgress, setPackageProgress] = useState<
+    Record<string, number>
+  >({});
+  const [packageInfo, setPackageInfo] = useState<
+    Record<string, { sizeBytes: number; savedAt: number }>
+  >({});
+  const [packageErrors, setPackageErrors] = useState<Record<string, string>>(
+    {}
+  );
   const [packageUrls, setPackageUrls] = useState<Record<string, string>>({});
   const [isOnline, setIsOnline] = useState(true);
   const [trackingCode, setTrackingCode] = useState("");
   const [question, setQuestion] = useState("");
   const [botAnswer, setBotAnswer] = useState("");
-  const [form, setForm] = useState({ pickupAddress: "", pickupProvince: "", pickupPostalCode: "", pickupDistrict: "", pickupNeighborhood: "", pickupStreet: "", pickupBuildingNo: "", pickupApartmentNo: "", pickupFloor: "", pickupCourierNote: "", pickupAddressDetail: "", deliveryAddress: "", deliveryProvince: "", deliveryPostalCode: "", deliveryDistrict: "", deliveryNeighborhood: "", deliveryStreet: "", deliveryBuildingNo: "", deliveryApartmentNo: "", deliveryFloor: "", deliveryCourierNote: "", deliveryAddressDetail: "", productDescription: "", serviceType: "standard" as CourierServiceType, packageWeightKg: 1, customerPhone: "" });
-  const [savedAddressSelection, setSavedAddressSelection] = useState<{ pickup: number | null; delivery: number | null }>({ pickup: null, delivery: null });
-  const [savedAddressLabels, setSavedAddressLabels] = useState({ pickup: "", delivery: "" });
+  const [form, setForm] = useState({
+    pickupAddress: "",
+    pickupProvince: "",
+    pickupPostalCode: "",
+    pickupDistrict: "",
+    pickupNeighborhood: "",
+    pickupStreet: "",
+    pickupBuildingNo: "",
+    pickupApartmentNo: "",
+    pickupFloor: "",
+    pickupCourierNote: "",
+    pickupAddressDetail: "",
+    deliveryAddress: "",
+    deliveryProvince: "",
+    deliveryPostalCode: "",
+    deliveryDistrict: "",
+    deliveryNeighborhood: "",
+    deliveryStreet: "",
+    deliveryBuildingNo: "",
+    deliveryApartmentNo: "",
+    deliveryFloor: "",
+    deliveryCourierNote: "",
+    deliveryAddressDetail: "",
+    productDescription: "",
+    serviceType: "standard" as CourierServiceType,
+    packageWeightKg: 1,
+    customerPhone: "",
+  });
+  const [savedAddressSelection, setSavedAddressSelection] = useState<{
+    pickup: number | null;
+    delivery: number | null;
+  }>({ pickup: null, delivery: null });
+  const [savedAddressLabels, setSavedAddressLabels] = useState({
+    pickup: "",
+    delivery: "",
+  });
   const [weightDetailsOpen, setWeightDetailsOpen] = useState(false);
   const [addressPreferencesOpen, setAddressPreferencesOpen] = useState(false);
-  const [paymentForm, setPaymentForm] = useState({ cardNumber: "4242 4242 4242 4242", expiry: "12/30", cvv: "123" });
-  const [paymentMethod, setPaymentMethod] = useState<"sandbox_card" | "cash_on_delivery">("sandbox_card");
+  const [paymentForm, setPaymentForm] = useState({
+    cardNumber: "4242 4242 4242 4242",
+    expiry: "12/30",
+    cvv: "123",
+  });
+  const [paymentMethod, setPaymentMethod] = useState<
+    "sandbox_card" | "cash_on_delivery"
+  >("sandbox_card");
   const [paymentReference, setPaymentReference] = useState<string | null>(null);
   const [paymentApproved, setPaymentApproved] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState<{ trackingCode: string; total: number; durationMinutes: number } | null>(null);
-  const savedAddresses = trpc.savedAddresses.list.useQuery(undefined, { enabled: isAuthenticated && ["order", "account"].includes(section) });
-  const addressPreferences = trpc.profile.addressPreferences.useQuery(undefined, { enabled: isAuthenticated && ["order", "account"].includes(section) });
-  const saveAddress = trpc.savedAddresses.create.useMutation({ onSuccess: () => { toast.success("Adres kaydedildi"); savedAddresses.refetch(); setSavedAddressLabels({ pickup: "", delivery: "" }); }, onError: error => toast.error(error.message) });
-  const removeSavedAddress = trpc.savedAddresses.remove.useMutation({ onSuccess: () => { toast.success("Kayıtlı adres silindi"); savedAddresses.refetch(); addressPreferences.refetch(); }, onError: error => toast.error(error.message) });
-  const setFavoriteAddress = trpc.savedAddresses.setFavorite.useMutation({ onSuccess: (_, input) => { toast.success(input.isFavorite ? "Adres favorilere eklendi" : "Adres favorilerden kaldırıldı"); savedAddresses.refetch(); addressPreferences.refetch(); }, onError: error => toast.error(error.message) });
-  const setSavedAddressDefault = trpc.savedAddresses.setDefault.useMutation({ onSuccess: () => { toast.success("Varsayılan adres tercihi kaydedildi"); addressPreferences.refetch(); }, onError: error => toast.error(error.message) });
-  const savedAddressInitial = (id: number | null) => { const address = savedAddresses.data?.find(item => item.id === id); return address ? { provinceId: String(ISTANBUL_PROVINCE_ID), districtId: `saved-${address.district}`, neighborhoodId: `saved-${address.neighborhood}`, province: address.province, postalCode: address.postalCode ?? "", district: address.district, neighborhood: address.neighborhood, street: address.street, buildingNo: address.buildingNo, apartmentNo: address.apartmentNo, floor: address.floor, courierNote: address.courierNote, detail: address.addressDetail } : undefined; };
+  const [orderSuccess, setOrderSuccess] = useState<{
+    trackingCode: string;
+    total: number;
+    durationMinutes: number;
+  } | null>(null);
+  const savedAddresses = trpc.savedAddresses.list.useQuery(undefined, {
+    enabled: isAuthenticated && ["order", "account"].includes(section),
+  });
+  const addressPreferences = trpc.profile.addressPreferences.useQuery(
+    undefined,
+    { enabled: isAuthenticated && ["order", "account"].includes(section) }
+  );
+  const saveAddress = trpc.savedAddresses.create.useMutation({
+    onSuccess: () => {
+      toast.success("Adres kaydedildi");
+      savedAddresses.refetch();
+      setSavedAddressLabels({ pickup: "", delivery: "" });
+    },
+    onError: error => toast.error(error.message),
+  });
+  const removeSavedAddress = trpc.savedAddresses.remove.useMutation({
+    onSuccess: () => {
+      toast.success("Kayıtlı adres silindi");
+      savedAddresses.refetch();
+      addressPreferences.refetch();
+    },
+    onError: error => toast.error(error.message),
+  });
+  const setFavoriteAddress = trpc.savedAddresses.setFavorite.useMutation({
+    onSuccess: (_, input) => {
+      toast.success(
+        input.isFavorite
+          ? "Adres favorilere eklendi"
+          : "Adres favorilerden kaldırıldı"
+      );
+      savedAddresses.refetch();
+      addressPreferences.refetch();
+    },
+    onError: error => toast.error(error.message),
+  });
+  const setSavedAddressDefault = trpc.savedAddresses.setDefault.useMutation({
+    onSuccess: () => {
+      toast.success("Varsayılan adres tercihi kaydedildi");
+      addressPreferences.refetch();
+    },
+    onError: error => toast.error(error.message),
+  });
+  const savedAddressInitial = (id: number | null) => {
+    const address = savedAddresses.data?.find(item => item.id === id);
+    return address
+      ? {
+          provinceId: `saved-${address.province}`,
+          districtId: `saved-${address.district}`,
+          neighborhoodId: `saved-${address.neighborhood}`,
+          province: address.province,
+          postalCode: address.postalCode ?? "",
+          district: address.district,
+          neighborhood: address.neighborhood,
+          street: address.street,
+          buildingNo: address.buildingNo,
+          apartmentNo: address.apartmentNo,
+          floor: address.floor,
+          courierNote: address.courierNote,
+          detail: address.addressDetail,
+        }
+      : undefined;
+  };
   const saveCurrentAddress = (side: "pickup" | "delivery") => {
     const prefix = side === "pickup" ? "pickup" : "delivery";
-    const value = { label: savedAddressLabels[side], province: "İstanbul" as const, postalCode: form[`${prefix}PostalCode` as keyof typeof form] as string, district: form[`${prefix}District` as keyof typeof form] as string, neighborhood: form[`${prefix}Neighborhood` as keyof typeof form] as string, street: form[`${prefix}Street` as keyof typeof form] as string, buildingNo: form[`${prefix}BuildingNo` as keyof typeof form] as string, apartmentNo: form[`${prefix}ApartmentNo` as keyof typeof form] as string, floor: form[`${prefix}Floor` as keyof typeof form] as string, courierNote: form[`${prefix}CourierNote` as keyof typeof form] as string, addressDetail: form[`${prefix}AddressDetail` as keyof typeof form] as string };
-    if (!value.label.trim()) { toast.error("Kayıtlı adres için bir ad yazın (ör. Ev, İş)"); return; }
-    if (!value.district || !value.neighborhood || !value.street || !value.buildingNo || !value.addressDetail) { toast.error("Adres kaydetmek için ilçe, mahalle, cadde, bina no ve açık adres gerekli"); return; }
+    const value = {
+      label: savedAddressLabels[side],
+      province: form[`${prefix}Province` as keyof typeof form] as string,
+      postalCode: form[`${prefix}PostalCode` as keyof typeof form] as string,
+      district: form[`${prefix}District` as keyof typeof form] as string,
+      neighborhood: form[
+        `${prefix}Neighborhood` as keyof typeof form
+      ] as string,
+      street: form[`${prefix}Street` as keyof typeof form] as string,
+      buildingNo: form[`${prefix}BuildingNo` as keyof typeof form] as string,
+      apartmentNo: form[`${prefix}ApartmentNo` as keyof typeof form] as string,
+      floor: form[`${prefix}Floor` as keyof typeof form] as string,
+      courierNote: form[`${prefix}CourierNote` as keyof typeof form] as string,
+      addressDetail: form[
+        `${prefix}AddressDetail` as keyof typeof form
+      ] as string,
+    };
+    if (!value.label.trim()) {
+      toast.error("Kayıtlı adres için bir ad yazın (ör. Ev, İş)");
+      return;
+    }
+    if (
+      !value.district ||
+      !value.neighborhood ||
+      !value.street ||
+      !value.buildingNo ||
+      !value.addressDetail
+    ) {
+      toast.error(
+        "Adres kaydetmek için ilçe, mahalle, cadde, bina no ve açık adres gerekli"
+      );
+      return;
+    }
     saveAddress.mutate(value);
-  }; 
-  useEffect(() => { const saved = savedAddresses.data?.find(item => item.id === savedAddressSelection.pickup); if (saved) setForm(prev => ({ ...prev, pickupPostalCode: saved.postalCode ?? "" })); }, [savedAddressSelection.pickup, savedAddresses.data]);
-  useEffect(() => { const saved = savedAddresses.data?.find(item => item.id === savedAddressSelection.delivery); if (saved) setForm(prev => ({ ...prev, deliveryPostalCode: saved.postalCode ?? "" })); }, [savedAddressSelection.delivery, savedAddresses.data]);
+  };
+  useEffect(() => {
+    const saved = savedAddresses.data?.find(
+      item => item.id === savedAddressSelection.pickup
+    );
+    if (saved)
+      setForm(prev => ({ ...prev, pickupPostalCode: saved.postalCode ?? "" }));
+  }, [savedAddressSelection.pickup, savedAddresses.data]);
+  useEffect(() => {
+    const saved = savedAddresses.data?.find(
+      item => item.id === savedAddressSelection.delivery
+    );
+    if (saved)
+      setForm(prev => ({
+        ...prev,
+        deliveryPostalCode: saved.postalCode ?? "",
+      }));
+  }, [savedAddressSelection.delivery, savedAddresses.data]);
   useEffect(() => {
     if (section !== "order" || !addressPreferences.data) return;
     setSavedAddressSelection(previous => {
-      const pickup = previous.pickup ?? addressPreferences.data.defaultPickupAddressId ?? null;
-      const delivery = previous.delivery ?? addressPreferences.data.defaultDeliveryAddressId ?? null;
-      return pickup === previous.pickup && delivery === previous.delivery ? previous : { pickup, delivery };
+      const pickup =
+        previous.pickup ??
+        addressPreferences.data.defaultPickupAddressId ??
+        null;
+      const delivery =
+        previous.delivery ??
+        addressPreferences.data.defaultDeliveryAddressId ??
+        null;
+      return pickup === previous.pickup && delivery === previous.delivery
+        ? previous
+        : { pickup, delivery };
     });
   }, [addressPreferences.data, section]);
   const estimate = trpc.pricing.estimate.useQuery({ distanceKm: distance });
   const routeAddressComplete = isRouteAddressComplete(form);
-  const routeEstimate = trpc.pricing.estimate.useQuery({ pickupAddress: form.pickupAddress, deliveryAddress: form.deliveryAddress, packageWeightKg: form.packageWeightKg }, { enabled: isOnline && routeAddressComplete });
+  const routeEstimate = trpc.pricing.estimate.useQuery(
+    {
+      pickupAddress: form.pickupAddress,
+      deliveryAddress: form.deliveryAddress,
+      packageWeightKg: form.packageWeightKg,
+    },
+    { enabled: isOnline && routeAddressComplete }
+  );
   const orderFormComplete = isOrderFormComplete(form);
   const routeConfirmed = canConfirmOrder(routeEstimate.data?.routeStatus);
   const weightSurcharge = getWeightSurcharge(form.packageWeightKg);
@@ -127,137 +676,506 @@ export default function Home() {
     const hint = document.getElementById("weight-surcharge-hint");
     if (!hint || weightSurcharge <= 0) return;
     const openDetails = () => setWeightDetailsOpen(true);
-    const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openDetails(); } };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openDetails();
+      }
+    };
     hint.tabIndex = 0;
     hint.setAttribute("role", "button");
     hint.setAttribute("aria-haspopup", "dialog");
-    hint.setAttribute("aria-label", "Ek ağırlık ücretinin hesaplama ayrıntılarını aç");
+    hint.setAttribute(
+      "aria-label",
+      "Ek ağırlık ücretinin hesaplama ayrıntılarını aç"
+    );
     hint.classList.add("cursor-pointer");
     hint.addEventListener("click", openDetails);
     hint.addEventListener("keydown", handleKeyDown);
-    return () => { hint.removeEventListener("click", openDetails); hint.removeEventListener("keydown", handleKeyDown); };
+    return () => {
+      hint.removeEventListener("click", openDetails);
+      hint.removeEventListener("keydown", handleKeyDown);
+    };
   }, [weightSurcharge]);
-  const orderProgress = getOrderProgressSteps({ addressesReady: routeAddressComplete, routeConfirmed, paymentApproved });
-  const orderProgressPercent = getOrderProgressPercent({ addressesReady: routeAddressComplete, routeConfirmed, paymentApproved });
-  const selectPaymentMethod = (method: "sandbox_card" | "cash_on_delivery") => { setPaymentMethod(method); setPaymentApproved(method === "cash_on_delivery"); setPaymentReference(null); };
+  const orderProgress = getOrderProgressSteps({
+    addressesReady: routeAddressComplete,
+    routeConfirmed,
+    paymentApproved,
+  });
+  const orderProgressPercent = getOrderProgressPercent({
+    addressesReady: routeAddressComplete,
+    routeConfirmed,
+    paymentApproved,
+  });
+  const selectPaymentMethod = (method: "sandbox_card" | "cash_on_delivery") => {
+    setPaymentMethod(method);
+    setPaymentApproved(method === "cash_on_delivery");
+    setPaymentReference(null);
+  };
   const handleCreateOrder = () => {
     if (!orderFormComplete) {
       toast.error(ORDER_FORM_INCOMPLETE_MESSAGE);
       return;
     }
-    createOrder.mutate({ ...form, paymentMethod, paymentReference: paymentMethod === "sandbox_card" ? paymentReference ?? undefined : undefined });
+    createOrder.mutate({
+      ...form,
+      paymentMethod,
+      paymentReference:
+        paymentMethod === "sandbox_card"
+          ? (paymentReference ?? undefined)
+          : undefined,
+    });
   };
-  useEffect(() => { const update = () => setIsOnline(navigator.onLine); update(); window.addEventListener("online", update); window.addEventListener("offline", update); return () => { window.removeEventListener("online", update); window.removeEventListener("offline", update); }; }, []);
+  useEffect(() => {
+    const update = () => setIsOnline(navigator.onLine);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
   const authMe = trpc.auth.me.useQuery();
-  useEffect(() => { if (user) { setProfileView(user); setProfileForm({ name: user.name ?? "", phone: user.phone ?? "" }); setContractForm(prev => ({ ...prev, courierFullName: prev.courierFullName || user.name || "" })); } }, [user]);
+  useEffect(() => {
+    if (user) {
+      setProfileView(user);
+      setProfileForm({ name: user.name ?? "", phone: user.phone ?? "" });
+      setContractForm(prev => ({
+        ...prev,
+        courierFullName: prev.courierFullName || user.name || "",
+      }));
+    }
+  }, [user]);
   const displayedUser = authMe.data ?? profileView ?? user;
-  const profileUpdate = trpc.profile.update.useMutation({ onSuccess: updated => { toast.success("Profil güncellendi"); if (updated) setProfileView(updated); setProfileForm({ name: updated?.name ?? "", phone: updated?.phone ?? "" }); authMe.refetch(); }, onError: error => toast.error(error.message) });
-  const courierContract = trpc.courier.contract.useQuery(undefined, { enabled: isAuthenticated && user?.role === "courier" });
-  const acceptCourierContract = trpc.courier.acceptContract.useMutation({ onSuccess: () => { toast.success("Courier sözleşmesi kabul edildi"); setContractAccepted(false); courierContract.refetch(); }, onError: error => toast.error(error.message) });
-  const courierDocuments = trpc.courier.documents.useQuery(undefined, { enabled: isAuthenticated && ["courier", "admin", "accountant"].includes(user?.role ?? "") });
-  const courierOperation = trpc.courier.operationStatus.useQuery(undefined, { enabled: isAuthenticated && user?.role === "courier", refetchInterval: 15000 });
-  const setCourierAvailability = trpc.courier.setAvailability.useMutation({ onSuccess: result => { toast.success(result.availability === "available" ? "Operasyon durumunuz müsait olarak güncellendi" : "Operasyon durumunuz güncellendi"); courierOperation.refetch(); }, onError: error => toast.error(error.message) });
-  const uploadCourierDocument = trpc.courier.uploadDocument.useMutation({ onSuccess: () => { toast.success("Belge yüklendi; inceleme bekliyor"); courierDocuments.refetch(); }, onError: error => toast.error(error.message), onSettled: (_data, _error, variables) => { if (variables) setDocumentUploadState(prev => ({ ...prev, [variables.documentType]: false })); } });
-  const reviewCourierDocument = trpc.courier.reviewDocument.useMutation({ onSuccess: () => { toast.success("Belge inceleme durumu kaydedildi"); courierDocuments.refetch(); }, onError: error => toast.error(error.message) });
+  const profileUpdate = trpc.profile.update.useMutation({
+    onSuccess: updated => {
+      toast.success("Profil güncellendi");
+      if (updated) setProfileView(updated);
+      setProfileForm({
+        name: updated?.name ?? "",
+        phone: updated?.phone ?? "",
+      });
+      authMe.refetch();
+    },
+    onError: error => toast.error(error.message),
+  });
+  const courierContract = trpc.courier.contract.useQuery(undefined, {
+    enabled: isAuthenticated && user?.role === "courier",
+  });
+  const acceptCourierContract = trpc.courier.acceptContract.useMutation({
+    onSuccess: () => {
+      toast.success("Courier sözleşmesi kabul edildi");
+      setContractAccepted(false);
+      courierContract.refetch();
+    },
+    onError: error => toast.error(error.message),
+  });
+  const courierDocuments = trpc.courier.documents.useQuery(undefined, {
+    enabled:
+      isAuthenticated &&
+      ["courier", "admin", "accountant"].includes(user?.role ?? ""),
+  });
+  const courierOperation = trpc.courier.operationStatus.useQuery(undefined, {
+    enabled: isAuthenticated && user?.role === "courier",
+    refetchInterval: 15000,
+  });
+  const setCourierAvailability = trpc.courier.setAvailability.useMutation({
+    onSuccess: result => {
+      toast.success(
+        result.availability === "available"
+          ? "Operasyon durumunuz müsait olarak güncellendi"
+          : "Operasyon durumunuz güncellendi"
+      );
+      courierOperation.refetch();
+    },
+    onError: error => toast.error(error.message),
+  });
+  const uploadCourierDocument = trpc.courier.uploadDocument.useMutation({
+    onSuccess: () => {
+      toast.success("Belge yüklendi; inceleme bekliyor");
+      courierDocuments.refetch();
+    },
+    onError: error => toast.error(error.message),
+    onSettled: (_data, _error, variables) => {
+      if (variables)
+        setDocumentUploadState(prev => ({
+          ...prev,
+          [variables.documentType]: false,
+        }));
+    },
+  });
+  const reviewCourierDocument = trpc.courier.reviewDocument.useMutation({
+    onSuccess: () => {
+      toast.success("Belge inceleme durumu kaydedildi");
+      courierDocuments.refetch();
+    },
+    onError: error => toast.error(error.message),
+  });
   const trpcUtils = trpc.useUtils();
-  const createOrder = trpc.orders.create.useMutation({ onSuccess: result => { setTrackingCode(result.trackingCode); setOrderSuccess({ trackingCode: result.trackingCode, total: Number(result.total), durationMinutes: Number(result.durationMinutes) }); toast.success("Siparişiniz oluşturuldu", { description: `${result.trackingCode} takip koduyla anlık olarak izleyebilirsiniz.` }); }, onError: error => toast.error(error.message) });
-  const sandboxPayment = trpc.payments.sandbox.useMutation({ onSuccess: result => { if (result.status === "approved") { setPaymentApproved(true); setPaymentReference(result.reference); toast.success(result.message); } else { setPaymentApproved(false); setPaymentReference(null); toast.error(result.message); } }, onError: error => { setPaymentApproved(false); setPaymentReference(null); toast.error(error.message); } });
-  const updateStatus = trpc.orders.updateStatus.useMutation({ onSuccess: () => { toast.success("Sipariş durumu güncellendi"); mine.refetch(); }, onError: error => toast.error(error.message) });
-  const publishCourierLocation = trpc.orders.publishLocation.useMutation({ onError: error => toast.error(error.message) });
-  const track = trpc.orders.track.useQuery({ trackingCode: trackingCode || "RUN-DEMO" }, { enabled: trackingCode.length > 3, refetchInterval: trackingCode.length > 3 ? 10000 : false });
-  const [liveLocation, setLiveLocation] = useState<{ lat: number; lng: number; accuracy: number | null; heading: number | null; speed: number | null; remainingDistanceKm?: number | null; trafficEtaMinutes?: number | null; trafficLevel?: "light" | "moderate" | "heavy" | "unknown"; trafficSource?: "live_route" | "speed_fallback" | "unavailable"; updatedAt: number } | null>(null);
-  const [liveConnection, setLiveConnection] = useState<"idle" | "connecting" | "connected" | "reconnecting">("idle");
-  const mine = trpc.orders.mine.useQuery(undefined, { enabled: isAuthenticated });
+  const createOrder = trpc.orders.create.useMutation({
+    onSuccess: result => {
+      setTrackingCode(result.trackingCode);
+      setOrderSuccess({
+        trackingCode: result.trackingCode,
+        total: Number(result.total),
+        durationMinutes: Number(result.durationMinutes),
+      });
+      toast.success("Siparişiniz oluşturuldu", {
+        description: `${result.trackingCode} takip koduyla anlık olarak izleyebilirsiniz.`,
+      });
+    },
+    onError: error => toast.error(error.message),
+  });
+  const sandboxPayment = trpc.payments.sandbox.useMutation({
+    onSuccess: result => {
+      if (result.status === "approved") {
+        setPaymentApproved(true);
+        setPaymentReference(result.reference);
+        toast.success(result.message);
+      } else {
+        setPaymentApproved(false);
+        setPaymentReference(null);
+        toast.error(result.message);
+      }
+    },
+    onError: error => {
+      setPaymentApproved(false);
+      setPaymentReference(null);
+      toast.error(error.message);
+    },
+  });
+  const updateStatus = trpc.orders.updateStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Sipariş durumu güncellendi");
+      mine.refetch();
+    },
+    onError: error => toast.error(error.message),
+  });
+  const publishCourierLocation = trpc.orders.publishLocation.useMutation({
+    onError: error => toast.error(error.message),
+  });
+  const track = trpc.orders.track.useQuery(
+    { trackingCode: trackingCode || "RUN-DEMO" },
+    {
+      enabled: trackingCode.length > 3,
+      refetchInterval: trackingCode.length > 3 ? 10000 : false,
+    }
+  );
+  const [liveLocation, setLiveLocation] = useState<{
+    lat: number;
+    lng: number;
+    accuracy: number | null;
+    heading: number | null;
+    speed: number | null;
+    remainingDistanceKm?: number | null;
+    trafficEtaMinutes?: number | null;
+    trafficLevel?: "light" | "moderate" | "heavy" | "unknown";
+    trafficSource?: "live_route" | "speed_fallback" | "unavailable";
+    updatedAt: number;
+  } | null>(null);
+  const [liveConnection, setLiveConnection] = useState<
+    "idle" | "connecting" | "connected" | "reconnecting"
+  >("idle");
+  const mine = trpc.orders.mine.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
   const isStaff = ["admin", "courier", "accountant"].includes(user?.role ?? "");
-  const accounting = trpc.accounting.summary.useQuery(undefined, { enabled: isAuthenticated });
-  const courierPerformance = trpc.courier.performance.useQuery(undefined, { enabled: isAuthenticated && user?.role === "courier" });
-  const [reportFilters, setReportFilters] = useState({ status: "all" as "all" | "received" | "on_the_way" | "delivered" | "cancelled", from: "", to: "", sortBy: "date" as "date" | "earning" | "status", direction: "desc" as "asc" | "desc" });
-  const courierReport = trpc.courier.report.useQuery(reportFilters, { enabled: isAuthenticated && user?.role === "courier" });
-  const courierLeaderboard = trpc.courier.leaderboard.useQuery(undefined, { enabled: isStaff });
-  const myLeaderboardEntry = courierLeaderboard.data?.find(entry => entry.courierId === user?.id);
+  const accounting = trpc.accounting.summary.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+  const courierPerformance = trpc.courier.performance.useQuery(undefined, {
+    enabled: isAuthenticated && user?.role === "courier",
+  });
+  const [reportFilters, setReportFilters] = useState({
+    status: "all" as
+      | "all"
+      | "received"
+      | "on_the_way"
+      | "delivered"
+      | "cancelled",
+    from: "",
+    to: "",
+    sortBy: "date" as "date" | "earning" | "status",
+    direction: "desc" as "asc" | "desc",
+  });
+  const courierReport = trpc.courier.report.useQuery(reportFilters, {
+    enabled: isAuthenticated && user?.role === "courier",
+  });
+  const courierLeaderboard = trpc.courier.leaderboard.useQuery(undefined, {
+    enabled: isStaff,
+  });
+  const myLeaderboardEntry = courierLeaderboard.data?.find(
+    entry => entry.courierId === user?.id
+  );
   const liveOrderId = mine.data?.[0]?.id ?? 0;
-  const liveMessages = trpc.chat.messages.useQuery({ orderId: liveOrderId }, { enabled: isAuthenticated && liveOrderId > 0, refetchInterval: 5000 });
+  const liveMessages = trpc.chat.messages.useQuery(
+    { orderId: liveOrderId },
+    { enabled: isAuthenticated && liveOrderId > 0, refetchInterval: 5000 }
+  );
   useEffect(() => {
     setLiveLocation(null);
-    if (!isAuthenticated || !trackingCode || trackingCode.length < 4) { setLiveConnection("idle"); return; }
+    if (!isAuthenticated || !trackingCode || trackingCode.length < 4) {
+      setLiveConnection("idle");
+      return;
+    }
     setLiveConnection("connecting");
-    const source = new EventSource(`/api/realtime/orders/${encodeURIComponent(trackingCode)}`, { withCredentials: true });
-    const handleLocation = (event: MessageEvent<string>) => { try { setLiveLocation(JSON.parse(event.data)); setLiveConnection("connected"); } catch { /* malformed event is ignored */ } };
+    const source = new EventSource(
+      `/api/realtime/orders/${encodeURIComponent(trackingCode)}`,
+      { withCredentials: true }
+    );
+    const handleLocation = (event: MessageEvent<string>) => {
+      try {
+        setLiveLocation(JSON.parse(event.data));
+        setLiveConnection("connected");
+      } catch {
+        /* malformed event is ignored */
+      }
+    };
     source.addEventListener("courier-location", handleLocation);
     source.addEventListener("connection", () => setLiveConnection("connected"));
     source.onerror = () => setLiveConnection("reconnecting");
-    return () => { source.close(); setLiveConnection("idle"); };
+    return () => {
+      source.close();
+      setLiveConnection("idle");
+    };
   }, [isAuthenticated, trackingCode]);
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== "courier" || !navigator.geolocation) return;
+    if (!isAuthenticated || user?.role !== "courier" || !navigator.geolocation)
+      return;
     const activeOrder = mine.data?.find(order => order.status === "on_the_way");
     if (!activeOrder) return;
-    const watchId = navigator.geolocation.watchPosition(position => {
-      publishCourierLocation.mutate({ orderId: activeOrder.id, lat: position.coords.latitude, lng: position.coords.longitude, accuracy: position.coords.accuracy ?? null, heading: position.coords.heading ?? null, speed: position.coords.speed ?? null });
-    }, () => undefined, { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
+    const watchId = navigator.geolocation.watchPosition(
+      position => {
+        publishCourierLocation.mutate({
+          orderId: activeOrder.id,
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy ?? null,
+          heading: position.coords.heading ?? null,
+          speed: position.coords.speed ?? null,
+        });
+      },
+      () => undefined,
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    );
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [isAuthenticated, user?.role, mine.data?.map(order => `${order.id}:${order.status}`).join(",")]);
-  const sendLiveMessage = trpc.chat.send.useMutation({ onSuccess: () => { setLiveMessage(""); liveMessages.refetch(); }, onError: error => toast.error(error.message) });
-  const panelMessages = trpc.chat.messages.useQuery({ orderId: panelOrderId }, { enabled: isStaff && panelOrderId > 0, refetchInterval: 5000 });
-  const sendPanelMessage = trpc.chat.send.useMutation({ onSuccess: () => { setPanelMessage(""); panelMessages.refetch(); }, onError: error => toast.error(error.message) });
-  const sendChatPhoto = trpc.chat.sendPhoto.useMutation({ onSuccess: () => { liveMessages.refetch(); panelMessages.refetch(); toast.success("Fotoğraf gönderildi"); }, onError: error => toast.error(error.message) });
-  const handleChatPhoto = (file: File | undefined, orderId: number, senderRole: "customer" | "operator") => {
+  }, [
+    isAuthenticated,
+    user?.role,
+    mine.data?.map(order => `${order.id}:${order.status}`).join(","),
+  ]);
+  const sendLiveMessage = trpc.chat.send.useMutation({
+    onSuccess: () => {
+      setLiveMessage("");
+      liveMessages.refetch();
+    },
+    onError: error => toast.error(error.message),
+  });
+  const panelMessages = trpc.chat.messages.useQuery(
+    { orderId: panelOrderId },
+    { enabled: isStaff && panelOrderId > 0, refetchInterval: 5000 }
+  );
+  const sendPanelMessage = trpc.chat.send.useMutation({
+    onSuccess: () => {
+      setPanelMessage("");
+      panelMessages.refetch();
+    },
+    onError: error => toast.error(error.message),
+  });
+  const sendChatPhoto = trpc.chat.sendPhoto.useMutation({
+    onSuccess: () => {
+      liveMessages.refetch();
+      panelMessages.refetch();
+      toast.success("Fotoğraf gönderildi");
+    },
+    onError: error => toast.error(error.message),
+  });
+  const handleChatPhoto = (
+    file: File | undefined,
+    orderId: number,
+    senderRole: "customer" | "operator"
+  ) => {
     if (!file || !orderId || sendChatPhoto.isPending) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { toast.error("JPG, PNG veya WebP fotoğraf seçin"); return; }
-    if (file.size > 5 * 1024 * 1024) { toast.error("Fotoğraf boyutu 5 MB’tan küçük olmalıdır"); return; }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("JPG, PNG veya WebP fotoğraf seçin");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Fotoğraf boyutu 5 MB’tan küçük olmalıdır");
+      return;
+    }
     const reader = new FileReader();
-    reader.onload = () => { if (typeof reader.result === "string") sendChatPhoto.mutate({ orderId, senderRole, fileName: file.name, contentType: file.type, dataBase64: reader.result }); };
+    reader.onload = () => {
+      if (typeof reader.result === "string")
+        sendChatPhoto.mutate({
+          orderId,
+          senderRole,
+          fileName: file.name,
+          contentType: file.type,
+          dataBase64: reader.result,
+        });
+    };
     reader.onerror = () => toast.error("Fotoğraf okunamadı");
     reader.readAsDataURL(file);
   };
-  const sendQuickLiveMessage = (content: string) => { if (!liveOrderId || sendLiveMessage.isPending) return; sendLiveMessage.mutate({ orderId: liveOrderId, content, senderRole: "customer" }); };
-  const sendQuickPanelMessage = (content: string) => { if (!panelOrderId || sendPanelMessage.isPending) return; sendPanelMessage.mutate({ orderId: panelOrderId, content, senderRole: "operator" }); };
-  const openPhotoPreview = (url: string, alt: string) => { setPhotoPreview({ url, alt }); setPhotoZoom(1); };
-  const closePhotoPreview = () => { setPhotoPreview(null); setPhotoZoom(1); };
-  useEffect(() => { if (!photoPreview) return; const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") closePhotoPreview(); if (event.key === "+" || event.key === "=") setPhotoZoom(value => Math.min(3, Number((value + 0.25).toFixed(2)))); if (event.key === "-") setPhotoZoom(value => Math.max(1, Number((value - 0.25).toFixed(2)))); if (event.key === "0") setPhotoZoom(1); }; document.addEventListener("keydown", handleKeyDown); const previousOverflow = document.body.style.overflow; document.body.style.overflow = "hidden"; return () => { document.removeEventListener("keydown", handleKeyDown); document.body.style.overflow = previousOverflow; }; }, [photoPreview]);
-  const notifications = trpc.notifications.list.useQuery(undefined, { enabled: isAuthenticated, refetchInterval: isAuthenticated ? 15000 : false });
-  const assistant = trpc.chat.assistant.useMutation({ onSuccess: data => setBotAnswer(data.answer), onError: error => toast.error(error.message) });
+  const sendQuickLiveMessage = (content: string) => {
+    if (!liveOrderId || sendLiveMessage.isPending) return;
+    sendLiveMessage.mutate({
+      orderId: liveOrderId,
+      content,
+      senderRole: "customer",
+    });
+  };
+  const sendQuickPanelMessage = (content: string) => {
+    if (!panelOrderId || sendPanelMessage.isPending) return;
+    sendPanelMessage.mutate({
+      orderId: panelOrderId,
+      content,
+      senderRole: "operator",
+    });
+  };
+  const openPhotoPreview = (url: string, alt: string) => {
+    setPhotoPreview({ url, alt });
+    setPhotoZoom(1);
+  };
+  const closePhotoPreview = () => {
+    setPhotoPreview(null);
+    setPhotoZoom(1);
+  };
   useEffect(() => {
-    const authError = new URLSearchParams(window.location.search).get("authError");
+    if (!photoPreview) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closePhotoPreview();
+      if (event.key === "+" || event.key === "=")
+        setPhotoZoom(value => Math.min(3, Number((value + 0.25).toFixed(2))));
+      if (event.key === "-")
+        setPhotoZoom(value => Math.max(1, Number((value - 0.25).toFixed(2))));
+      if (event.key === "0") setPhotoZoom(1);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [photoPreview]);
+  const notifications = trpc.notifications.list.useQuery(undefined, {
+    enabled: isAuthenticated,
+    refetchInterval: isAuthenticated ? 15000 : false,
+  });
+  const assistant = trpc.chat.assistant.useMutation({
+    onSuccess: data => setBotAnswer(data.answer),
+    onError: error => toast.error(error.message),
+  });
+  useEffect(() => {
+    const authError = new URLSearchParams(window.location.search).get(
+      "authError"
+    );
     if (!authError) return;
     sessionStorage.removeItem("run-kurye-oauth-pending-at");
-    toast.error(authError === "invalid_state" ? "Giriş oturumu yenilenemedi. Lütfen tekrar giriş yapın." : "Giriş bağlantısı tamamlanamadı. Lütfen tekrar deneyin.");
+    toast.error(
+      authError === "invalid_state"
+        ? "Giriş oturumu yenilenemedi. Lütfen tekrar giriş yapın."
+        : "Giriş bağlantısı tamamlanamadı. Lütfen tekrar deneyin."
+    );
     window.history.replaceState({}, "", window.location.pathname);
   }, []);
-  const handleCourierDocument = (documentType: "identity" | "license" | "vehicle_registration", file: File | undefined) => {
+  const handleCourierDocument = (
+    documentType: "identity" | "license" | "vehicle_registration",
+    file: File | undefined
+  ) => {
     if (!file) return;
     const allowed = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowed.includes(file.type)) { toast.error("Yalnızca PDF, JPG veya PNG yükleyebilirsiniz"); return; }
-    if (file.size > 8 * 1024 * 1024) { toast.error("Belge boyutu 8 MB’tan küçük olmalıdır"); return; }
+    if (!allowed.includes(file.type)) {
+      toast.error("Yalnızca PDF, JPG veya PNG yükleyebilirsiniz");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Belge boyutu 8 MB’tan küçük olmalıdır");
+      return;
+    }
     setDocumentUploadState(prev => ({ ...prev, [documentType]: true }));
     const reader = new FileReader();
-    reader.onload = () => { if (typeof reader.result === "string") uploadCourierDocument.mutate({ documentType, fileName: file.name, contentType: file.type as "image/jpeg" | "image/png" | "application/pdf", dataBase64: reader.result }); else setDocumentUploadState(prev => ({ ...prev, [documentType]: false })); };
-    reader.onerror = () => { setDocumentUploadState(prev => ({ ...prev, [documentType]: false })); toast.error("Belge okunamadı; tekrar deneyin"); };
+    reader.onload = () => {
+      if (typeof reader.result === "string")
+        uploadCourierDocument.mutate({
+          documentType,
+          fileName: file.name,
+          contentType: file.type as
+            | "image/jpeg"
+            | "image/png"
+            | "application/pdf",
+          dataBase64: reader.result,
+        });
+      else setDocumentUploadState(prev => ({ ...prev, [documentType]: false }));
+    };
+    reader.onerror = () => {
+      setDocumentUploadState(prev => ({ ...prev, [documentType]: false }));
+      toast.error("Belge okunamadı; tekrar deneyin");
+    };
     reader.readAsDataURL(file);
   };
-  const openCourierDocument = async (documentId: number) => { const popup = window.open("", "_blank"); try { const result = await trpcUtils.courier.documentUrl.fetch({ documentId }); if (popup) popup.location.href = result.url; else window.location.href = result.url; } catch (error) { popup?.close(); toast.error(error instanceof Error ? error.message : "Belge açılamadı"); } };
-  const nav = (next: typeof section) => { setSection(next); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const handlePackageDownload = async (pkg: typeof OFFLINE_MAP_PACKAGES[number]) => {
+  const openCourierDocument = async (documentId: number) => {
+    const popup = window.open("", "_blank");
+    try {
+      const result = await trpcUtils.courier.documentUrl.fetch({ documentId });
+      if (popup) popup.location.href = result.url;
+      else window.location.href = result.url;
+    } catch (error) {
+      popup?.close();
+      toast.error(error instanceof Error ? error.message : "Belge açılamadı");
+    }
+  };
+  const nav = (next: typeof section) => {
+    setSection(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const handlePackageDownload = async (
+    pkg: (typeof OFFLINE_MAP_PACKAGES)[number]
+  ) => {
     setPackageErrors(prev => ({ ...prev, [pkg.id]: "" }));
     setPackageState(prev => ({ ...prev, [pkg.id]: "checking" }));
     try {
-      if (await hasOfflinePackage(pkg.id)) { const info = await getOfflinePackageInfo(pkg.id); const blobUrl = await getOfflinePackageDownloadUrl(pkg.id); if (info) setPackageInfo(prev => ({ ...prev, [pkg.id]: { sizeBytes: info.sizeBytes, savedAt: info.savedAt } })); if (blobUrl) setPackageUrls(prev => ({ ...prev, [pkg.id]: blobUrl })); setPackageState(prev => ({ ...prev, [pkg.id]: "ready" })); return; }
+      if (await hasOfflinePackage(pkg.id)) {
+        const info = await getOfflinePackageInfo(pkg.id);
+        const blobUrl = await getOfflinePackageDownloadUrl(pkg.id);
+        if (info)
+          setPackageInfo(prev => ({
+            ...prev,
+            [pkg.id]: { sizeBytes: info.sizeBytes, savedAt: info.savedAt },
+          }));
+        if (blobUrl) setPackageUrls(prev => ({ ...prev, [pkg.id]: blobUrl }));
+        setPackageState(prev => ({ ...prev, [pkg.id]: "ready" }));
+        return;
+      }
       setPackageState(prev => ({ ...prev, [pkg.id]: "downloading" }));
-      await downloadOfflinePackage(pkg, progress => setPackageProgress(prev => ({ ...prev, [pkg.id]: progress })));
+      await downloadOfflinePackage(pkg, progress =>
+        setPackageProgress(prev => ({ ...prev, [pkg.id]: progress }))
+      );
       const info = await getOfflinePackageInfo(pkg.id);
       const blobUrl = await getOfflinePackageDownloadUrl(pkg.id);
-      if (info) setPackageInfo(prev => ({ ...prev, [pkg.id]: { sizeBytes: info.sizeBytes, savedAt: info.savedAt } }));
+      if (info)
+        setPackageInfo(prev => ({
+          ...prev,
+          [pkg.id]: { sizeBytes: info.sizeBytes, savedAt: info.savedAt },
+        }));
       if (blobUrl) setPackageUrls(prev => ({ ...prev, [pkg.id]: blobUrl }));
       setPackageState(prev => ({ ...prev, [pkg.id]: "ready" }));
       toast.success(`${pkg.city} offline harita paketi hazır`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Offline paket indirilemedi";
+      const message =
+        error instanceof Error ? error.message : "Offline paket indirilemedi";
       setPackageState(prev => ({ ...prev, [pkg.id]: "error" }));
       setPackageErrors(prev => ({ ...prev, [pkg.id]: message }));
       toast.error(message);
     }
   };
-  const handlePackageImport = async (pkg: typeof OFFLINE_MAP_PACKAGES[number], file?: File) => {
+  const handlePackageImport = async (
+    pkg: (typeof OFFLINE_MAP_PACKAGES)[number],
+    file?: File
+  ) => {
     if (!file) return;
     setPackageErrors(prev => ({ ...prev, [pkg.id]: "" }));
     setPackageState(prev => ({ ...prev, [pkg.id]: "downloading" }));
@@ -265,62 +1183,3089 @@ export default function Home() {
       await storeOfflinePackage(pkg, file);
       const info = await getOfflinePackageInfo(pkg.id);
       const blobUrl = await getOfflinePackageDownloadUrl(pkg.id);
-      if (info) setPackageInfo(prev => ({ ...prev, [pkg.id]: { sizeBytes: info.sizeBytes, savedAt: info.savedAt } }));
+      if (info)
+        setPackageInfo(prev => ({
+          ...prev,
+          [pkg.id]: { sizeBytes: info.sizeBytes, savedAt: info.savedAt },
+        }));
       if (blobUrl) setPackageUrls(prev => ({ ...prev, [pkg.id]: blobUrl }));
       setPackageState(prev => ({ ...prev, [pkg.id]: "ready" }));
       toast.success(`${pkg.city} offline harita paketi cihazda hazır`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Offline paket içe aktarılamadı";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Offline paket içe aktarılamadı";
       setPackageState(prev => ({ ...prev, [pkg.id]: "error" }));
       setPackageErrors(prev => ({ ...prev, [pkg.id]: message }));
       toast.error(message);
     }
   };
-  const steps = useMemo(() => ["received", "on_the_way", "delivered"] as const, []);
-  const trackStepIndex = track.data ? steps.indexOf(track.data.status as typeof steps[number]) : -1;
+  const steps = useMemo(
+    () => ["received", "on_the_way", "delivered"] as const,
+    []
+  );
+  const trackStepIndex = track.data
+    ? steps.indexOf(track.data.status as (typeof steps)[number])
+    : -1;
   const liveSpeedKmh = speedKmhFromMetersPerSecond(liveLocation?.speed);
-  const liveEtaMinutes = liveLocation?.trafficEtaMinutes ?? etaMinutesFromRoute(track.data?.routeDurationMinutes == null ? null : Number(track.data.routeDurationMinutes), track.data?.status);
+  const liveEtaMinutes =
+    liveLocation?.trafficEtaMinutes ??
+    etaMinutesFromRoute(
+      track.data?.routeDurationMinutes == null
+        ? null
+        : Number(track.data.routeDurationMinutes),
+      track.data?.status
+    );
   const liveRemainingDistanceKm = liveLocation?.remainingDistanceKm ?? null;
   const liveTrafficLevel = liveLocation?.trafficLevel ?? "unknown";
 
-  return <div className="min-h-screen bg-[#f7f8fa] text-slate-950">
-    {orderSuccess && <div role="dialog" aria-modal="true" aria-label="Sipariş başarıyla oluşturuldu" className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"><Card className="w-full max-w-md rounded-3xl border-0 bg-white shadow-2xl"><CardContent className="p-7 text-center"><div className="mx-auto grid size-16 place-items-center rounded-3xl bg-emerald-100 text-emerald-700"><CheckCircle2 size={34}/></div><Badge className="mt-5 bg-emerald-100 text-emerald-700">Siparişiniz alındı</Badge><h2 className="mt-3 text-2xl font-black tracking-tight">Kurye talebiniz oluşturuldu.</h2><p className="mt-2 text-sm leading-6 text-slate-600">Takip kodunuz <strong className="text-slate-900">{orderSuccess.trackingCode}</strong>. Operasyon başladığında teslimat durumunu anlık izleyebilirsiniz.</p><div className="mt-5 grid gap-3 text-left sm:grid-cols-2"><div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Tahmini işlem tutarı</p><p className="mt-1 text-xl font-black text-slate-950">{money(orderSuccess.total)}</p></div><div className="rounded-2xl bg-orange-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-[#c9381b]">Tahmini süreç</p><p className="mt-1 text-sm font-black text-slate-950">Kurye atama: {getDeliveryEstimate({ serviceType: form.serviceType, routeDurationMinutes: orderSuccess.durationMinutes }).assignmentMinutes} dk</p><p className="mt-1 text-xs font-semibold text-slate-600">Teslimat hedefi: {getDeliveryEstimate({ serviceType: form.serviceType, routeDurationMinutes: orderSuccess.durationMinutes }).label}</p></div></div><div className="mt-6 grid gap-2 sm:grid-cols-2"><Button type="button" variant="outline" className="rounded-xl" onClick={() => setOrderSuccess(null)}>Yeni sipariş</Button><Button type="button" className="rounded-xl bg-[#e54725] font-bold hover:bg-[#c9381b]" onClick={() => { setOrderSuccess(null); nav("track"); }}>Siparişimi takip et <ArrowRight className="ml-2" size={16}/></Button></div></CardContent></Card></div>}
-    {photoPreview && <div role="dialog" aria-modal="true" aria-label="Fotoğraf detay önizlemesi" className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/95 p-4" onMouseDown={event => { if (event.target === event.currentTarget) closePhotoPreview(); }}><div className="flex max-h-full max-w-5xl flex-col items-center gap-4"><div className="flex w-full items-center justify-between gap-3 text-white"><p className="max-w-[70vw] truncate text-sm font-semibold">{photoPreview.alt}</p><Button type="button" variant="ghost" size="icon" onClick={closePhotoPreview} aria-label="Fotoğraf önizlemesini kapat" className="text-white hover:bg-white/10"><X size={20}/></Button></div><div className="flex max-h-[78vh] max-w-full items-center justify-center overflow-auto rounded-2xl bg-black/30 p-2"><img src={photoPreview.url} alt={photoPreview.alt} className="max-h-[74vh] max-w-[90vw] origin-center select-none object-contain transition-transform duration-150" style={{ transform: `scale(${photoZoom})` }} draggable={false}/></div><div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 p-1"><Button type="button" variant="ghost" size="icon" onClick={() => setPhotoZoom(value => Math.max(1, Number((value - 0.25).toFixed(2))))} disabled={photoZoom <= 1} aria-label="Fotoğrafı küçült" className="text-white hover:bg-white/10"><ZoomOut size={18}/></Button><span className="min-w-12 text-center text-xs font-bold text-white">{Math.round(photoZoom * 100)}%</span><Button type="button" variant="ghost" size="icon" onClick={() => setPhotoZoom(value => Math.min(3, Number((value + 0.25).toFixed(2))))} disabled={photoZoom >= 3} aria-label="Fotoğrafı büyüt" className="text-white hover:bg-white/10"><ZoomIn size={18}/></Button><Button type="button" variant="ghost" size="icon" onClick={() => setPhotoZoom(1)} aria-label="Fotoğraf boyutunu sıfırla" className="text-white hover:bg-white/10"><RotateCcw size={16}/></Button></div></div></div>}
-    <Dialog open={weightDetailsOpen} onOpenChange={setWeightDetailsOpen}><DialogContent className="max-w-md rounded-3xl border-0 p-6"><DialogHeader><DialogTitle>Ek ağırlık ücreti nasıl hesaplanır?</DialogTitle><DialogDescription>Bu açıklama yalnızca 5 kg üzerindeki gönderiler için gösterilir.</DialogDescription></DialogHeader><div className="space-y-3 rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p><strong>5 kg’a kadar:</strong> Ek ağırlık ücreti uygulanmaz.</p><p><strong>5 kg’ı aşınca:</strong> Gönderinin ağırlığından bağımsız olarak sipariş toplamına tek seferlik <strong>500 TL</strong> eklenir.</p><p><strong>Örnek:</strong> 5,1 kg ve 12 kg paketlerde ek ağırlık bedeli aynıdır; rota ücreti ise güzergâha göre ayrıca doğrulanır.</p></div><p className="text-xs leading-5 text-slate-500">Seçtiğiniz ağırlık: <strong className="text-slate-900">{form.packageWeightKg.toLocaleString("tr-TR")} kg</strong> · Geçerli ek ücret: <strong className="text-slate-900">{money(weightSurcharge)}</strong></p></DialogContent></Dialog>
-    <Dialog open={addressPreferencesOpen} onOpenChange={setAddressPreferencesOpen}><DialogContent className="max-w-lg rounded-3xl border-0 p-6"><DialogHeader><DialogTitle>Varsayılan favori adresler</DialogTitle><DialogDescription>Yeni siparişlerde alış ve teslimat noktaları için bu favori adresler otomatik seçilir.</DialogDescription></DialogHeader>{savedAddresses.data?.filter(address => address.isFavorite === 1).length ? <div className="space-y-3">{(["pickup", "delivery"] as const).map(side => { const defaultId = side === "pickup" ? addressPreferences.data?.defaultPickupAddressId : addressPreferences.data?.defaultDeliveryAddressId; return <div key={side} className="rounded-2xl bg-slate-50 p-4"><p className="mb-3 text-sm font-black">Varsayılan {side === "pickup" ? "alış" : "teslimat"} noktası</p><div className="flex flex-wrap gap-2">{savedAddresses.data?.filter(address => address.isFavorite === 1).map(address => <Button key={address.id} type="button" size="sm" variant={defaultId === address.id ? "default" : "outline"} disabled={setSavedAddressDefault.isPending} onClick={() => setSavedAddressDefault.mutate({ side, id: defaultId === address.id ? null : address.id })} className={defaultId === address.id ? "bg-[#e54725]" : "bg-white"}>{defaultId === address.id ? "✓ " : ""}{address.label}</Button>)}</div><p className="mt-3 text-xs text-slate-500">Seçimi kaldırmak için aktif etikete tekrar dokunun.</p></div>; })}</div> : <div className="rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">Önce sipariş ekranından en az bir kayıtlı adresi favorilere ekleyin. Favori adresler burada varsayılan alış veya teslimat noktası olarak atanabilir.</div>}</DialogContent></Dialog>
-    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl"><div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 lg:px-8">
-      <button onClick={() => nav("home")} aria-label="Run Courier ana sayfa" className="flex min-h-11 items-center gap-2 font-black tracking-tight"><span aria-hidden="true" className="grid size-9 place-items-center rounded-xl bg-[#e54725] text-white shadow-lg shadow-orange-200"><Bike size={21}/></span><span className="text-xl lowercase">run <span className="text-[#e54725]">courier</span></span></button>
-      <nav className="hidden items-center gap-6 text-sm font-semibold md:flex"><button onClick={() => nav("home")}>{t.services}</button><button onClick={() => nav("track")}>{t.tracking}</button><button onClick={() => nav("chat")}>{t.support}</button><button onClick={() => window.location.assign("/membership")}>Üyelik</button>{isAuthenticated && <button onClick={() => nav("account")}>{t.account}</button>}{isStaff && <button onClick={() => nav("panel")}>{t.operations}</button>}</nav>
-      <div className="flex items-center gap-2"><label className="sr-only" htmlFor="language-select">{t.language}</label><select id="language-select" value={language} onChange={event => setLanguage(event.target.value as LanguageCode)} className="h-9 max-w-[7.5rem] rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-orange-300" aria-label={t.language}>{supportedLanguages.map(item => <option key={item.code} value={item.code}>{item.nativeLabel}</option>)}</select>{isAuthenticated ? <><Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => window.location.assign("/membership")}>Hesap türü</Button><span className="hidden text-sm font-semibold lg:inline">{t.greeting}, {user?.name?.split(" ")[0] ?? "Run üyesi"}</span><Button variant="ghost" size="sm" onClick={() => logout()}>{t.logout}</Button></> : <><Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => window.location.assign("/membership")}>Üyelik</Button><Button variant="outline" size="sm" onClick={() => startLogin()}>{t.login}</Button></>}</div>
-    </div></header>
-    {section === "account" && isAuthenticated && <div className="mx-auto flex max-w-5xl justify-end px-4 pt-5 lg:px-8"><Button type="button" variant="outline" onClick={() => setAddressPreferencesOpen(true)} className="rounded-xl border-orange-200 bg-white text-[#c9381b]">Favori adres tercihlerim</Button></div>}
+  return (
+    <div className="min-h-screen bg-[#f7f8fa] text-slate-950">
+      {orderSuccess && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Sipariş başarıyla oluşturuldu"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"
+        >
+          <Card className="w-full max-w-md rounded-3xl border-0 bg-white shadow-2xl">
+            <CardContent className="p-7 text-center">
+              <div className="mx-auto grid size-16 place-items-center rounded-3xl bg-emerald-100 text-emerald-700">
+                <CheckCircle2 size={34} />
+              </div>
+              <Badge className="mt-5 bg-emerald-100 text-emerald-700">
+                Siparişiniz alındı
+              </Badge>
+              <h2 className="mt-3 text-2xl font-black tracking-tight">
+                Kurye talebiniz oluşturuldu.
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Takip kodunuz{" "}
+                <strong className="text-slate-900">
+                  {orderSuccess.trackingCode}
+                </strong>
+                . Operasyon başladığında teslimat durumunu anlık
+                izleyebilirsiniz.
+              </p>
+              <div className="mt-5 grid gap-3 text-left sm:grid-cols-2">
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                    Tahmini işlem tutarı
+                  </p>
+                  <p className="mt-1 text-xl font-black text-slate-950">
+                    {money(orderSuccess.total)}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-orange-50 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-[#c9381b]">
+                    Tahmini süreç
+                  </p>
+                  <p className="mt-1 text-sm font-black text-slate-950">
+                    Kurye atama:{" "}
+                    {
+                      getDeliveryEstimate({
+                        serviceType: form.serviceType,
+                        routeDurationMinutes: orderSuccess.durationMinutes,
+                      }).assignmentMinutes
+                    }{" "}
+                    dk
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-slate-600">
+                    Teslimat hedefi:{" "}
+                    {
+                      getDeliveryEstimate({
+                        serviceType: form.serviceType,
+                        routeDurationMinutes: orderSuccess.durationMinutes,
+                      }).label
+                    }
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 grid gap-2 sm:grid-cols-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setOrderSuccess(null)}
+                >
+                  Yeni sipariş
+                </Button>
+                <Button
+                  type="button"
+                  className="rounded-xl bg-[#e54725] font-bold hover:bg-[#c9381b]"
+                  onClick={() => {
+                    setOrderSuccess(null);
+                    nav("track");
+                  }}
+                >
+                  Siparişimi takip et <ArrowRight className="ml-2" size={16} />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      {photoPreview && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Fotoğraf detay önizlemesi"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/95 p-4"
+          onMouseDown={event => {
+            if (event.target === event.currentTarget) closePhotoPreview();
+          }}
+        >
+          <div className="flex max-h-full max-w-5xl flex-col items-center gap-4">
+            <div className="flex w-full items-center justify-between gap-3 text-white">
+              <p className="max-w-[70vw] truncate text-sm font-semibold">
+                {photoPreview.alt}
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={closePhotoPreview}
+                aria-label="Fotoğraf önizlemesini kapat"
+                className="text-white hover:bg-white/10"
+              >
+                <X size={20} />
+              </Button>
+            </div>
+            <div className="flex max-h-[78vh] max-w-full items-center justify-center overflow-auto rounded-2xl bg-black/30 p-2">
+              <img
+                src={photoPreview.url}
+                alt={photoPreview.alt}
+                className="max-h-[74vh] max-w-[90vw] origin-center select-none object-contain transition-transform duration-150"
+                style={{ transform: `scale(${photoZoom})` }}
+                draggable={false}
+              />
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 p-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  setPhotoZoom(value =>
+                    Math.max(1, Number((value - 0.25).toFixed(2)))
+                  )
+                }
+                disabled={photoZoom <= 1}
+                aria-label="Fotoğrafı küçült"
+                className="text-white hover:bg-white/10"
+              >
+                <ZoomOut size={18} />
+              </Button>
+              <span className="min-w-12 text-center text-xs font-bold text-white">
+                {Math.round(photoZoom * 100)}%
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  setPhotoZoom(value =>
+                    Math.min(3, Number((value + 0.25).toFixed(2)))
+                  )
+                }
+                disabled={photoZoom >= 3}
+                aria-label="Fotoğrafı büyüt"
+                className="text-white hover:bg-white/10"
+              >
+                <ZoomIn size={18} />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setPhotoZoom(1)}
+                aria-label="Fotoğraf boyutunu sıfırla"
+                className="text-white hover:bg-white/10"
+              >
+                <RotateCcw size={16} />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      <Dialog open={weightDetailsOpen} onOpenChange={setWeightDetailsOpen}>
+        <DialogContent className="max-w-md rounded-3xl border-0 p-6">
+          <DialogHeader>
+            <DialogTitle>Ek ağırlık ücreti nasıl hesaplanır?</DialogTitle>
+            <DialogDescription>
+              Bu açıklama yalnızca 5 kg üzerindeki gönderiler için gösterilir.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+            <p>
+              <strong>5 kg’a kadar:</strong> Ek ağırlık ücreti uygulanmaz.
+            </p>
+            <p>
+              <strong>5 kg’ı aşınca:</strong> Gönderinin ağırlığından bağımsız
+              olarak sipariş toplamına tek seferlik <strong>500 TL</strong>{" "}
+              eklenir.
+            </p>
+            <p>
+              <strong>Örnek:</strong> 5,1 kg ve 12 kg paketlerde ek ağırlık
+              bedeli aynıdır; rota ücreti ise güzergâha göre ayrıca doğrulanır.
+            </p>
+          </div>
+          <p className="text-xs leading-5 text-slate-500">
+            Seçtiğiniz ağırlık:{" "}
+            <strong className="text-slate-900">
+              {form.packageWeightKg.toLocaleString("tr-TR")} kg
+            </strong>{" "}
+            · Geçerli ek ücret:{" "}
+            <strong className="text-slate-900">{money(weightSurcharge)}</strong>
+          </p>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={addressPreferencesOpen}
+        onOpenChange={setAddressPreferencesOpen}
+      >
+        <DialogContent className="max-w-lg rounded-3xl border-0 p-6">
+          <DialogHeader>
+            <DialogTitle>Varsayılan favori adresler</DialogTitle>
+            <DialogDescription>
+              Yeni siparişlerde alış ve teslimat noktaları için bu favori
+              adresler otomatik seçilir.
+            </DialogDescription>
+          </DialogHeader>
+          {savedAddresses.data?.filter(address => address.isFavorite === 1)
+            .length ? (
+            <div className="space-y-3">
+              {(["pickup", "delivery"] as const).map(side => {
+                const defaultId =
+                  side === "pickup"
+                    ? addressPreferences.data?.defaultPickupAddressId
+                    : addressPreferences.data?.defaultDeliveryAddressId;
+                return (
+                  <div key={side} className="rounded-2xl bg-slate-50 p-4">
+                    <p className="mb-3 text-sm font-black">
+                      Varsayılan {side === "pickup" ? "alış" : "teslimat"}{" "}
+                      noktası
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {savedAddresses.data
+                        ?.filter(address => address.isFavorite === 1)
+                        .map(address => (
+                          <Button
+                            key={address.id}
+                            type="button"
+                            size="sm"
+                            variant={
+                              defaultId === address.id ? "default" : "outline"
+                            }
+                            disabled={setSavedAddressDefault.isPending}
+                            onClick={() =>
+                              setSavedAddressDefault.mutate({
+                                side,
+                                id:
+                                  defaultId === address.id ? null : address.id,
+                              })
+                            }
+                            className={
+                              defaultId === address.id
+                                ? "bg-[#e54725]"
+                                : "bg-white"
+                            }
+                          >
+                            {defaultId === address.id ? "✓ " : ""}
+                            {address.label}
+                          </Button>
+                        ))}
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500">
+                      Seçimi kaldırmak için aktif etikete tekrar dokunun.
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+              Önce sipariş ekranından en az bir kayıtlı adresi favorilere
+              ekleyin. Favori adresler burada varsayılan alış veya teslimat
+              noktası olarak atanabilir.
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 lg:px-8">
+          <button
+            onClick={() => nav("home")}
+            aria-label="Run Courier ana sayfa"
+            className="flex min-h-11 items-center gap-2 font-black tracking-tight"
+          >
+            <span
+              aria-hidden="true"
+              className="grid size-9 place-items-center rounded-xl bg-[#e54725] text-white shadow-lg shadow-orange-200"
+            >
+              <Bike size={21} />
+            </span>
+            <span className="text-xl lowercase">
+              run <span className="text-[#e54725]">courier</span>
+            </span>
+          </button>
+          <nav className="hidden items-center gap-6 text-sm font-semibold md:flex">
+            <button onClick={() => nav("home")}>{t.services}</button>
+            <button onClick={() => nav("track")}>{t.tracking}</button>
+            <button onClick={() => nav("chat")}>{t.support}</button>
+            <button onClick={() => window.location.assign("/membership")}>
+              Üyelik
+            </button>
+            {isAuthenticated && (
+              <button onClick={() => nav("account")}>{t.account}</button>
+            )}
+            {isStaff && (
+              <button onClick={() => nav("panel")}>{t.operations}</button>
+            )}
+          </nav>
+          <div className="flex items-center gap-2">
+            <label className="sr-only" htmlFor="language-select">
+              {t.language}
+            </label>
+            <select
+              id="language-select"
+              value={language}
+              onChange={event =>
+                setLanguage(event.target.value as LanguageCode)
+              }
+              className="h-9 max-w-[7.5rem] rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-orange-300"
+              aria-label={t.language}
+            >
+              {supportedLanguages.map(item => (
+                <option key={item.code} value={item.code}>
+                  {item.nativeLabel}
+                </option>
+              ))}
+            </select>
+            {isAuthenticated ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hidden sm:inline-flex"
+                  onClick={() => window.location.assign("/membership")}
+                >
+                  Hesap türü
+                </Button>
+                <span className="hidden text-sm font-semibold lg:inline">
+                  {t.greeting}, {user?.name?.split(" ")[0] ?? "Run üyesi"}
+                </span>
+                <Button variant="ghost" size="sm" onClick={() => logout()}>
+                  {t.logout}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hidden sm:inline-flex"
+                  onClick={() => window.location.assign("/membership")}
+                >
+                  Üyelik
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => startLogin()}
+                >
+                  {t.login}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+      {section === "account" && isAuthenticated && (
+        <div className="mx-auto flex max-w-5xl justify-end px-4 pt-5 lg:px-8">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setAddressPreferencesOpen(true)}
+            className="rounded-xl border-orange-200 bg-white text-[#c9381b]"
+          >
+            Favori adres tercihlerim
+          </Button>
+        </div>
+      )}
 
-    {section === "order" && isAuthenticated && <section aria-label="Sipariş ilerlemesi" className="mx-auto max-w-5xl px-4 pt-6 lg:px-8"><Card className="rounded-3xl border-0 shadow-sm"><CardContent className="p-4"><div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm font-black">Sipariş ilerlemesi</p><span className="text-xs font-bold text-[#c9381b]">%{orderProgressPercent} tamamlandı</span></div><div className="grid grid-cols-3 gap-2">{orderProgress.map((step, index) => <div key={step.id} className="min-w-0"><div className="flex items-center gap-2"><span className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-black ${step.complete ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-500"}`}>{step.complete ? <CheckCircle2 size={15}/> : index + 1}</span><span className={`truncate text-xs font-bold ${step.complete ? "text-slate-900" : "text-slate-500"}`}>{step.label}</span></div><div className={`mt-2 h-1 rounded-full ${step.complete ? "bg-emerald-500" : "bg-slate-100"}`}/></div>)}</div>{routeEstimate.isError && routeAddressComplete && isOnline && <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs font-semibold leading-5 text-amber-900">Rota hesaplama geçici olarak tamamlanamadı. Adresleriniz kaydedildi; tekrar deneyebilirsiniz.</p><Button type="button" variant="outline" size="sm" disabled={routeEstimate.isFetching} onClick={() => routeEstimate.refetch()} className="shrink-0 rounded-xl border-amber-300 bg-white text-amber-900 hover:bg-amber-100"><RotateCcw className="mr-2" size={15}/>{routeEstimate.isFetching ? "Hesaplanıyor…" : "Yeniden dene"}</Button></div>}</CardContent></Card></section>}
+      {section === "order" && isAuthenticated && (
+        <section
+          aria-label="Sipariş ilerlemesi"
+          className="mx-auto max-w-5xl px-4 pt-6 lg:px-8"
+        >
+          <Card className="rounded-3xl border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-sm font-black">Sipariş ilerlemesi</p>
+                <span className="text-xs font-bold text-[#c9381b]">
+                  %{orderProgressPercent} tamamlandı
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {orderProgress.map((step, index) => (
+                  <div key={step.id} className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-black ${step.complete ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-500"}`}
+                      >
+                        {step.complete ? <CheckCircle2 size={15} /> : index + 1}
+                      </span>
+                      <span
+                        className={`truncate text-xs font-bold ${step.complete ? "text-slate-900" : "text-slate-500"}`}
+                      >
+                        {step.label}
+                      </span>
+                    </div>
+                    <div
+                      className={`mt-2 h-1 rounded-full ${step.complete ? "bg-emerald-500" : "bg-slate-100"}`}
+                    />
+                  </div>
+                ))}
+              </div>
+              {routeEstimate.isError && routeAddressComplete && isOnline && (
+                <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs font-semibold leading-5 text-amber-900">
+                    Rota hesaplama geçici olarak tamamlanamadı. Adresleriniz
+                    kaydedildi; tekrar deneyebilirsiniz.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={routeEstimate.isFetching}
+                    onClick={() => routeEstimate.refetch()}
+                    className="shrink-0 rounded-xl border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+                  >
+                    <RotateCcw className="mr-2" size={15} />
+                    {routeEstimate.isFetching
+                      ? "Hesaplanıyor…"
+                      : "Yeniden dene"}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
-    {section === "home" && <main>
-      <section className="relative overflow-hidden bg-[#111827] text-white"><div className="absolute -right-24 -top-32 size-96 rounded-full bg-[#e54725]/30 blur-3xl"/><div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:py-24"><div className="relative z-10"><Badge className="mb-6 border border-white/15 bg-white/10 px-3 py-1 text-orange-200">{t.cityDelivery}</Badge><h1 className="max-w-3xl text-5xl font-black leading-[.98] tracking-tight sm:text-7xl">{t.heroTitle.split(" ").slice(0, 3).join(" ")}<br/><span className="text-[#ff7956]">{t.heroTitle.split(" ").slice(3).join(" ")}</span></h1><p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">{t.heroDescription}</p><div className="mt-8 flex flex-wrap gap-3"><Button onClick={() => isAuthenticated ? nav("order") : startLogin()} className="h-12 rounded-xl bg-[#e54725] px-6 text-base font-bold hover:bg-[#c9381b]">{t.fastOrder} <ArrowRight className="ml-2" size={18}/></Button><Button onClick={() => nav("track")} variant="outline" className="h-12 rounded-xl border-white/20 bg-white/5 px-6 text-white hover:bg-white/10">{t.trackOrder}</Button></div><div className="mt-10 flex gap-8 text-sm text-slate-300"><div><strong className="block text-2xl text-white">7/24</strong>destek</div><div><strong className="block text-2xl text-white">İstanbul</strong>içi teslimat</div></div></div><div className="relative z-10 flex items-center justify-center"><div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/10 p-5 shadow-2xl backdrop-blur-md"><div className="mb-5 flex items-center justify-between"><span className="font-bold">Teslimat rotası</span><span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-bold text-emerald-300">Canlı</span></div><div className="space-y-3"><div className="flex items-center gap-3 rounded-2xl bg-white/10 p-4"><span className="size-3 rounded-full bg-[#ff7956]"/><div><p className="text-xs text-slate-400">Alış noktası</p><p className="font-semibold">Kadıköy, İstanbul</p></div></div><div className="ml-6 h-8 border-l border-dashed border-slate-500"/><div className="flex items-center gap-3 rounded-2xl bg-white/10 p-4"><span className="size-3 rounded-full bg-emerald-400"/><div><p className="text-xs text-slate-400">Teslimat noktası</p><p className="font-semibold">Beşiktaş, İstanbul</p></div></div></div><div className="mt-5 flex items-end justify-between border-t border-white/10 pt-5"><div><p className="text-xs text-slate-400">Rota durumu</p><p className="text-xl font-black">Aktif takip</p></div><div className="rounded-xl bg-[#e54725] px-4 py-2 text-sm font-bold">Canlı</div></div></div></div></div></section>
-      <section className="bg-white"><div className="mx-auto max-w-6xl px-4 py-16 lg:px-8"><div className="mb-9 flex flex-wrap items-end justify-between gap-4"><div className="max-w-2xl"><p className="font-bold uppercase tracking-[.2em] text-[#e54725]">Hizmetlerimiz</p><h2 className="mt-3 text-4xl font-black tracking-tight">Teslimat ihtiyacınıza uygun kurye.</h2><p className="mt-3 text-slate-500">Zarf ve 5 kg’a kadar gönderiler için İstanbul içi rota bazlı teslimat. 5 kg üzeri gönderilerde 500 TL ek ücret uygulanır.</p></div><Button onClick={() => isAuthenticated ? nav("order") : startLogin()} variant="outline" className="rounded-xl border-orange-200 text-[#c9381b]">Hizmet seçerek sipariş ver</Button></div><div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{[{ key:"pharmacy_on_call", image:"/manus-storage/run-courier-pharmacy_ce755a7f.jpg" },{ key:"vip", image:"/manus-storage/run-courier-vip_10294627.jpg" },{ key:"mall", image:"/manus-storage/run-courier-mall_adac17b6.jpg" },{ key:"airport", image:"/manus-storage/run-courier-airport_e1b63bec.jpg" },{ key:"express", image:"/manus-storage/run-courier-express_25575ed9.jpg" },{ key:"standard", image:"/manus-storage/run-courier-standard_bbf51353.jpg" }].map(({key,image}) => { const service = COURIER_SERVICES[key as CourierServiceType]; return <button key={key} type="button" onClick={() => { setForm(prev => ({...prev, serviceType: key as CourierServiceType})); isAuthenticated ? nav("order") : startLogin(); }} className="group overflow-hidden rounded-3xl bg-[#111827] text-left shadow-sm transition-transform hover:-translate-y-1"><img src={image} alt={`${service.label} hizmeti`} className="h-44 w-full object-cover opacity-90 transition duration-300 group-hover:opacity-100"/><div className="p-5 text-white"><div className="flex items-start justify-between gap-3"><div><h3 className="text-xl font-black">{service.label}</h3><p className="mt-1 text-sm text-slate-300">{service.description}</p></div><Badge className="shrink-0 bg-[#e54725] text-white">{service.deliveryTargetMinutes === 60 ? "60 dk" : "2–3 saat"}</Badge></div><p className="mt-4 text-xs font-bold text-orange-200">Rota bazlı ücret · {service.deliveryTargetMinutes === 60 ? "öncelikli atama" : "planlı hızlı teslimat"}</p></div></button>})}</div></div></section>
-      <section className="bg-[#fff7f3]"><div className="mx-auto max-w-6xl px-4 py-12 lg:px-8"><div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between"><div><p className="font-bold uppercase tracking-[.2em] text-[#e54725]">Offline şehir paketleri</p><h2 className="mt-3 text-3xl font-black tracking-tight">İstanbul rotanızı önceden indirin.</h2><p className="mb-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">{isOnline ? "Online · rota doğrulama açık" : "Offline · yalnızca indirilen harita paketleri"}</p><p className="mt-3 max-w-2xl text-slate-600">Harita paketi cihazda saklanır. Bu ücretsiz paket harita verisidir; gerçek yol rotası ve kesin ücret için internet bağlantısı gerekir. Paket dışındaki veya offline rotalarda fiyat doğrulanmadan sipariş onaylanmaz.</p></div><a className="text-sm font-semibold text-[#c9381b] underline" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap / ODbL</a></div><div className="mt-7 grid gap-4 md:grid-cols-2">{OFFLINE_MAP_PACKAGES.map(pkg => { const state = packageState[pkg.id] ?? "idle"; return <Card key={pkg.id} className="rounded-3xl border-0 bg-white shadow-sm"><CardContent className="flex items-center justify-between gap-4 p-5"><div><div className="flex items-center gap-2"><MapPin size={18} className="text-[#e54725]"/><h3 className="font-extrabold">{pkg.city}</h3></div><p className="mt-1 text-sm text-slate-500">{pkg.sizeLabel}</p><p className="mt-1 text-xs text-slate-400">{pkg.attribution}</p>{pkg.checksum && <p className="mt-1 break-all text-[10px] text-slate-400">{pkg.checksum.algorithm.toUpperCase()} checksum: {pkg.checksum.value}</p>}{state === "downloading" && <p className="mt-2 text-xs font-bold text-[#e54725]">İndiriliyor · %{packageProgress[pkg.id] ?? 0}</p>}{state === "ready" && <><p className="mt-2 text-xs font-bold text-emerald-600">Cihazda hazır · offline harita önbelleğinde{packageInfo[pkg.id] ? ` · ${(packageInfo[pkg.id].sizeBytes / 1024 / 1024).toFixed(1)} MB` : ""}</p>{packageUrls[pkg.id] && <a className="mt-1 block text-xs font-bold text-[#c9381b] underline" href={packageUrls[pkg.id]} download={`${pkg.city.toLowerCase()}-offline-osm.zip`}>Önbellekteki paketi aç/indir</a>}</>}{state === "error" && packageErrors[pkg.id] && <p className="mt-2 text-xs font-bold text-red-600">{packageErrors[pkg.id]}</p>}</div><Button disabled={pkg.status !== "available" || state === "checking" || state === "downloading"} onClick={() => handlePackageDownload(pkg)} variant={state === "ready" ? "outline" : "default"} className="shrink-0 rounded-xl bg-[#e54725]">{pkg.status === "preparing" ? "Hazırlanıyor" : state === "ready" ? "Hazır" : state === "downloading" ? "%" + (packageProgress[pkg.id] ?? 0) : "İndir"}</Button><label className="text-right text-[10px] font-semibold text-slate-500">ZIP/PMTiles içe aktar<input type="file" accept=".zip,.pmtiles,application/zip,application/octet-stream" className="mt-1 block w-32 text-[10px]" onChange={e => handlePackageImport(pkg, e.target.files?.[0])}/></label></CardContent></Card>; })}</div></div></section>
-      <section className="mx-auto max-w-6xl px-4 py-12 lg:px-8"><OfflineIstanbulMap offlinePackageReady={Object.values(packageState).includes("ready")} /></section>
-      <section className="mx-auto max-w-6xl px-4 py-16 lg:px-8"><div className="mb-10 max-w-2xl"><p className="font-bold uppercase tracking-[.2em] text-[#e54725]">Tek platform, tam kontrol</p><h2 className="mt-3 text-4xl font-black tracking-tight">İşinizin her adımı Run Courier’de.</h2></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[[Package,"Ürün alımı","Mağazadan veya adresten ürününüzü teslim alırız."],[MapPin,"Akıllı takip","Siparişinizin hangi aşamada olduğunu anlık görün."],[Headphones,"Canlı destek","Operatör ve kurye ile tek sohbet ekranından iletişim kurun."],[WalletCards,"Şeffaf muhasebe","Komisyon, kurye kazancı ve firma geliri tek raporda."]].map(([Icon,title,desc]) => <Card key={title as string} className="rounded-3xl border-0 bg-white shadow-sm"><CardContent className="p-6"><div className="mb-5 grid size-11 place-items-center rounded-2xl bg-orange-50 text-[#e54725]"><Icon size={21}/></div><h3 className="font-extrabold">{title as string}</h3><p className="mt-2 text-sm leading-6 text-slate-500">{desc as string}</p></CardContent></Card>)}</div></section>
-    </main>}
+      {section === "home" && (
+        <main>
+          <section className="relative overflow-hidden bg-[#111827] text-white">
+            <div className="absolute -right-24 -top-32 size-96 rounded-full bg-[#e54725]/30 blur-3xl" />
+            <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:py-24">
+              <div className="relative z-10">
+                <Badge className="mb-6 border border-white/15 bg-white/10 px-3 py-1 text-orange-200">
+                  {t.cityDelivery}
+                </Badge>
+                <h1 className="max-w-3xl text-5xl font-black leading-[.98] tracking-tight sm:text-7xl">
+                  {t.heroTitle.split(" ").slice(0, 3).join(" ")}
+                  <br />
+                  <span className="text-[#ff7956]">
+                    {t.heroTitle.split(" ").slice(3).join(" ")}
+                  </span>
+                </h1>
+                <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">
+                  {t.heroDescription}
+                </p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Button
+                    onClick={() =>
+                      isAuthenticated ? nav("order") : startLogin()
+                    }
+                    className="h-12 rounded-xl bg-[#e54725] px-6 text-base font-bold hover:bg-[#c9381b]"
+                  >
+                    {t.fastOrder} <ArrowRight className="ml-2" size={18} />
+                  </Button>
+                  <Button
+                    onClick={() => nav("track")}
+                    variant="outline"
+                    className="h-12 rounded-xl border-white/20 bg-white/5 px-6 text-white hover:bg-white/10"
+                  >
+                    {t.trackOrder}
+                  </Button>
+                </div>
+                <div className="mt-10 flex gap-8 text-sm text-slate-300">
+                  <div>
+                    <strong className="block text-2xl text-white">7/24</strong>
+                    destek
+                  </div>
+                  <div>
+                    <strong className="block text-2xl text-white">
+                      Türkiye
+                    </strong>
+                    geneli teslimat
+                  </div>
+                </div>
+              </div>
+              <div className="relative z-10 flex items-center justify-center">
+                <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/10 p-5 shadow-2xl backdrop-blur-md">
+                  <div className="mb-5 flex items-center justify-between">
+                    <span className="font-bold">Teslimat rotası</span>
+                    <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-bold text-emerald-300">
+                      Canlı
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-4">
+                      <span className="size-3 rounded-full bg-[#ff7956]" />
+                      <div>
+                        <p className="text-xs text-slate-400">Alış noktası</p>
+                        <p className="font-semibold">Çankaya, Ankara</p>
+                      </div>
+                    </div>
+                    <div className="ml-6 h-8 border-l border-dashed border-slate-500" />
+                    <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-4">
+                      <span className="size-3 rounded-full bg-emerald-400" />
+                      <div>
+                        <p className="text-xs text-slate-400">
+                          Teslimat noktası
+                        </p>
+                        <p className="font-semibold">Konak, İzmir</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-5 flex items-end justify-between border-t border-white/10 pt-5">
+                    <div>
+                      <p className="text-xs text-slate-400">Rota durumu</p>
+                      <p className="text-xl font-black">Aktif takip</p>
+                    </div>
+                    <div className="rounded-xl bg-[#e54725] px-4 py-2 text-sm font-bold">
+                      Canlı
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section className="bg-white">
+            <div className="mx-auto max-w-6xl px-4 py-16 lg:px-8">
+              <div className="mb-9 flex flex-wrap items-end justify-between gap-4">
+                <div className="max-w-2xl">
+                  <p className="font-bold uppercase tracking-[.2em] text-[#e54725]">
+                    Hizmetlerimiz
+                  </p>
+                  <h2 className="mt-3 text-4xl font-black tracking-tight">
+                    Teslimat ihtiyacınıza uygun kurye.
+                  </h2>
+                  <p className="mt-3 text-slate-500">
+                    Zarf ve 5 kg’a kadar gönderiler için Türkiye geneli rota bazlı
+                    teslimat. 5 kg üzeri gönderilerde 500 TL ek ücret uygulanır.
+                  </p>
+                </div>
+                <Button
+                  onClick={() =>
+                    isAuthenticated ? nav("order") : startLogin()
+                  }
+                  variant="outline"
+                  className="rounded-xl border-orange-200 text-[#c9381b]"
+                >
+                  Hizmet seçerek sipariş ver
+                </Button>
+              </div>
+              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                {[
+                  {
+                    key: "pharmacy_on_call",
+                    image: "/manus-storage/run-courier-pharmacy_ce755a7f.jpg",
+                  },
+                  {
+                    key: "vip",
+                    image: "/manus-storage/run-courier-vip_10294627.jpg",
+                  },
+                  {
+                    key: "mall",
+                    image: "/manus-storage/run-courier-mall_adac17b6.jpg",
+                  },
+                  {
+                    key: "airport",
+                    image: "/manus-storage/run-courier-airport_e1b63bec.jpg",
+                  },
+                  {
+                    key: "express",
+                    image: "/manus-storage/run-courier-express_25575ed9.jpg",
+                  },
+                  {
+                    key: "standard",
+                    image: "/manus-storage/run-courier-standard_bbf51353.jpg",
+                  },
+                ].map(({ key, image }) => {
+                  const service = COURIER_SERVICES[key as CourierServiceType];
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        setForm(prev => ({
+                          ...prev,
+                          serviceType: key as CourierServiceType,
+                        }));
+                        isAuthenticated ? nav("order") : startLogin();
+                      }}
+                      className="group overflow-hidden rounded-3xl bg-[#111827] text-left shadow-sm transition-transform hover:-translate-y-1"
+                    >
+                      <img
+                        src={image}
+                        alt={`${service.label} hizmeti`}
+                        className="h-44 w-full object-cover opacity-90 transition duration-300 group-hover:opacity-100"
+                      />
+                      <div className="p-5 text-white">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h3 className="text-xl font-black">
+                              {service.label}
+                            </h3>
+                            <p className="mt-1 text-sm text-slate-300">
+                              {service.description}
+                            </p>
+                          </div>
+                          <Badge className="shrink-0 bg-[#e54725] text-white">
+                            {service.deliveryTargetMinutes === 60
+                              ? "60 dk"
+                              : "2–3 saat"}
+                          </Badge>
+                        </div>
+                        <p className="mt-4 text-xs font-bold text-orange-200">
+                          Rota bazlı ücret ·{" "}
+                          {service.deliveryTargetMinutes === 60
+                            ? "öncelikli atama"
+                            : "planlı hızlı teslimat"}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+          <section className="bg-[#fff7f3]">
+            <div className="mx-auto max-w-6xl px-4 py-12 lg:px-8">
+              <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="font-bold uppercase tracking-[.2em] text-[#e54725]">
+                    Offline şehir paketleri
+                  </p>
+                  <h2 className="mt-3 text-3xl font-black tracking-tight">
+                    İstanbul rotanızı önceden indirin.
+                  </h2>
+                  <p className="mb-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">
+                    {isOnline
+                      ? "Online · rota doğrulama açık"
+                      : "Offline · yalnızca indirilen harita paketleri"}
+                  </p>
+                  <p className="mt-3 max-w-2xl text-slate-600">
+                    Harita paketi cihazda saklanır. Bu ücretsiz paket harita
+                    verisidir; gerçek yol rotası ve kesin ücret için internet
+                    bağlantısı gerekir. Paket dışındaki veya offline rotalarda
+                    fiyat doğrulanmadan sipariş onaylanmaz.
+                  </p>
+                </div>
+                <a
+                  className="text-sm font-semibold text-[#c9381b] underline"
+                  href="https://www.openstreetmap.org/copyright"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  OpenStreetMap / ODbL
+                </a>
+              </div>
+              <div className="mt-7 grid gap-4 md:grid-cols-2">
+                {OFFLINE_MAP_PACKAGES.map(pkg => {
+                  const state = packageState[pkg.id] ?? "idle";
+                  return (
+                    <Card
+                      key={pkg.id}
+                      className="rounded-3xl border-0 bg-white shadow-sm"
+                    >
+                      <CardContent className="flex items-center justify-between gap-4 p-5">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <MapPin size={18} className="text-[#e54725]" />
+                            <h3 className="font-extrabold">{pkg.city}</h3>
+                          </div>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {pkg.sizeLabel}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {pkg.attribution}
+                          </p>
+                          {pkg.checksum && (
+                            <p className="mt-1 break-all text-[10px] text-slate-400">
+                              {pkg.checksum.algorithm.toUpperCase()} checksum:{" "}
+                              {pkg.checksum.value}
+                            </p>
+                          )}
+                          {state === "downloading" && (
+                            <p className="mt-2 text-xs font-bold text-[#e54725]">
+                              İndiriliyor · %{packageProgress[pkg.id] ?? 0}
+                            </p>
+                          )}
+                          {state === "ready" && (
+                            <>
+                              <p className="mt-2 text-xs font-bold text-emerald-600">
+                                Cihazda hazır · offline harita önbelleğinde
+                                {packageInfo[pkg.id]
+                                  ? ` · ${(packageInfo[pkg.id].sizeBytes / 1024 / 1024).toFixed(1)} MB`
+                                  : ""}
+                              </p>
+                              {packageUrls[pkg.id] && (
+                                <a
+                                  className="mt-1 block text-xs font-bold text-[#c9381b] underline"
+                                  href={packageUrls[pkg.id]}
+                                  download={`${pkg.city.toLowerCase()}-offline-osm.zip`}
+                                >
+                                  Önbellekteki paketi aç/indir
+                                </a>
+                              )}
+                            </>
+                          )}
+                          {state === "error" && packageErrors[pkg.id] && (
+                            <p className="mt-2 text-xs font-bold text-red-600">
+                              {packageErrors[pkg.id]}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          disabled={
+                            pkg.status !== "available" ||
+                            state === "checking" ||
+                            state === "downloading"
+                          }
+                          onClick={() => handlePackageDownload(pkg)}
+                          variant={state === "ready" ? "outline" : "default"}
+                          className="shrink-0 rounded-xl bg-[#e54725]"
+                        >
+                          {pkg.status === "preparing"
+                            ? "Hazırlanıyor"
+                            : state === "ready"
+                              ? "Hazır"
+                              : state === "downloading"
+                                ? "%" + (packageProgress[pkg.id] ?? 0)
+                                : "İndir"}
+                        </Button>
+                        <label className="text-right text-[10px] font-semibold text-slate-500">
+                          ZIP/PMTiles içe aktar
+                          <input
+                            type="file"
+                            accept=".zip,.pmtiles,application/zip,application/octet-stream"
+                            className="mt-1 block w-32 text-[10px]"
+                            onChange={e =>
+                              handlePackageImport(pkg, e.target.files?.[0])
+                            }
+                          />
+                        </label>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+          <section className="mx-auto max-w-6xl px-4 py-12 lg:px-8">
+            <OfflineIstanbulMap
+              offlinePackageReady={Object.values(packageState).includes(
+                "ready"
+              )}
+            />
+          </section>
+          <section className="mx-auto max-w-6xl px-4 py-16 lg:px-8">
+            <div className="mb-10 max-w-2xl">
+              <p className="font-bold uppercase tracking-[.2em] text-[#e54725]">
+                Tek platform, tam kontrol
+              </p>
+              <h2 className="mt-3 text-4xl font-black tracking-tight">
+                İşinizin her adımı Run Courier’de.
+              </h2>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                [
+                  Package,
+                  "Ürün alımı",
+                  "Mağazadan veya adresten ürününüzü teslim alırız.",
+                ],
+                [
+                  MapPin,
+                  "Akıllı takip",
+                  "Siparişinizin hangi aşamada olduğunu anlık görün.",
+                ],
+                [
+                  Headphones,
+                  "Canlı destek",
+                  "Operatör ve kurye ile tek sohbet ekranından iletişim kurun.",
+                ],
+                [
+                  WalletCards,
+                  "Şeffaf muhasebe",
+                  "Komisyon, kurye kazancı ve firma geliri tek raporda.",
+                ],
+              ].map(([Icon, title, desc]) => (
+                <Card
+                  key={title as string}
+                  className="rounded-3xl border-0 bg-white shadow-sm"
+                >
+                  <CardContent className="p-6">
+                    <div className="mb-5 grid size-11 place-items-center rounded-2xl bg-orange-50 text-[#e54725]">
+                      <Icon size={21} />
+                    </div>
+                    <h3 className="font-extrabold">{title as string}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      {desc as string}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        </main>
+      )}
 
-    {section === "order" && !isAuthenticated && <main className="mx-auto max-w-xl px-4 py-16 lg:px-8"><Card className="rounded-3xl border-0 shadow-sm"><CardContent className="p-8 text-center"><Badge className="bg-orange-100 text-[#c9381b]">Giriş gerekli</Badge><h1 className="mt-4 text-3xl font-black">Sipariş oluşturmak için giriş yapın.</h1><p className="mt-3 text-slate-500">Adres, ödeme ve canlı takip bilgilerinizin güvenliği için siparişler yalnızca giriş yapan müşteriler tarafından oluşturulabilir.</p><Button onClick={() => startLogin()} className="mt-6 h-12 w-full rounded-xl bg-[#e54725] font-bold">Giriş yap ve devam et</Button><Button type="button" variant="outline" onClick={() => nav("home")} className="mt-3 w-full rounded-xl">Ana sayfaya dön</Button></CardContent></Card></main>}
-    {section === "order" && isAuthenticated && <main className="mx-auto max-w-5xl px-4 py-10 lg:px-8"><div className="mb-8"><Badge className="bg-orange-100 text-[#c9381b]">Yeni sipariş</Badge><h1 className="mt-3 text-4xl font-black">Teslimat detaylarını girin.</h1><p className="mt-2 text-slate-500">Adresleri ve mesafeyi girin; ücret otomatik hesaplanır.</p></div><div className="grid gap-6 lg:grid-cols-[1fr_360px]"><Card className="rounded-3xl border-0 shadow-sm"><CardContent className="space-y-5 p-6"><div className="grid gap-5"><div className="space-y-3"><div className="flex flex-wrap items-center gap-2"><select className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm" value={savedAddressSelection.pickup ?? ""} onChange={e => setSavedAddressSelection(prev => ({ ...prev, pickup: e.target.value ? Number(e.target.value) : null }))}><option value="">Kayıtlı alış adresi seçin</option>{savedAddresses.data?.map(address => <option key={address.id} value={address.id}>{address.label} · {address.district}, {address.neighborhood}</option>)}</select><Button type="button" variant="outline" disabled={!savedAddressSelection.pickup || removeSavedAddress.isPending} onClick={() => savedAddressSelection.pickup && removeSavedAddress.mutate({ id: savedAddressSelection.pickup })}>Sil</Button></div><AddressPicker key={`pickup-${savedAddressSelection.pickup ?? "new"}`} label="Ürün alma adresi" initialValue={savedAddressInitial(savedAddressSelection.pickup)} onChange={(pickupAddress, value) => setForm(prev => ({ ...prev, pickupAddress, pickupProvince: value.province, pickupDistrict: value.district, pickupNeighborhood: value.neighborhood, pickupStreet: value.street, pickupBuildingNo: value.buildingNo, pickupPostalCode: value.postalCode, pickupApartmentNo: value.apartmentNo, pickupFloor: value.floor, pickupCourierNote: value.courierNote, pickupAddressDetail: value.detail }))}/><Input className="mt-2" inputMode="numeric" maxLength={5} placeholder="Posta kodu (5 hane)" value={form.pickupPostalCode} onChange={e => setForm(prev => ({ ...prev, pickupPostalCode: e.target.value.replace(/\D/g, "").slice(0, 5) }))}/><div className="flex flex-wrap items-center gap-2"><Input className="min-w-0 flex-1" placeholder="Adres adı (Ev, İş)" value={savedAddressLabels.pickup} onChange={e => setSavedAddressLabels(prev => ({ ...prev, pickup: e.target.value }))}/><Button type="button" variant="outline" disabled={saveAddress.isPending} onClick={() => saveCurrentAddress("pickup")}>Adresi kaydet</Button></div></div><div className="space-y-3"><div className="flex flex-wrap items-center gap-2"><select className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm" value={savedAddressSelection.delivery ?? ""} onChange={e => setSavedAddressSelection(prev => ({ ...prev, delivery: e.target.value ? Number(e.target.value) : null }))}><option value="">Kayıtlı teslimat adresi seçin</option>{savedAddresses.data?.map(address => <option key={address.id} value={address.id}>{address.label} · {address.district}, {address.neighborhood}</option>)}</select><Button type="button" variant="outline" disabled={!savedAddressSelection.delivery || removeSavedAddress.isPending} onClick={() => savedAddressSelection.delivery && removeSavedAddress.mutate({ id: savedAddressSelection.delivery })}>Sil</Button></div><AddressPicker key={`delivery-${savedAddressSelection.delivery ?? "new"}`} label="Teslimat adresi" initialValue={savedAddressInitial(savedAddressSelection.delivery)} onChange={(deliveryAddress, value) => setForm(prev => ({ ...prev, deliveryAddress, deliveryProvince: value.province, deliveryDistrict: value.district, deliveryNeighborhood: value.neighborhood, deliveryStreet: value.street, deliveryBuildingNo: value.buildingNo, deliveryPostalCode: value.postalCode, deliveryApartmentNo: value.apartmentNo, deliveryFloor: value.floor, deliveryCourierNote: value.courierNote, deliveryAddressDetail: value.detail }))}/><Input className="mt-2" inputMode="numeric" maxLength={5} placeholder="Posta kodu (5 hane)" value={form.deliveryPostalCode} onChange={e => setForm(prev => ({ ...prev, deliveryPostalCode: e.target.value.replace(/\D/g, "").slice(0, 5) }))}/><div className="flex flex-wrap items-center gap-2"><Input className="min-w-0 flex-1" placeholder="Adres adı (Ev, İş)" value={savedAddressLabels.delivery} onChange={e => setSavedAddressLabels(prev => ({ ...prev, delivery: e.target.value }))}/><Button type="button" variant="outline" disabled={saveAddress.isPending} onClick={() => saveCurrentAddress("delivery")}>Adresi kaydet</Button></div></div></div><label className="text-sm font-bold">Ürün açıklaması<Input className="mt-2" placeholder="Ne alınacak?" value={form.productDescription} onChange={e => setForm({...form,productDescription:e.target.value})}/></label><label className="text-sm font-bold">Telefon numarası<Input className="mt-2" placeholder="05xx xxx xx xx" value={form.customerPhone} onChange={e => setForm({...form,customerPhone:e.target.value})}/></label><div className="rounded-2xl bg-orange-50 p-4 text-sm"><p className="font-bold text-[#c9381b]">Gerçek araç rotası</p><p className="mt-1 text-slate-600">İl, ilçe, mahalle ve sokak bilgileri araç yolundan doğrulanır; kuş uçuşu mesafe kullanılmaz.</p>{canConfirmOrder(routeEstimate.data?.routeStatus) ? <p className="mt-2 font-bold text-slate-900">{routeEstimate.data.distanceKm} km · yaklaşık {routeEstimate.data.durationMinutes} dk · rota doğrulandı</p> : <p className="mt-2 font-bold text-amber-700">{!routeAddressComplete ? "Önce iki adres için ilçe, mahalle, cadde/sokak ve açık adres alanlarını doldurun." : !isOnline ? "Çevrim dışı: rota doğrulanmadan sipariş onaylanamaz." : routeEstimate.isError ? "Bu adreslerle araç rotası oluşturulamadı. Cadde/sokak ve açık adres bilgilerini kontrol edin." : "Adresleri seçin; kesin fiyat için araç rotası doğrulanmalı."}</p>}</div><div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-bold">Ödeme yöntemi</p><p className="text-xs text-slate-500">Kart sandbox testtir; kapıda nakitte ödeme teslimat sırasında tahsil edilir.</p></div><Badge className={paymentApproved ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"}>{paymentApproved ? "Onaylandı" : "Test bekliyor"}</Badge></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => selectPaymentMethod("sandbox_card")} className={`rounded-xl border px-3 py-2 text-left text-xs font-bold ${paymentMethod === "sandbox_card" ? "border-[#e54725] bg-orange-50 text-[#c9381b]" : "border-slate-200 bg-white text-slate-600"}`}>Sandbox kart</button><button type="button" onClick={() => selectPaymentMethod("cash_on_delivery")} className={`rounded-xl border px-3 py-2 text-left text-xs font-bold ${paymentMethod === "cash_on_delivery" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-600"}`}>Kapıda nakit</button></div>{paymentMethod === "sandbox_card" && <div className="mt-3">
-  <div className="grid gap-2 sm:grid-cols-[1fr_100px_80px]"><Input aria-label="Kart numarası" placeholder="4242 4242 4242 4242" value={paymentForm.cardNumber} onChange={e => { setPaymentApproved(false); setPaymentReference(null); setPaymentForm({...paymentForm, cardNumber: e.target.value}); }}/><Input aria-label="Son kullanma" placeholder="12/30" value={paymentForm.expiry} onChange={e => { setPaymentApproved(false); setPaymentReference(null); setPaymentForm({...paymentForm, expiry: e.target.value}); }}/><Input aria-label="CVV" placeholder="123" value={paymentForm.cvv} onChange={e => { setPaymentApproved(false); setPaymentReference(null); setPaymentForm({...paymentForm, cvv: e.target.value}); }}/></div>
-  <Button type="button" variant="outline" disabled={!orderFormComplete || !canConfirmOrder(routeEstimate.data?.routeStatus) || sandboxPayment.isPending} onClick={() => routeEstimate.data && sandboxPayment.mutate({ ...paymentForm, amount: routeEstimate.data.total })} className="mt-3 w-full">{sandboxPayment.isPending ? "Ödeme test ediliyor…" : "Sandbox ödemeyi test et"}</Button>
-</div>}
-{paymentMethod === "cash_on_delivery" && <p className="mt-3 rounded-xl bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">Kapıda nakit seçildi. Tutar, kurye teslimatı tamamladığında müşteriden nakit tahsil edilecektir.</p>}
-<div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-black">Kurye hizmeti ve gönderi</p><p className="mt-1 text-xs text-slate-500">Tüm hizmetlerde kilometre bazlı rota ücreti uygulanır. Zarf–5 kg arasındaki gönderiler için uygundur.</p></div><Badge className="bg-orange-100 text-[#c9381b]">{getDeliveryEstimate({ serviceType: form.serviceType, routeDurationMinutes: routeEstimate.data?.durationMinutes }).label}</Badge></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{COURIER_SERVICE_TYPES.map(type => { const service = COURIER_SERVICES[type]; const selected = form.serviceType === type; return <button key={type} type="button" onClick={() => setForm(prev => ({ ...prev, serviceType: type }))} className={`rounded-xl border p-3 text-left ${selected ? "border-[#e54725] bg-orange-50 text-[#c9381b]" : "border-slate-200 bg-slate-50 text-slate-700"}`}><span className="block text-sm font-black">{service.label}</span><span className="mt-1 block text-xs opacity-80">{service.description} · hedef {service.deliveryTargetMinutes === 60 ? "60 dk" : "2–3 saat"}</span></button>})}</div><label className="mt-4 block text-sm font-bold">Gönderi ağırlığı (kg)<span title="5 kg üzerindeki her gönderiye rota ücretinden bağımsız 500 TL eklenir." className="ml-1 inline-flex cursor-help items-center text-slate-400" aria-label="5 kg üzeri ek ücret bilgisi"><Calculator className="h-3.5 w-3.5"/></span><Input className="mt-2" type="number" min="0.1" step="0.1" max="50" aria-describedby="weight-surcharge-hint" value={form.packageWeightKg} onChange={event => setForm(prev => ({ ...prev, packageWeightKg: Math.max(0.1, Number(event.target.value) || 0.1) }))}/></label>{weightSurcharge > 0 ? <div id="weight-surcharge-hint" role="status" aria-live="polite" className="mt-2 flex gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"><Calculator className="mt-0.5 h-4 w-4 shrink-0 text-amber-700"/><div><p className="font-black">{form.packageWeightKg.toLocaleString("tr-TR")} kg için {money(weightSurcharge)} ek ücret eklendi.</p><p className="mt-0.5 font-medium">Bu tutar rota ücretinden ayrı olarak sipariş toplamına yansıtılır.</p></div></div> : <p id="weight-surcharge-hint" className="mt-2 text-xs text-slate-500">5 kg’a kadar ek ağırlık ücreti yoktur.</p>}</div>
-	<Button disabled={createOrder.isPending || !paymentApproved || !orderFormComplete || !canConfirmOrder(routeEstimate.data?.routeStatus)} onClick={handleCreateOrder} className="h-12 w-full rounded-xl bg-[#e54725] text-base font-bold">Siparişi onayla · {canConfirmOrder(routeEstimate.data?.routeStatus) ? money(routeEstimate.data.total) : "rota bekleniyor"}</Button></div></CardContent></Card><Card className="h-fit rounded-3xl border-0 shadow-sm"><CardHeader><CardTitle className="flex items-center gap-2"><Star className="h-5 w-5 fill-orange-200 text-[#e54725]"/>Favori adresler</CardTitle><p className="text-sm font-normal text-slate-500">Sık kullandığınız kayıtlı adresleri öne çıkarın ve tek dokunuşla formun ilgili alanına taşıyın.</p></CardHeader><CardContent className="space-y-3"><div className="rounded-2xl bg-orange-50 p-3"><p className="text-xs font-bold text-[#c9381b]">Seçili kayıtlı adresi favoriye ekleyin</p><div className="mt-2 grid gap-2 sm:grid-cols-2">{(["pickup", "delivery"] as const).map(side => { const selected = savedAddresses.data?.find(address => address.id === savedAddressSelection[side]); return selected ? <Button key={side} type="button" variant="outline" size="sm" disabled={setFavoriteAddress.isPending} onClick={() => setFavoriteAddress.mutate({ id: selected.id, isFavorite: selected.isFavorite !== 1 })} className="justify-between border-orange-200 bg-white text-xs text-[#c9381b]">{side === "pickup" ? "Alış" : "Teslim"} · {selected.isFavorite === 1 ? "Favoriden çıkar" : "Favoriye ekle"}<Star className={selected.isFavorite === 1 ? "h-4 w-4 fill-current" : "h-4 w-4"}/></Button> : <p key={side} className="rounded-lg bg-white px-3 py-2 text-xs text-slate-500">{side === "pickup" ? "Alış" : "Teslim"} için kayıtlı adres seçin.</p>; })}</div></div>{(savedAddresses.data?.filter(address => address.isFavorite === 1).length ?? 0) > 0 ? <div className="space-y-2">{savedAddresses.data?.filter(address => address.isFavorite === 1).map(address => <div key={address.id} className="rounded-2xl border border-amber-100 bg-amber-50/60 p-3"><div className="flex items-start justify-between gap-3"><div><p className="flex items-center gap-1 text-sm font-black text-slate-900"><Star className="h-3.5 w-3.5 fill-[#e54725] text-[#e54725]"/>{address.label}</p><p className="mt-1 text-xs leading-5 text-slate-600">{address.district}, {address.neighborhood} · {address.street}</p></div><Button type="button" variant="ghost" size="icon" disabled={setFavoriteAddress.isPending} onClick={() => setFavoriteAddress.mutate({ id: address.id, isFavorite: false })} aria-label={`${address.label} adresini favorilerden çıkar`} className="h-8 w-8 text-[#c9381b]"><Star className="h-4 w-4 fill-current"/></Button></div><div className="mt-3 grid grid-cols-2 gap-2"><Button type="button" size="sm" variant="outline" onClick={() => setSavedAddressSelection(prev => ({ ...prev, pickup: address.id }))}>Alışta kullan</Button><Button type="button" size="sm" variant="outline" onClick={() => setSavedAddressSelection(prev => ({ ...prev, delivery: address.id }))}>Teslimde kullan</Button></div></div>)}</div> : <p className="rounded-2xl border border-dashed border-slate-200 p-4 text-xs leading-5 text-slate-500">Kayıtlı adresi üstteki listeden seçip “Favoriye ekle” düğmesine basın. Favoriler burada hızlı seçim için görünür.</p>}</CardContent></Card></div></main>}
+      {section === "order" && !isAuthenticated && (
+        <main className="mx-auto max-w-xl px-4 py-16 lg:px-8">
+          <Card className="rounded-3xl border-0 shadow-sm">
+            <CardContent className="p-8 text-center">
+              <Badge className="bg-orange-100 text-[#c9381b]">
+                Giriş gerekli
+              </Badge>
+              <h1 className="mt-4 text-3xl font-black">
+                Sipariş oluşturmak için giriş yapın.
+              </h1>
+              <p className="mt-3 text-slate-500">
+                Adres, ödeme ve canlı takip bilgilerinizin güvenliği için
+                siparişler yalnızca giriş yapan müşteriler tarafından
+                oluşturulabilir.
+              </p>
+              <Button
+                onClick={() => startLogin()}
+                className="mt-6 h-12 w-full rounded-xl bg-[#e54725] font-bold"
+              >
+                Giriş yap ve devam et
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => nav("home")}
+                className="mt-3 w-full rounded-xl"
+              >
+                Ana sayfaya dön
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      )}
+      {section === "order" && isAuthenticated && (
+        <main className="mx-auto max-w-5xl px-4 py-10 lg:px-8">
+          <div className="mb-8">
+            <Badge className="bg-orange-100 text-[#c9381b]">Yeni sipariş</Badge>
+            <h1 className="mt-3 text-4xl font-black">
+              Teslimat detaylarını girin.
+            </h1>
+            <p className="mt-2 text-slate-500">
+              Adresleri ve mesafeyi girin; ücret otomatik hesaplanır.
+            </p>
+          </div>
+          <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+            <Card className="rounded-3xl border-0 shadow-sm">
+              <CardContent className="space-y-5 p-6">
+                <div className="grid gap-5">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm"
+                        value={savedAddressSelection.pickup ?? ""}
+                        onChange={e =>
+                          setSavedAddressSelection(prev => ({
+                            ...prev,
+                            pickup: e.target.value
+                              ? Number(e.target.value)
+                              : null,
+                          }))
+                        }
+                      >
+                        <option value="">Kayıtlı alış adresi seçin</option>
+                        {savedAddresses.data?.map(address => (
+                          <option key={address.id} value={address.id}>
+                            {address.label} · {address.district},{" "}
+                            {address.neighborhood}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={
+                          !savedAddressSelection.pickup ||
+                          removeSavedAddress.isPending
+                        }
+                        onClick={() =>
+                          savedAddressSelection.pickup &&
+                          removeSavedAddress.mutate({
+                            id: savedAddressSelection.pickup,
+                          })
+                        }
+                      >
+                        Sil
+                      </Button>
+                    </div>
+                    <AddressPicker
+                      key={`pickup-${savedAddressSelection.pickup ?? "new"}`}
+                      label="Ürün alma adresi"
+                      initialValue={savedAddressInitial(
+                        savedAddressSelection.pickup
+                      )}
+                      onChange={(pickupAddress, value) =>
+                        setForm(prev => ({
+                          ...prev,
+                          pickupAddress,
+                          pickupProvince: value.province,
+                          pickupDistrict: value.district,
+                          pickupNeighborhood: value.neighborhood,
+                          pickupStreet: value.street,
+                          pickupBuildingNo: value.buildingNo,
+                          pickupPostalCode: value.postalCode,
+                          pickupApartmentNo: value.apartmentNo,
+                          pickupFloor: value.floor,
+                          pickupCourierNote: value.courierNote,
+                          pickupAddressDetail: value.detail,
+                        }))
+                      }
+                    />
+                    <Input
+                      className="mt-2"
+                      inputMode="numeric"
+                      maxLength={5}
+                      placeholder="Posta kodu (5 hane)"
+                      value={form.pickupPostalCode}
+                      onChange={e =>
+                        setForm(prev => ({
+                          ...prev,
+                          pickupPostalCode: e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 5),
+                        }))
+                      }
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        className="min-w-0 flex-1"
+                        placeholder="Adres adı (Ev, İş)"
+                        value={savedAddressLabels.pickup}
+                        onChange={e =>
+                          setSavedAddressLabels(prev => ({
+                            ...prev,
+                            pickup: e.target.value,
+                          }))
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={saveAddress.isPending}
+                        onClick={() => saveCurrentAddress("pickup")}
+                      >
+                        Adresi kaydet
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm"
+                        value={savedAddressSelection.delivery ?? ""}
+                        onChange={e =>
+                          setSavedAddressSelection(prev => ({
+                            ...prev,
+                            delivery: e.target.value
+                              ? Number(e.target.value)
+                              : null,
+                          }))
+                        }
+                      >
+                        <option value="">Kayıtlı teslimat adresi seçin</option>
+                        {savedAddresses.data?.map(address => (
+                          <option key={address.id} value={address.id}>
+                            {address.label} · {address.district},{" "}
+                            {address.neighborhood}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={
+                          !savedAddressSelection.delivery ||
+                          removeSavedAddress.isPending
+                        }
+                        onClick={() =>
+                          savedAddressSelection.delivery &&
+                          removeSavedAddress.mutate({
+                            id: savedAddressSelection.delivery,
+                          })
+                        }
+                      >
+                        Sil
+                      </Button>
+                    </div>
+                    <AddressPicker
+                      key={`delivery-${savedAddressSelection.delivery ?? "new"}`}
+                      label="Teslimat adresi"
+                      initialValue={savedAddressInitial(
+                        savedAddressSelection.delivery
+                      )}
+                      onChange={(deliveryAddress, value) =>
+                        setForm(prev => ({
+                          ...prev,
+                          deliveryAddress,
+                          deliveryProvince: value.province,
+                          deliveryDistrict: value.district,
+                          deliveryNeighborhood: value.neighborhood,
+                          deliveryStreet: value.street,
+                          deliveryBuildingNo: value.buildingNo,
+                          deliveryPostalCode: value.postalCode,
+                          deliveryApartmentNo: value.apartmentNo,
+                          deliveryFloor: value.floor,
+                          deliveryCourierNote: value.courierNote,
+                          deliveryAddressDetail: value.detail,
+                        }))
+                      }
+                    />
+                    <Input
+                      className="mt-2"
+                      inputMode="numeric"
+                      maxLength={5}
+                      placeholder="Posta kodu (5 hane)"
+                      value={form.deliveryPostalCode}
+                      onChange={e =>
+                        setForm(prev => ({
+                          ...prev,
+                          deliveryPostalCode: e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 5),
+                        }))
+                      }
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        className="min-w-0 flex-1"
+                        placeholder="Adres adı (Ev, İş)"
+                        value={savedAddressLabels.delivery}
+                        onChange={e =>
+                          setSavedAddressLabels(prev => ({
+                            ...prev,
+                            delivery: e.target.value,
+                          }))
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={saveAddress.isPending}
+                        onClick={() => saveCurrentAddress("delivery")}
+                      >
+                        Adresi kaydet
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <label className="text-sm font-bold">
+                  Ürün açıklaması
+                  <Input
+                    className="mt-2"
+                    placeholder="Ne alınacak?"
+                    value={form.productDescription}
+                    onChange={e =>
+                      setForm({ ...form, productDescription: e.target.value })
+                    }
+                  />
+                </label>
+                <label className="text-sm font-bold">
+                  Telefon numarası
+                  <Input
+                    className="mt-2"
+                    placeholder="05xx xxx xx xx"
+                    value={form.customerPhone}
+                    onChange={e =>
+                      setForm({ ...form, customerPhone: e.target.value })
+                    }
+                  />
+                </label>
+                <div className="rounded-2xl bg-orange-50 p-4 text-sm">
+                  <p className="font-bold text-[#c9381b]">Gerçek araç rotası</p>
+                  <p className="mt-1 text-slate-600">
+                    İl, ilçe, mahalle ve sokak bilgileri araç yolundan
+                    doğrulanır; kuş uçuşu mesafe kullanılmaz.
+                  </p>
+                  {canConfirmOrder(routeEstimate.data?.routeStatus) ? (
+                    <p className="mt-2 font-bold text-slate-900">
+                      {routeEstimate.data.distanceKm} km · yaklaşık{" "}
+                      {routeEstimate.data.durationMinutes} dk · rota doğrulandı
+                    </p>
+                  ) : (
+                    <p className="mt-2 font-bold text-amber-700">
+                      {!routeAddressComplete
+                        ? "Önce iki adres için ilçe, mahalle, cadde/sokak ve açık adres alanlarını doldurun."
+                        : !isOnline
+                          ? "Çevrim dışı: rota doğrulanmadan sipariş onaylanamaz."
+                          : routeEstimate.isError
+                            ? "Bu adreslerle araç rotası oluşturulamadı. Cadde/sokak ve açık adres bilgilerini kontrol edin."
+                            : "Adresleri seçin; kesin fiyat için araç rotası doğrulanmalı."}
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold">Ödeme yöntemi</p>
+                      <p className="text-xs text-slate-500">
+                        Kart sandbox testtir; kapıda nakitte ödeme teslimat
+                        sırasında tahsil edilir.
+                      </p>
+                    </div>
+                    <Badge
+                      className={
+                        paymentApproved
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-slate-200 text-slate-700"
+                      }
+                    >
+                      {paymentApproved ? "Onaylandı" : "Test bekliyor"}
+                    </Badge>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => selectPaymentMethod("sandbox_card")}
+                      className={`rounded-xl border px-3 py-2 text-left text-xs font-bold ${paymentMethod === "sandbox_card" ? "border-[#e54725] bg-orange-50 text-[#c9381b]" : "border-slate-200 bg-white text-slate-600"}`}
+                    >
+                      Sandbox kart
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => selectPaymentMethod("cash_on_delivery")}
+                      className={`rounded-xl border px-3 py-2 text-left text-xs font-bold ${paymentMethod === "cash_on_delivery" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-600"}`}
+                    >
+                      Kapıda nakit
+                    </button>
+                  </div>
+                  {paymentMethod === "sandbox_card" && (
+                    <div className="mt-3">
+                      <div className="grid gap-2 sm:grid-cols-[1fr_100px_80px]">
+                        <Input
+                          aria-label="Kart numarası"
+                          placeholder="4242 4242 4242 4242"
+                          value={paymentForm.cardNumber}
+                          onChange={e => {
+                            setPaymentApproved(false);
+                            setPaymentReference(null);
+                            setPaymentForm({
+                              ...paymentForm,
+                              cardNumber: e.target.value,
+                            });
+                          }}
+                        />
+                        <Input
+                          aria-label="Son kullanma"
+                          placeholder="12/30"
+                          value={paymentForm.expiry}
+                          onChange={e => {
+                            setPaymentApproved(false);
+                            setPaymentReference(null);
+                            setPaymentForm({
+                              ...paymentForm,
+                              expiry: e.target.value,
+                            });
+                          }}
+                        />
+                        <Input
+                          aria-label="CVV"
+                          placeholder="123"
+                          value={paymentForm.cvv}
+                          onChange={e => {
+                            setPaymentApproved(false);
+                            setPaymentReference(null);
+                            setPaymentForm({
+                              ...paymentForm,
+                              cvv: e.target.value,
+                            });
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={
+                          !orderFormComplete ||
+                          !canConfirmOrder(routeEstimate.data?.routeStatus) ||
+                          sandboxPayment.isPending
+                        }
+                        onClick={() =>
+                          routeEstimate.data &&
+                          sandboxPayment.mutate({
+                            ...paymentForm,
+                            amount: routeEstimate.data.total,
+                          })
+                        }
+                        className="mt-3 w-full"
+                      >
+                        {sandboxPayment.isPending
+                          ? "Ödeme test ediliyor…"
+                          : "Sandbox ödemeyi test et"}
+                      </Button>
+                    </div>
+                  )}
+                  {paymentMethod === "cash_on_delivery" && (
+                    <p className="mt-3 rounded-xl bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">
+                      Kapıda nakit seçildi. Tutar, kurye teslimatı
+                      tamamladığında müşteriden nakit tahsil edilecektir.
+                    </p>
+                  )}
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-black">
+                          Kurye hizmeti ve gönderi
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Tüm hizmetlerde kilometre bazlı rota ücreti uygulanır.
+                          Zarf–5 kg arasındaki gönderiler için uygundur.
+                        </p>
+                      </div>
+                      <Badge className="bg-orange-100 text-[#c9381b]">
+                        {
+                          getDeliveryEstimate({
+                            serviceType: form.serviceType,
+                            routeDurationMinutes:
+                              routeEstimate.data?.durationMinutes,
+                          }).label
+                        }
+                      </Badge>
+                    </div>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {COURIER_SERVICE_TYPES.map(type => {
+                        const service = COURIER_SERVICES[type];
+                        const selected = form.serviceType === type;
+                        return (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() =>
+                              setForm(prev => ({ ...prev, serviceType: type }))
+                            }
+                            className={`rounded-xl border p-3 text-left ${selected ? "border-[#e54725] bg-orange-50 text-[#c9381b]" : "border-slate-200 bg-slate-50 text-slate-700"}`}
+                          >
+                            <span className="block text-sm font-black">
+                              {service.label}
+                            </span>
+                            <span className="mt-1 block text-xs opacity-80">
+                              {service.description} · hedef{" "}
+                              {service.deliveryTargetMinutes === 60
+                                ? "60 dk"
+                                : "2–3 saat"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <label className="mt-4 block text-sm font-bold">
+                      Gönderi ağırlığı (kg)
+                      <span
+                        title="5 kg üzerindeki her gönderiye rota ücretinden bağımsız 500 TL eklenir."
+                        className="ml-1 inline-flex cursor-help items-center text-slate-400"
+                        aria-label="5 kg üzeri ek ücret bilgisi"
+                      >
+                        <Calculator className="h-3.5 w-3.5" />
+                      </span>
+                      <Input
+                        className="mt-2"
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        max="50"
+                        aria-describedby="weight-surcharge-hint"
+                        value={form.packageWeightKg}
+                        onChange={event =>
+                          setForm(prev => ({
+                            ...prev,
+                            packageWeightKg: Math.max(
+                              0.1,
+                              Number(event.target.value) || 0.1
+                            ),
+                          }))
+                        }
+                      />
+                    </label>
+                    {weightSurcharge > 0 ? (
+                      <div
+                        id="weight-surcharge-hint"
+                        role="status"
+                        aria-live="polite"
+                        className="mt-2 flex gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+                      >
+                        <Calculator className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+                        <div>
+                          <p className="font-black">
+                            {form.packageWeightKg.toLocaleString("tr-TR")} kg
+                            için {money(weightSurcharge)} ek ücret eklendi.
+                          </p>
+                          <p className="mt-0.5 font-medium">
+                            Bu tutar rota ücretinden ayrı olarak sipariş
+                            toplamına yansıtılır.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p
+                        id="weight-surcharge-hint"
+                        className="mt-2 text-xs text-slate-500"
+                      >
+                        5 kg’a kadar ek ağırlık ücreti yoktur.
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    disabled={
+                      createOrder.isPending ||
+                      !paymentApproved ||
+                      !orderFormComplete ||
+                      !canConfirmOrder(routeEstimate.data?.routeStatus)
+                    }
+                    onClick={handleCreateOrder}
+                    className="h-12 w-full rounded-xl bg-[#e54725] text-base font-bold"
+                  >
+                    Siparişi onayla ·{" "}
+                    {canConfirmOrder(routeEstimate.data?.routeStatus)
+                      ? money(routeEstimate.data.total)
+                      : "rota bekleniyor"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="h-fit rounded-3xl border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5 fill-orange-200 text-[#e54725]" />
+                  Favori adresler
+                </CardTitle>
+                <p className="text-sm font-normal text-slate-500">
+                  Sık kullandığınız kayıtlı adresleri öne çıkarın ve tek
+                  dokunuşla formun ilgili alanına taşıyın.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="rounded-2xl bg-orange-50 p-3">
+                  <p className="text-xs font-bold text-[#c9381b]">
+                    Seçili kayıtlı adresi favoriye ekleyin
+                  </p>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {(["pickup", "delivery"] as const).map(side => {
+                      const selected = savedAddresses.data?.find(
+                        address => address.id === savedAddressSelection[side]
+                      );
+                      return selected ? (
+                        <Button
+                          key={side}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={setFavoriteAddress.isPending}
+                          onClick={() =>
+                            setFavoriteAddress.mutate({
+                              id: selected.id,
+                              isFavorite: selected.isFavorite !== 1,
+                            })
+                          }
+                          className="justify-between border-orange-200 bg-white text-xs text-[#c9381b]"
+                        >
+                          {side === "pickup" ? "Alış" : "Teslim"} ·{" "}
+                          {selected.isFavorite === 1
+                            ? "Favoriden çıkar"
+                            : "Favoriye ekle"}
+                          <Star
+                            className={
+                              selected.isFavorite === 1
+                                ? "h-4 w-4 fill-current"
+                                : "h-4 w-4"
+                            }
+                          />
+                        </Button>
+                      ) : (
+                        <p
+                          key={side}
+                          className="rounded-lg bg-white px-3 py-2 text-xs text-slate-500"
+                        >
+                          {side === "pickup" ? "Alış" : "Teslim"} için kayıtlı
+                          adres seçin.
+                        </p>
+                      );
+                    })}
+                  </div>
+                </div>
+                {(savedAddresses.data?.filter(
+                  address => address.isFavorite === 1
+                ).length ?? 0) > 0 ? (
+                  <div className="space-y-2">
+                    {savedAddresses.data
+                      ?.filter(address => address.isFavorite === 1)
+                      .map(address => (
+                        <div
+                          key={address.id}
+                          className="rounded-2xl border border-amber-100 bg-amber-50/60 p-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="flex items-center gap-1 text-sm font-black text-slate-900">
+                                <Star className="h-3.5 w-3.5 fill-[#e54725] text-[#e54725]" />
+                                {address.label}
+                              </p>
+                              <p className="mt-1 text-xs leading-5 text-slate-600">
+                                {address.district}, {address.neighborhood} ·{" "}
+                                {address.street}
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              disabled={setFavoriteAddress.isPending}
+                              onClick={() =>
+                                setFavoriteAddress.mutate({
+                                  id: address.id,
+                                  isFavorite: false,
+                                })
+                              }
+                              aria-label={`${address.label} adresini favorilerden çıkar`}
+                              className="h-8 w-8 text-[#c9381b]"
+                            >
+                              <Star className="h-4 w-4 fill-current" />
+                            </Button>
+                          </div>
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                setSavedAddressSelection(prev => ({
+                                  ...prev,
+                                  pickup: address.id,
+                                }))
+                              }
+                            >
+                              Alışta kullan
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                setSavedAddressSelection(prev => ({
+                                  ...prev,
+                                  delivery: address.id,
+                                }))
+                              }
+                            >
+                              Teslimde kullan
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="rounded-2xl border border-dashed border-slate-200 p-4 text-xs leading-5 text-slate-500">
+                    Kayıtlı adresi üstteki listeden seçip “Favoriye ekle”
+                    düğmesine basın. Favoriler burada hızlı seçim için görünür.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      )}
 
-    {section === "track" && <main className="mx-auto max-w-4xl px-4 py-10 lg:px-8"><div className="mb-8"><Badge className="bg-orange-100 text-[#c9381b]">Canlı takip</Badge><h1 className="mt-3 text-4xl font-black">Siparişiniz nerede?</h1><p className="mt-2 max-w-2xl text-slate-500">Durum güncellemeleri otomatik yenilenir. Yeni bildirimler aşağıdaki alanda görünür.</p></div><div className="grid gap-6 lg:grid-cols-[1.35fr_.65fr]"><Card className="rounded-3xl border-0 shadow-sm"><CardContent className="p-6"><div className="flex gap-2"><Input placeholder="RUN-XXXXXXXX" value={trackingCode} onChange={e => setTrackingCode(e.target.value.toUpperCase())}/><Button onClick={() => track.refetch()} className="bg-[#e54725]">Takip et</Button></div>{track.data ? <div className="mt-10"><div className="mb-8 flex items-center justify-between gap-4"><div><p className="text-sm text-slate-500">Takip numarası</p><p className="text-2xl font-black">{track.data.trackingCode}</p></div><Badge className={track.data.status === "delivered" ? "bg-emerald-100 text-emerald-700" : "bg-orange-100 text-[#c9381b]"}>{statusText[track.data.status]}</Badge></div><div className="mb-8"><div className="relative h-3 rounded-full bg-slate-100"><div className="absolute left-0 top-0 h-3 rounded-full bg-[#e54725] transition-all duration-500" style={{ width: track.data.status === "cancelled" ? "100%" : `${Math.max(8, ((trackStepIndex + 1) / steps.length) * 100)}%` }}/><div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-between">{steps.map((step, index) => <span key={step} className={`size-5 rounded-full border-4 border-white ${index <= trackStepIndex ? "bg-[#e54725]" : "bg-slate-300"} ${index === trackStepIndex && track.data?.status !== "delivered" ? "animate-pulse ring-4 ring-orange-200" : ""}`} aria-label={statusText[step]}/>)}</div></div><div className="mt-3 flex justify-between text-[11px] font-semibold text-slate-500">{steps.map(step => <span key={step}>{statusText[step]}</span>)}</div></div><div className="mt-4 grid gap-3 sm:grid-cols-3"><div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Rota motoru</p><p className="mt-1 font-bold">{track.data?.routeStatus === "verified" ? "Doğrulandı" : track.data?.routeStatus ?? "Beklemede"}</p></div><div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Tahmini süre</p><p className="mt-1 font-bold">{track.data?.routeDurationMinutes ? `${track.data.routeDurationMinutes} dk` : "—"}</p></div><div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Son yenileme</p><p className="mt-1 font-bold">{track.data?.updatedAt ? new Date(track.data.updatedAt).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }) : "—"}</p></div></div><div className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#c9381b]">Gerçek zamanlı konum</p><p className="mt-1 text-sm text-slate-700">{liveConnection === "connected" ? "Courier konumu canlı bağlantıyla güncelleniyor." : liveConnection === "reconnecting" ? "Bağlantı yenileniyor; son bilinen durum korunuyor." : liveConnection === "connecting" ? "Courier bağlantısı kuruluyor…" : "Konum akışı sipariş sahibi oturumu bekliyor."}</p></div><Badge className={liveConnection === "connected" ? "bg-emerald-100 text-emerald-700" : "bg-white text-slate-600"}>{liveConnection === "connected" ? "Canlı" : liveConnection === "reconnecting" ? "Yeniden bağlanıyor" : "Beklemede"}</Badge></div>{liveLocation && <p className="mt-2 text-xs text-slate-500">Son konum: {liveLocation.lat.toFixed(5)}, {liveLocation.lng.toFixed(5)} · {new Date(liveLocation.updatedAt).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</p>}</div><div className="mt-4"><OfflineIstanbulMap offlinePackageReady={Object.values(packageState).includes("ready")} courierLocation={liveLocation} speedKmh={liveSpeedKmh} etaMinutes={liveEtaMinutes} remainingDistanceKm={liveRemainingDistanceKm} trafficLevel={liveTrafficLevel} trafficSource={liveLocation?.trafficSource ?? "unavailable"} /></div><div className="mt-4 grid gap-3 sm:grid-cols-3">{steps.map((step,index) => { const active = index <= trackStepIndex; return <div key={step} className={`rounded-2xl p-4 ${active ? "bg-orange-50 text-[#c9381b]" : "bg-slate-100 text-slate-400"}`}><div className="flex items-center gap-2 font-bold"><span className={`grid size-8 place-items-center rounded-full ${active ? "bg-[#e54725] text-white" : "bg-slate-300 text-white"}`}>{active ? <CheckCircle2 size={16}/> : index + 1}</span>{statusText[step]}</div></div>})}</div><div className="mt-8 rounded-2xl bg-slate-50 p-4 text-sm"><p className="font-semibold">Adres bilgileri güvenli tutulur.</p><p className="mt-1 text-slate-500">Sipariş sahibi veya yetkili operasyon ekibi, teslimat detaylarını görüntüleyebilir.</p></div></div> : <div className="py-12 text-center text-slate-500"><Truck className="mx-auto mb-3"/><p>Takip numaranızı girerek siparişinizi görüntüleyin.</p></div>}</CardContent></Card><Card className="rounded-3xl border-0 shadow-sm"><CardHeader><CardTitle className="flex items-center gap-2"><Bell size={18} className="text-[#e54725]"/>Bildirimler</CardTitle><p className="text-sm text-slate-500">Sipariş ve hesap güncellemeleri burada görünür.</p></CardHeader><CardContent className="space-y-3">{notifications.data?.slice(0,5).map(note => <div key={note.id} className="rounded-2xl bg-orange-50 p-3"><div className="flex items-start gap-2"><Bell size={15} className="mt-0.5 shrink-0 text-[#e54725]"/><div><strong className="text-sm">{note.title}</strong><p className="mt-1 text-xs leading-5 text-slate-600">{note.content}</p></div></div></div>) ?? <p className="text-sm text-slate-500">Henüz yeni bildirim yok.</p>}</CardContent></Card></div></main>}
-    {section === "chat" && <main className="mx-auto max-w-3xl px-4 py-10 lg:px-8"><div className="mb-8"><Badge className="bg-orange-100 text-[#c9381b]">Run Asistan</Badge><h1 className="mt-3 text-4xl font-black">Nasıl yardımcı olabiliriz?</h1><p className="mt-2 text-slate-500">Sipariş durumu, fiyat tahmini ve teslimat süresi hakkında sorun.</p></div><Card className="rounded-3xl border-0 shadow-sm"><CardContent className="p-6"><div className="min-h-40 rounded-2xl bg-[#111827] p-5 text-white"><div className="flex items-center gap-2 text-sm font-bold"><Sparkles className="text-orange-300" size={17}/> Run AI destek</div><p className="mt-4 leading-7 text-slate-300">Merhaba! Sabit ücretlendirme ve sipariş takibi hakkında size yardımcı olabilirim.</p>{botAnswer && <p className="mt-4 rounded-xl bg-white/10 p-3 leading-6">{botAnswer}</p>}</div><div className="mt-4 flex gap-2"><Input placeholder="Örn. 8 km için ücret nedir?" value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={e => e.key === "Enter" && assistant.mutate({question,trackingCode:trackingCode||undefined})}/><Button disabled={assistant.isPending} onClick={() => assistant.mutate({question,trackingCode:trackingCode||undefined})} className="bg-[#e54725]"><MessageCircle size={18}/></Button></div><div className="mt-6 rounded-2xl border border-slate-200 p-4"><div className="mb-3 flex items-center justify-between"><strong>Operatör / kurye sohbeti</strong><span className="text-xs text-emerald-600">5 sn’de yenilenir</span></div><div className="max-h-48 space-y-2 overflow-auto">{liveMessages.data?.map(message => <div key={message.id} className={`rounded-xl p-3 text-sm ${message.senderId === user?.id ? "ml-8 bg-orange-50" : "mr-8 bg-slate-50"}`}><p>{message.senderRole === "customer" ? message.content : message.translatedContent || message.content}</p>{message.attachmentUrl && <button type="button" className="mt-2 block w-full cursor-zoom-in rounded-lg text-left focus:outline-none focus:ring-2 focus:ring-orange-400" onClick={() => openPhotoPreview(message.attachmentUrl!, message.attachmentName || "Sohbet fotoğrafı")} aria-label="Fotoğrafı tam ekran aç"><img src={message.attachmentUrl} alt={message.attachmentName || "Sohbet fotoğrafı"} className="max-h-48 w-full rounded-lg object-cover" loading="lazy"/></button>}<span className="text-[10px] text-slate-400">{message.senderRole === "customer" ? "Siz" : "Run Courier · çevrildi"}</span></div>) ?? <p className="text-sm text-slate-400">İlk mesajı siz gönderin.</p>}</div><div className="mt-3 flex flex-wrap gap-2" aria-label="Hazır müşteri mesajları">{customerChatTemplates.map(template => <Button key={template.id} type="button" size="sm" variant="outline" disabled={!liveOrderId || sendLiveMessage.isPending} onClick={() => sendQuickLiveMessage(template.content)} className="rounded-full border-orange-200 bg-orange-50 text-xs font-bold text-[#c9381b] hover:bg-orange-100">{template.label}</Button>)}</div><div className="mt-3 flex flex-wrap gap-2"><input ref={livePhotoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={event => { handleChatPhoto(event.target.files?.[0], liveOrderId, "customer"); event.currentTarget.value = ""; }}/><Button type="button" variant="outline" disabled={!liveOrderId || sendChatPhoto.isPending} onClick={() => livePhotoInputRef.current?.click()} aria-label="Fotoğraf gönder" className="gap-2"><FileUp size={16}/> Fotoğraf</Button><div className="flex min-w-[min(100%,24rem)] flex-1 gap-2"><Input placeholder="Mesajınızı yazın" value={liveMessage} onChange={e => setLiveMessage(e.target.value)}/><Button disabled={!liveOrderId || sendLiveMessage.isPending} onClick={() => sendLiveMessage.mutate({ orderId: liveOrderId, content: liveMessage, senderRole: "customer" })} className="bg-[#e54725]">Gönder</Button></div></div></div><p className="mt-3 text-xs text-slate-400">Canlı operatöre bağlanmak için giriş yapıp aktif sipariş oluşturun.</p></CardContent></Card></main>}
+      {section === "track" && (
+        <main className="mx-auto max-w-4xl px-4 py-10 lg:px-8">
+          <div className="mb-8">
+            <Badge className="bg-orange-100 text-[#c9381b]">Canlı takip</Badge>
+            <h1 className="mt-3 text-4xl font-black">Siparişiniz nerede?</h1>
+            <p className="mt-2 max-w-2xl text-slate-500">
+              Durum güncellemeleri otomatik yenilenir. Yeni bildirimler
+              aşağıdaki alanda görünür.
+            </p>
+          </div>
+          <div className="grid gap-6 lg:grid-cols-[1.35fr_.65fr]">
+            <Card className="rounded-3xl border-0 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="RUN-XXXXXXXX"
+                    value={trackingCode}
+                    onChange={e =>
+                      setTrackingCode(e.target.value.toUpperCase())
+                    }
+                  />
+                  <Button
+                    onClick={() => track.refetch()}
+                    className="bg-[#e54725]"
+                  >
+                    Takip et
+                  </Button>
+                </div>
+                {track.data ? (
+                  <div className="mt-10">
+                    <div className="mb-8 flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm text-slate-500">Takip numarası</p>
+                        <p className="text-2xl font-black">
+                          {track.data.trackingCode}
+                        </p>
+                      </div>
+                      <Badge
+                        className={
+                          track.data.status === "delivered"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-orange-100 text-[#c9381b]"
+                        }
+                      >
+                        {statusText[track.data.status]}
+                      </Badge>
+                    </div>
+                    <div className="mb-8">
+                      <div className="relative h-3 rounded-full bg-slate-100">
+                        <div
+                          className="absolute left-0 top-0 h-3 rounded-full bg-[#e54725] transition-all duration-500"
+                          style={{
+                            width:
+                              track.data.status === "cancelled"
+                                ? "100%"
+                                : `${Math.max(8, ((trackStepIndex + 1) / steps.length) * 100)}%`,
+                          }}
+                        />
+                        <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-between">
+                          {steps.map((step, index) => (
+                            <span
+                              key={step}
+                              className={`size-5 rounded-full border-4 border-white ${index <= trackStepIndex ? "bg-[#e54725]" : "bg-slate-300"} ${index === trackStepIndex && track.data?.status !== "delivered" ? "animate-pulse ring-4 ring-orange-200" : ""}`}
+                              aria-label={statusText[step]}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex justify-between text-[11px] font-semibold text-slate-500">
+                        {steps.map(step => (
+                          <span key={step}>{statusText[step]}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-slate-50 p-4">
+                        <p className="text-xs text-slate-500">Rota motoru</p>
+                        <p className="mt-1 font-bold">
+                          {track.data?.routeStatus === "verified"
+                            ? "Doğrulandı"
+                            : (track.data?.routeStatus ?? "Beklemede")}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-slate-50 p-4">
+                        <p className="text-xs text-slate-500">Tahmini süre</p>
+                        <p className="mt-1 font-bold">
+                          {track.data?.routeDurationMinutes
+                            ? `${track.data.routeDurationMinutes} dk`
+                            : "—"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-slate-50 p-4">
+                        <p className="text-xs text-slate-500">Son yenileme</p>
+                        <p className="mt-1 font-bold">
+                          {track.data?.updatedAt
+                            ? new Date(track.data.updatedAt).toLocaleTimeString(
+                                "tr-TR",
+                                { hour: "2-digit", minute: "2-digit" }
+                              )
+                            : "—"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[.16em] text-[#c9381b]">
+                            Gerçek zamanlı konum
+                          </p>
+                          <p className="mt-1 text-sm text-slate-700">
+                            {liveConnection === "connected"
+                              ? "Courier konumu canlı bağlantıyla güncelleniyor."
+                              : liveConnection === "reconnecting"
+                                ? "Bağlantı yenileniyor; son bilinen durum korunuyor."
+                                : liveConnection === "connecting"
+                                  ? "Courier bağlantısı kuruluyor…"
+                                  : "Konum akışı sipariş sahibi oturumu bekliyor."}
+                          </p>
+                        </div>
+                        <Badge
+                          className={
+                            liveConnection === "connected"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-white text-slate-600"
+                          }
+                        >
+                          {liveConnection === "connected"
+                            ? "Canlı"
+                            : liveConnection === "reconnecting"
+                              ? "Yeniden bağlanıyor"
+                              : "Beklemede"}
+                        </Badge>
+                      </div>
+                      {liveLocation && (
+                        <p className="mt-2 text-xs text-slate-500">
+                          Son konum: {liveLocation.lat.toFixed(5)},{" "}
+                          {liveLocation.lng.toFixed(5)} ·{" "}
+                          {new Date(liveLocation.updatedAt).toLocaleTimeString(
+                            "tr-TR",
+                            { hour: "2-digit", minute: "2-digit" }
+                          )}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-4">
+                      <OfflineIstanbulMap
+                        offlinePackageReady={Object.values(
+                          packageState
+                        ).includes("ready")}
+                        courierLocation={liveLocation}
+                        speedKmh={liveSpeedKmh}
+                        etaMinutes={liveEtaMinutes}
+                        remainingDistanceKm={liveRemainingDistanceKm}
+                        trafficLevel={liveTrafficLevel}
+                        trafficSource={
+                          liveLocation?.trafficSource ?? "unavailable"
+                        }
+                      />
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      {steps.map((step, index) => {
+                        const active = index <= trackStepIndex;
+                        return (
+                          <div
+                            key={step}
+                            className={`rounded-2xl p-4 ${active ? "bg-orange-50 text-[#c9381b]" : "bg-slate-100 text-slate-400"}`}
+                          >
+                            <div className="flex items-center gap-2 font-bold">
+                              <span
+                                className={`grid size-8 place-items-center rounded-full ${active ? "bg-[#e54725] text-white" : "bg-slate-300 text-white"}`}
+                              >
+                                {active ? (
+                                  <CheckCircle2 size={16} />
+                                ) : (
+                                  index + 1
+                                )}
+                              </span>
+                              {statusText[step]}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-8 rounded-2xl bg-slate-50 p-4 text-sm">
+                      <p className="font-semibold">
+                        Adres bilgileri güvenli tutulur.
+                      </p>
+                      <p className="mt-1 text-slate-500">
+                        Sipariş sahibi veya yetkili operasyon ekibi, teslimat
+                        detaylarını görüntüleyebilir.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-12 text-center text-slate-500">
+                    <Truck className="mx-auto mb-3" />
+                    <p>Takip numaranızı girerek siparişinizi görüntüleyin.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="rounded-3xl border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell size={18} className="text-[#e54725]" />
+                  Bildirimler
+                </CardTitle>
+                <p className="text-sm text-slate-500">
+                  Sipariş ve hesap güncellemeleri burada görünür.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {notifications.data?.slice(0, 5).map(note => (
+                  <div key={note.id} className="rounded-2xl bg-orange-50 p-3">
+                    <div className="flex items-start gap-2">
+                      <Bell
+                        size={15}
+                        className="mt-0.5 shrink-0 text-[#e54725]"
+                      />
+                      <div>
+                        <strong className="text-sm">{note.title}</strong>
+                        <p className="mt-1 text-xs leading-5 text-slate-600">
+                          {note.content}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )) ?? (
+                  <p className="text-sm text-slate-500">
+                    Henüz yeni bildirim yok.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      )}
+      {section === "chat" && (
+        <main className="mx-auto max-w-3xl px-4 py-10 lg:px-8">
+          <div className="mb-8">
+            <Badge className="bg-orange-100 text-[#c9381b]">Run Asistan</Badge>
+            <h1 className="mt-3 text-4xl font-black">
+              Nasıl yardımcı olabiliriz?
+            </h1>
+            <p className="mt-2 text-slate-500">
+              Sipariş durumu, fiyat tahmini ve teslimat süresi hakkında sorun.
+            </p>
+          </div>
+          <Card className="rounded-3xl border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="min-h-40 rounded-2xl bg-[#111827] p-5 text-white">
+                <div className="flex items-center gap-2 text-sm font-bold">
+                  <Sparkles className="text-orange-300" size={17} /> Run AI
+                  destek
+                </div>
+                <p className="mt-4 leading-7 text-slate-300">
+                  Merhaba! Sabit ücretlendirme ve sipariş takibi hakkında size
+                  yardımcı olabilirim.
+                </p>
+                {botAnswer && (
+                  <p className="mt-4 rounded-xl bg-white/10 p-3 leading-6">
+                    {botAnswer}
+                  </p>
+                )}
+              </div>
+              <div className="mt-4 flex gap-2">
+                <Input
+                  placeholder="Örn. 8 km için ücret nedir?"
+                  value={question}
+                  onChange={e => setQuestion(e.target.value)}
+                  onKeyDown={e =>
+                    e.key === "Enter" &&
+                    assistant.mutate({
+                      question,
+                      trackingCode: trackingCode || undefined,
+                    })
+                  }
+                />
+                <Button
+                  disabled={assistant.isPending}
+                  onClick={() =>
+                    assistant.mutate({
+                      question,
+                      trackingCode: trackingCode || undefined,
+                    })
+                  }
+                  className="bg-[#e54725]"
+                >
+                  <MessageCircle size={18} />
+                </Button>
+              </div>
+              <div className="mt-6 rounded-2xl border border-slate-200 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <strong>Operatör / kurye sohbeti</strong>
+                  <span className="text-xs text-emerald-600">
+                    5 sn’de yenilenir
+                  </span>
+                </div>
+                <div className="max-h-48 space-y-2 overflow-auto">
+                  {liveMessages.data?.map(message => (
+                    <div
+                      key={message.id}
+                      className={`rounded-xl p-3 text-sm ${message.senderId === user?.id ? "ml-8 bg-orange-50" : "mr-8 bg-slate-50"}`}
+                    >
+                      <p>
+                        {message.senderRole === "customer"
+                          ? message.content
+                          : message.translatedContent || message.content}
+                      </p>
+                      {message.attachmentUrl && (
+                        <button
+                          type="button"
+                          className="mt-2 block w-full cursor-zoom-in rounded-lg text-left focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          onClick={() =>
+                            openPhotoPreview(
+                              message.attachmentUrl!,
+                              message.attachmentName || "Sohbet fotoğrafı"
+                            )
+                          }
+                          aria-label="Fotoğrafı tam ekran aç"
+                        >
+                          <img
+                            src={message.attachmentUrl}
+                            alt={message.attachmentName || "Sohbet fotoğrafı"}
+                            className="max-h-48 w-full rounded-lg object-cover"
+                            loading="lazy"
+                          />
+                        </button>
+                      )}
+                      <span className="text-[10px] text-slate-400">
+                        {message.senderRole === "customer"
+                          ? "Siz"
+                          : "Run Courier · çevrildi"}
+                      </span>
+                    </div>
+                  )) ?? (
+                    <p className="text-sm text-slate-400">
+                      İlk mesajı siz gönderin.
+                    </p>
+                  )}
+                </div>
+                <div
+                  className="mt-3 flex flex-wrap gap-2"
+                  aria-label="Hazır müşteri mesajları"
+                >
+                  {customerChatTemplates.map(template => (
+                    <Button
+                      key={template.id}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={!liveOrderId || sendLiveMessage.isPending}
+                      onClick={() => sendQuickLiveMessage(template.content)}
+                      className="rounded-full border-orange-200 bg-orange-50 text-xs font-bold text-[#c9381b] hover:bg-orange-100"
+                    >
+                      {template.label}
+                    </Button>
+                  ))}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <input
+                    ref={livePhotoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={event => {
+                      handleChatPhoto(
+                        event.target.files?.[0],
+                        liveOrderId,
+                        "customer"
+                      );
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!liveOrderId || sendChatPhoto.isPending}
+                    onClick={() => livePhotoInputRef.current?.click()}
+                    aria-label="Fotoğraf gönder"
+                    className="gap-2"
+                  >
+                    <FileUp size={16} /> Fotoğraf
+                  </Button>
+                  <div className="flex min-w-[min(100%,24rem)] flex-1 gap-2">
+                    <Input
+                      placeholder="Mesajınızı yazın"
+                      value={liveMessage}
+                      onChange={e => setLiveMessage(e.target.value)}
+                    />
+                    <Button
+                      disabled={!liveOrderId || sendLiveMessage.isPending}
+                      onClick={() =>
+                        sendLiveMessage.mutate({
+                          orderId: liveOrderId,
+                          content: liveMessage,
+                          senderRole: "customer",
+                        })
+                      }
+                      className="bg-[#e54725]"
+                    >
+                      Gönder
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-slate-400">
+                Canlı operatöre bağlanmak için giriş yapıp aktif sipariş
+                oluşturun.
+              </p>
+            </CardContent>
+          </Card>
+        </main>
+      )}
 
-    {section === "account" && isAuthenticated && <main className="mx-auto max-w-5xl px-4 py-10 lg:px-8"><div className="mb-8"><Badge className="bg-orange-100 text-[#c9381b]">Hesabım</Badge><h1 className="mt-3 text-4xl font-black">Profil ve sipariş geçmişi</h1></div><div className="grid gap-6 lg:grid-cols-[.8fr_1.2fr]"><Card className="rounded-3xl border-0 shadow-sm"><CardContent className="p-6"><div className="mb-5 grid size-14 place-items-center rounded-2xl bg-orange-100 text-xl font-black text-[#e54725]">{displayedUser?.name?.[0] ?? "R"}</div><h2 className="text-xl font-black">{displayedUser?.name ?? "Run Courier üyesi"}</h2><p className="mt-1 text-slate-500">{displayedUser?.email ?? "E-posta bilgisi yok"}</p><div className="mt-6 space-y-3 rounded-2xl bg-slate-50 p-4 text-sm"><p className="font-semibold">Profil bilgileri</p><Input placeholder={user?.name ?? "Ad soyad"} value={profileForm.name} onChange={e => setProfileForm({...profileForm, name: e.target.value})}/><Input placeholder="05xx xxx xx xx" value={profileForm.phone} onChange={e => setProfileForm({...profileForm, phone: e.target.value})}/><Button size="sm" onClick={() => profileUpdate.mutate({ name: profileForm.name || user?.name || "Run Courier üyesi", phone: profileForm.phone || user?.phone || "" })} className="bg-[#e54725]">Profili kaydet</Button><p className="pt-2 text-slate-500">{notifications.data?.length ?? 0} kayıtlı bildirim</p></div>{courierPerformance.data && <div className="mt-5 rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white p-4"><div className="flex items-start justify-between gap-3"><div className="flex items-center gap-3"><div className="grid size-11 place-items-center rounded-2xl bg-[#e54725] text-white"><Award size={22}/></div><div><p className="text-xs font-bold uppercase tracking-[.12em] text-[#c9381b]">Courier başarısı</p><h3 className="font-black">{courierPerformance.data.badgeLabel}</h3></div></div><Badge variant="outline" className="border-orange-200 text-[#c9381b]">{courierPerformance.data.points} puan</Badge></div><div className="mt-4 grid grid-cols-2 gap-3 text-sm"><div className="rounded-xl bg-white p-3"><p className="text-xs text-slate-500">Tamamlanan teslimat</p><strong className="text-xl">{courierPerformance.data.completedDeliveries}</strong></div><div className="rounded-xl bg-white p-3"><p className="text-xs text-slate-500">Sonraki seviye</p><strong className="text-sm">{courierPerformance.data.nextBadgeLabel ?? "En üst rozet"}</strong></div></div>{courierPerformance.data.nextBadgeAt && <div className="mt-4"><div className="mb-1 flex justify-between text-xs font-semibold text-slate-500"><span>{courierPerformance.data.remainingToNext} teslimat kaldı</span><span>%{courierPerformance.data.progressPercent}</span></div><Progress value={courierPerformance.data.progressPercent} className="h-2"/></div>}<p className="mt-3 text-xs leading-5 text-slate-500">Puanlar tamamlanan teslimat başına 10 puan olarak, yalnızca teslim edildi durumundaki gerçek siparişlerden hesaplanır.</p></div>}{user?.role === "courier" && courierReport.data && <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.12em] text-[#c9381b]">Detaylı kazanç raporu</p><h3 className="font-black">Geçmiş teslimatlar</h3></div><Button size="sm" variant="outline" onClick={() => courierReport.refetch()}>Yenile</Button></div><div className="mt-4 grid gap-2 sm:grid-cols-3"><Input type="date" aria-label="Başlangıç tarihi" value={reportFilters.from} onChange={e => setReportFilters({...reportFilters, from: e.target.value})}/><Input type="date" aria-label="Bitiş tarihi" value={reportFilters.to} onChange={e => setReportFilters({...reportFilters, to: e.target.value})}/><select aria-label="Sipariş durumu" className="h-10 rounded-xl border border-slate-200 px-3 text-sm" value={reportFilters.status} onChange={e => setReportFilters({...reportFilters, status: e.target.value as typeof reportFilters.status})}><option value="all">Tüm durumlar</option><option value="received">Alındı</option><option value="on_the_way">Yolda</option><option value="delivered">Teslim edildi</option><option value="cancelled">İptal edildi</option></select></div><div className="mt-3 flex flex-wrap gap-2"><select aria-label="Rapor sıralaması" className="h-9 rounded-lg border border-slate-200 px-3 text-xs" value={reportFilters.sortBy} onChange={e => setReportFilters({...reportFilters, sortBy: e.target.value as typeof reportFilters.sortBy})}><option value="date">Tarihe göre</option><option value="earning">Kazanca göre</option><option value="status">Duruma göre</option></select><Button size="sm" variant="outline" onClick={() => setReportFilters({...reportFilters, direction: reportFilters.direction === "desc" ? "asc" : "desc"})}>{reportFilters.direction === "desc" ? "Azalan" : "Artan"}</Button></div><div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-orange-50 p-3 text-center"><div><p className="text-[11px] text-slate-500">İş</p><strong>{courierReport.data.totals.orders}</strong></div><div><p className="text-[11px] text-slate-500">Brüt</p><strong>{money(courierReport.data.totals.gross)}</strong></div><div><p className="text-[11px] text-slate-500">Kazanç</p><strong className="text-[#c9381b]">{money(courierReport.data.totals.earnings)}</strong></div></div><div className="mt-4 max-h-56 space-y-2 overflow-auto">{courierReport.data.rows.map(row => <div key={row.id} className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-sm"><div><strong>{row.trackingCode}</strong><p className="text-xs text-slate-500">{statusText[row.status as keyof typeof statusText]} · {new Date(row.createdAt).toLocaleDateString("tr-TR")}</p></div><strong>{money(row.courierEarning)}</strong></div>)}{courierReport.data.rows.length === 0 && <p className="py-4 text-center text-sm text-slate-500">Filtreye uyan kayıt yok.</p>}</div></div>}{user?.role === "courier" && <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/60 p-4"><div className="flex items-start gap-3"><div className="grid size-10 place-items-center rounded-xl bg-blue-600 text-white"><FileUp size={19}/></div><div><p className="text-xs font-bold uppercase tracking-[.12em] text-blue-700">Gerekli belgeler</p><h3 className="font-black text-slate-900">Courier doğrulama dosyaları</h3><p className="mt-1 text-xs leading-5 text-slate-600">Kimlik, ehliyet ve araç ruhsatınızı PDF, JPG veya PNG olarak yükleyin. Dosyalar yalnızca yetkili inceleme ekibine açılır.</p></div></div><div className="mt-4 space-y-2">{([{ type: "identity", label: "Kimlik belgesi" }, { type: "license", label: "Ehliyet" }, { type: "vehicle_registration", label: "Araç ruhsatı" }] as const).map(item => { const document = courierDocuments.data?.find(row => row.documentType === item.type); return <div key={item.type} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-3"><div><p className="text-sm font-bold text-slate-800">{item.label}</p><p className="text-xs text-slate-500">{document ? `${document.originalName} · ${document.status === "approved" ? "Onaylandı" : document.status === "rejected" ? "Geri gönderildi" : "İnceleniyor"}` : "Henüz yüklenmedi"}</p></div><label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-slate-700"><FileUp size={14}/>{documentUploadState[item.type] ? "Yükleniyor…" : document ? "Yenile" : "Dosya seç"}<input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" className="hidden" disabled={documentUploadState[item.type]} onChange={e => { handleCourierDocument(item.type, e.target.files?.[0]); e.currentTarget.value = ""; }}/></label></div>; })}</div><p className="mt-3 text-[11px] leading-4 text-slate-500">Maksimum 8 MB. Hassas belgeleri yalnızca Run Courier uygulamasının resmi alanından yükleyin.</p></div>}{user?.role === "courier" && <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.12em] text-emerald-700">Operasyon durumu</p><h3 className="font-black text-slate-900">Teslimat nöbeti</h3><p className="mt-1 text-xs text-slate-600">Müsait olduğunuzda admin sizi yeni siparişlere otomatik olarak aday gösterir.</p></div><Badge variant="outline" className="border-emerald-200 bg-white text-emerald-700">{courierOperation.data?.availability === "available" ? "Müsait" : courierOperation.data?.availability === "busy" ? "Meşgul" : courierOperation.data?.availability === "break" ? "Molada" : "Çevrimdışı"}</Badge></div><div className="mt-4 flex flex-wrap gap-2"><Button size="sm" disabled={setCourierAvailability.isPending || courierOperation.data?.availability === "available"} onClick={() => setCourierAvailability.mutate({ availability: "available" })} className="bg-emerald-600 hover:bg-emerald-700">Müsaitim</Button><Button size="sm" variant="outline" disabled={setCourierAvailability.isPending || courierOperation.data?.availability === "break"} onClick={() => setCourierAvailability.mutate({ availability: "break" })}>Mola</Button><Button size="sm" variant="outline" disabled={setCourierAvailability.isPending || courierOperation.data?.availability === "offline"} onClick={() => setCourierAvailability.mutate({ availability: "offline" })}>Çevrimdışı</Button></div>{courierOperation.data?.lastLocationAt && <p className="mt-3 text-[11px] text-slate-500">Son konum güncellemesi: {new Date(courierOperation.data.lastLocationAt).toLocaleString("tr-TR")}</p>}</div>}{courierContract.data && <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.12em] text-[#c9381b]">Courier sözleşmesi</p><h3 className="font-black">Run Courier Hizmet Sözleşmesi</h3><p className="mt-1 text-xs text-slate-500">Sürüm: {courierContract.data.version}</p></div><Badge variant={courierContract.data.accepted ? "default" : "outline"} className={courierContract.data.accepted ? "bg-emerald-600" : "border-orange-300 text-[#c9381b]"}>{courierContract.data.accepted ? "Kabul edildi" : "Kabul bekliyor"}</Badge></div><div className="mt-4 max-h-64 space-y-3 overflow-auto rounded-xl bg-white p-3">{courierContract.data.sections.map(section => <div key={section.title}><p className="text-sm font-bold">{section.title}</p><p className="mt-1 text-xs leading-5 text-slate-600">{section.body}</p></div>)}</div><p className="mt-3 text-xs leading-5 text-amber-800">{courierContract.data.notice}</p>{!courierContract.data.accepted && <div className="mt-4 space-y-2"><Input placeholder="Ad soyad" value={contractForm.courierFullName} onChange={e => setContractForm({...contractForm, courierFullName: e.target.value})}/><Input placeholder="T.C. kimlik no" value={contractForm.identityNumber} onChange={e => setContractForm({...contractForm, identityNumber: e.target.value})}/><Input placeholder="İkamet adresi" value={contractForm.residenceAddress} onChange={e => setContractForm({...contractForm, residenceAddress: e.target.value})}/><div className="grid gap-2 sm:grid-cols-2"><Input placeholder="Vergi dairesi" value={contractForm.taxOffice} onChange={e => setContractForm({...contractForm, taxOffice: e.target.value})}/><Input placeholder="Vergi no" value={contractForm.taxNumber} onChange={e => setContractForm({...contractForm, taxNumber: e.target.value})}/><Input placeholder="Araç plakası" value={contractForm.vehiclePlate} onChange={e => setContractForm({...contractForm, vehiclePlate: e.target.value})}/><Input placeholder="IBAN" value={contractForm.iban} onChange={e => setContractForm({...contractForm, iban: e.target.value})}/></div><label className="flex items-start gap-2 pt-2 text-xs text-slate-600"><input type="checkbox" checked={contractAccepted} onChange={e => setContractAccepted(e.target.checked)} className="mt-0.5 size-4 accent-[#e54725]"/><span>Sözleşme metnini okudum, verdiğim bilgilerin doğru olduğunu ve kabul ettiğimi beyan ederim.</span></label><Button disabled={!contractAccepted || acceptCourierContract.isPending} onClick={() => acceptCourierContract.mutate({...contractForm, accepted: true})} className="mt-2 w-full bg-[#e54725]">Sözleşmeyi kabul et ve kaydet</Button></div>}</div>}</CardContent></Card><Card className="rounded-3xl border-0 shadow-sm"><CardHeader><CardTitle>Geçmiş siparişler ve kişisel muhasebe</CardTitle><p className="text-sm text-slate-500">Bu üyeliğe ait sipariş ve ödeme kayıtları.</p></CardHeader><CardContent>{accounting.data && <div className="mb-5 grid gap-3 rounded-2xl bg-orange-50 p-4 sm:grid-cols-3"><div><p className="text-xs text-slate-500">Toplam işlem</p><strong className="text-xl">{accounting.data.totalOrders}</strong></div><div><p className="text-xs text-slate-500">Toplam ödeme</p><strong className="text-xl">{money(accounting.data.gross)}</strong></div><div><p className="text-xs text-slate-500">{accounting.data.role === "courier" ? "Courier kazancı" : "Kişisel kayıt"}</p><strong className="text-xl text-[#c9381b]">{accounting.data.role === "courier" ? money(accounting.data.courierEarnings) : "Güvenli"}</strong></div></div>}<div className="space-y-3">{mine.data?.map(order => <div key={order.id} className="flex items-center justify-between rounded-2xl bg-slate-50 p-4"><div><strong>{order.trackingCode}</strong><p className="text-sm text-slate-500">{statusText[order.status]}</p></div><strong>{money(order.totalPrice)}</strong></div>) ?? <p className="text-slate-500">Henüz sipariş yok.</p>}</div><div className="mt-6 border-t pt-5"><p className="mb-3 font-bold">Son bildirimler</p>{notifications.data?.slice(0,3).map(note => <div key={note.id} className="mb-2 rounded-xl bg-orange-50 p-3 text-sm"><strong>{note.title}</strong><p className="text-slate-600">{note.content}</p></div>)}</div></CardContent></Card></div></main>}
+      {section === "account" && isAuthenticated && (
+        <main className="mx-auto max-w-5xl px-4 py-10 lg:px-8">
+          <div className="mb-8">
+            <Badge className="bg-orange-100 text-[#c9381b]">Hesabım</Badge>
+            <h1 className="mt-3 text-4xl font-black">
+              Profil ve sipariş geçmişi
+            </h1>
+          </div>
+          <div className="grid gap-6 lg:grid-cols-[.8fr_1.2fr]">
+            <Card className="rounded-3xl border-0 shadow-sm">
+              <CardContent className="p-6">
+                <div className="mb-5 grid size-14 place-items-center rounded-2xl bg-orange-100 text-xl font-black text-[#e54725]">
+                  {displayedUser?.name?.[0] ?? "R"}
+                </div>
+                <h2 className="text-xl font-black">
+                  {displayedUser?.name ?? "Run Courier üyesi"}
+                </h2>
+                <p className="mt-1 text-slate-500">
+                  {displayedUser?.email ?? "E-posta bilgisi yok"}
+                </p>
+                <div className="mt-6 space-y-3 rounded-2xl bg-slate-50 p-4 text-sm">
+                  <p className="font-semibold">Profil bilgileri</p>
+                  <Input
+                    placeholder={user?.name ?? "Ad soyad"}
+                    value={profileForm.name}
+                    onChange={e =>
+                      setProfileForm({ ...profileForm, name: e.target.value })
+                    }
+                  />
+                  <Input
+                    placeholder="05xx xxx xx xx"
+                    value={profileForm.phone}
+                    onChange={e =>
+                      setProfileForm({ ...profileForm, phone: e.target.value })
+                    }
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      profileUpdate.mutate({
+                        name:
+                          profileForm.name || user?.name || "Run Courier üyesi",
+                        phone: profileForm.phone || user?.phone || "",
+                      })
+                    }
+                    className="bg-[#e54725]"
+                  >
+                    Profili kaydet
+                  </Button>
+                  <p className="pt-2 text-slate-500">
+                    {notifications.data?.length ?? 0} kayıtlı bildirim
+                  </p>
+                </div>
+                {courierPerformance.data && (
+                  <div className="mt-5 rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="grid size-11 place-items-center rounded-2xl bg-[#e54725] text-white">
+                          <Award size={22} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[.12em] text-[#c9381b]">
+                            Courier başarısı
+                          </p>
+                          <h3 className="font-black">
+                            {courierPerformance.data.badgeLabel}
+                          </h3>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="border-orange-200 text-[#c9381b]"
+                      >
+                        {courierPerformance.data.points} puan
+                      </Badge>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-xl bg-white p-3">
+                        <p className="text-xs text-slate-500">
+                          Tamamlanan teslimat
+                        </p>
+                        <strong className="text-xl">
+                          {courierPerformance.data.completedDeliveries}
+                        </strong>
+                      </div>
+                      <div className="rounded-xl bg-white p-3">
+                        <p className="text-xs text-slate-500">Sonraki seviye</p>
+                        <strong className="text-sm">
+                          {courierPerformance.data.nextBadgeLabel ??
+                            "En üst rozet"}
+                        </strong>
+                      </div>
+                    </div>
+                    {courierPerformance.data.nextBadgeAt && (
+                      <div className="mt-4">
+                        <div className="mb-1 flex justify-between text-xs font-semibold text-slate-500">
+                          <span>
+                            {courierPerformance.data.remainingToNext} teslimat
+                            kaldı
+                          </span>
+                          <span>
+                            %{courierPerformance.data.progressPercent}
+                          </span>
+                        </div>
+                        <Progress
+                          value={courierPerformance.data.progressPercent}
+                          className="h-2"
+                        />
+                      </div>
+                    )}
+                    <p className="mt-3 text-xs leading-5 text-slate-500">
+                      Puanlar tamamlanan teslimat başına 10 puan olarak,
+                      yalnızca teslim edildi durumundaki gerçek siparişlerden
+                      hesaplanır.
+                    </p>
+                  </div>
+                )}
+                {user?.role === "courier" && courierReport.data && (
+                  <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[.12em] text-[#c9381b]">
+                          Detaylı kazanç raporu
+                        </p>
+                        <h3 className="font-black">Geçmiş teslimatlar</h3>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => courierReport.refetch()}
+                      >
+                        Yenile
+                      </Button>
+                    </div>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                      <Input
+                        type="date"
+                        aria-label="Başlangıç tarihi"
+                        value={reportFilters.from}
+                        onChange={e =>
+                          setReportFilters({
+                            ...reportFilters,
+                            from: e.target.value,
+                          })
+                        }
+                      />
+                      <Input
+                        type="date"
+                        aria-label="Bitiş tarihi"
+                        value={reportFilters.to}
+                        onChange={e =>
+                          setReportFilters({
+                            ...reportFilters,
+                            to: e.target.value,
+                          })
+                        }
+                      />
+                      <select
+                        aria-label="Sipariş durumu"
+                        className="h-10 rounded-xl border border-slate-200 px-3 text-sm"
+                        value={reportFilters.status}
+                        onChange={e =>
+                          setReportFilters({
+                            ...reportFilters,
+                            status: e.target
+                              .value as typeof reportFilters.status,
+                          })
+                        }
+                      >
+                        <option value="all">Tüm durumlar</option>
+                        <option value="received">Alındı</option>
+                        <option value="on_the_way">Yolda</option>
+                        <option value="delivered">Teslim edildi</option>
+                        <option value="cancelled">İptal edildi</option>
+                      </select>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <select
+                        aria-label="Rapor sıralaması"
+                        className="h-9 rounded-lg border border-slate-200 px-3 text-xs"
+                        value={reportFilters.sortBy}
+                        onChange={e =>
+                          setReportFilters({
+                            ...reportFilters,
+                            sortBy: e.target
+                              .value as typeof reportFilters.sortBy,
+                          })
+                        }
+                      >
+                        <option value="date">Tarihe göre</option>
+                        <option value="earning">Kazanca göre</option>
+                        <option value="status">Duruma göre</option>
+                      </select>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setReportFilters({
+                            ...reportFilters,
+                            direction:
+                              reportFilters.direction === "desc"
+                                ? "asc"
+                                : "desc",
+                          })
+                        }
+                      >
+                        {reportFilters.direction === "desc"
+                          ? "Azalan"
+                          : "Artan"}
+                      </Button>
+                    </div>
+                    <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-orange-50 p-3 text-center">
+                      <div>
+                        <p className="text-[11px] text-slate-500">İş</p>
+                        <strong>{courierReport.data.totals.orders}</strong>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-slate-500">Brüt</p>
+                        <strong>
+                          {money(courierReport.data.totals.gross)}
+                        </strong>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-slate-500">Kazanç</p>
+                        <strong className="text-[#c9381b]">
+                          {money(courierReport.data.totals.earnings)}
+                        </strong>
+                      </div>
+                    </div>
+                    <div className="mt-4 max-h-56 space-y-2 overflow-auto">
+                      {courierReport.data.rows.map(row => (
+                        <div
+                          key={row.id}
+                          className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-sm"
+                        >
+                          <div>
+                            <strong>{row.trackingCode}</strong>
+                            <p className="text-xs text-slate-500">
+                              {
+                                statusText[
+                                  row.status as keyof typeof statusText
+                                ]
+                              }{" "}
+                              ·{" "}
+                              {new Date(row.createdAt).toLocaleDateString(
+                                "tr-TR"
+                              )}
+                            </p>
+                          </div>
+                          <strong>{money(row.courierEarning)}</strong>
+                        </div>
+                      ))}
+                      {courierReport.data.rows.length === 0 && (
+                        <p className="py-4 text-center text-sm text-slate-500">
+                          Filtreye uyan kayıt yok.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {user?.role === "courier" && (
+                  <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="grid size-10 place-items-center rounded-xl bg-blue-600 text-white">
+                        <FileUp size={19} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[.12em] text-blue-700">
+                          Gerekli belgeler
+                        </p>
+                        <h3 className="font-black text-slate-900">
+                          Courier doğrulama dosyaları
+                        </h3>
+                        <p className="mt-1 text-xs leading-5 text-slate-600">
+                          Kimlik, ehliyet ve araç ruhsatınızı PDF, JPG veya PNG
+                          olarak yükleyin. Dosyalar yalnızca yetkili inceleme
+                          ekibine açılır.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      {(
+                        [
+                          { type: "identity", label: "Kimlik belgesi" },
+                          { type: "license", label: "Ehliyet" },
+                          {
+                            type: "vehicle_registration",
+                            label: "Araç ruhsatı",
+                          },
+                        ] as const
+                      ).map(item => {
+                        const document = courierDocuments.data?.find(
+                          row => row.documentType === item.type
+                        );
+                        return (
+                          <div
+                            key={item.type}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-3"
+                          >
+                            <div>
+                              <p className="text-sm font-bold text-slate-800">
+                                {item.label}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {document
+                                  ? `${document.originalName} · ${document.status === "approved" ? "Onaylandı" : document.status === "rejected" ? "Geri gönderildi" : "İnceleniyor"}`
+                                  : "Henüz yüklenmedi"}
+                              </p>
+                            </div>
+                            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-slate-700">
+                              <FileUp size={14} />
+                              {documentUploadState[item.type]
+                                ? "Yükleniyor…"
+                                : document
+                                  ? "Yenile"
+                                  : "Dosya seç"}
+                              <input
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                                className="hidden"
+                                disabled={documentUploadState[item.type]}
+                                onChange={e => {
+                                  handleCourierDocument(
+                                    item.type,
+                                    e.target.files?.[0]
+                                  );
+                                  e.currentTarget.value = "";
+                                }}
+                              />
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-3 text-[11px] leading-4 text-slate-500">
+                      Maksimum 8 MB. Hassas belgeleri yalnızca Run Courier
+                      uygulamasının resmi alanından yükleyin.
+                    </p>
+                  </div>
+                )}
+                {user?.role === "courier" && (
+                  <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[.12em] text-emerald-700">
+                          Operasyon durumu
+                        </p>
+                        <h3 className="font-black text-slate-900">
+                          Teslimat nöbeti
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-600">
+                          Müsait olduğunuzda admin sizi yeni siparişlere
+                          otomatik olarak aday gösterir.
+                        </p>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="border-emerald-200 bg-white text-emerald-700"
+                      >
+                        {courierOperation.data?.availability === "available"
+                          ? "Müsait"
+                          : courierOperation.data?.availability === "busy"
+                            ? "Meşgul"
+                            : courierOperation.data?.availability === "break"
+                              ? "Molada"
+                              : "Çevrimdışı"}
+                      </Badge>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        disabled={
+                          setCourierAvailability.isPending ||
+                          courierOperation.data?.availability === "available"
+                        }
+                        onClick={() =>
+                          setCourierAvailability.mutate({
+                            availability: "available",
+                          })
+                        }
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                      >
+                        Müsaitim
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={
+                          setCourierAvailability.isPending ||
+                          courierOperation.data?.availability === "break"
+                        }
+                        onClick={() =>
+                          setCourierAvailability.mutate({
+                            availability: "break",
+                          })
+                        }
+                      >
+                        Mola
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={
+                          setCourierAvailability.isPending ||
+                          courierOperation.data?.availability === "offline"
+                        }
+                        onClick={() =>
+                          setCourierAvailability.mutate({
+                            availability: "offline",
+                          })
+                        }
+                      >
+                        Çevrimdışı
+                      </Button>
+                    </div>
+                    {courierOperation.data?.lastLocationAt && (
+                      <p className="mt-3 text-[11px] text-slate-500">
+                        Son konum güncellemesi:{" "}
+                        {new Date(
+                          courierOperation.data.lastLocationAt
+                        ).toLocaleString("tr-TR")}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {courierContract.data && (
+                  <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[.12em] text-[#c9381b]">
+                          Courier sözleşmesi
+                        </p>
+                        <h3 className="font-black">
+                          Run Courier Hizmet Sözleşmesi
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Sürüm: {courierContract.data.version}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={
+                          courierContract.data.accepted ? "default" : "outline"
+                        }
+                        className={
+                          courierContract.data.accepted
+                            ? "bg-emerald-600"
+                            : "border-orange-300 text-[#c9381b]"
+                        }
+                      >
+                        {courierContract.data.accepted
+                          ? "Kabul edildi"
+                          : "Kabul bekliyor"}
+                      </Badge>
+                    </div>
+                    <div className="mt-4 max-h-64 space-y-3 overflow-auto rounded-xl bg-white p-3">
+                      {courierContract.data.sections.map(section => (
+                        <div key={section.title}>
+                          <p className="text-sm font-bold">{section.title}</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-600">
+                            {section.body}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-3 text-xs leading-5 text-amber-800">
+                      {courierContract.data.notice}
+                    </p>
+                    {!courierContract.data.accepted && (
+                      <div className="mt-4 space-y-2">
+                        <Input
+                          placeholder="Ad soyad"
+                          value={contractForm.courierFullName}
+                          onChange={e =>
+                            setContractForm({
+                              ...contractForm,
+                              courierFullName: e.target.value,
+                            })
+                          }
+                        />
+                        <Input
+                          placeholder="T.C. kimlik no"
+                          value={contractForm.identityNumber}
+                          onChange={e =>
+                            setContractForm({
+                              ...contractForm,
+                              identityNumber: e.target.value,
+                            })
+                          }
+                        />
+                        <Input
+                          placeholder="İkamet adresi"
+                          value={contractForm.residenceAddress}
+                          onChange={e =>
+                            setContractForm({
+                              ...contractForm,
+                              residenceAddress: e.target.value,
+                            })
+                          }
+                        />
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <Input
+                            placeholder="Vergi dairesi"
+                            value={contractForm.taxOffice}
+                            onChange={e =>
+                              setContractForm({
+                                ...contractForm,
+                                taxOffice: e.target.value,
+                              })
+                            }
+                          />
+                          <Input
+                            placeholder="Vergi no"
+                            value={contractForm.taxNumber}
+                            onChange={e =>
+                              setContractForm({
+                                ...contractForm,
+                                taxNumber: e.target.value,
+                              })
+                            }
+                          />
+                          <Input
+                            placeholder="Araç plakası"
+                            value={contractForm.vehiclePlate}
+                            onChange={e =>
+                              setContractForm({
+                                ...contractForm,
+                                vehiclePlate: e.target.value,
+                              })
+                            }
+                          />
+                          <Input
+                            placeholder="IBAN"
+                            value={contractForm.iban}
+                            onChange={e =>
+                              setContractForm({
+                                ...contractForm,
+                                iban: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <label className="flex items-start gap-2 pt-2 text-xs text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={contractAccepted}
+                            onChange={e =>
+                              setContractAccepted(e.target.checked)
+                            }
+                            className="mt-0.5 size-4 accent-[#e54725]"
+                          />
+                          <span>
+                            Sözleşme metnini okudum, verdiğim bilgilerin doğru
+                            olduğunu ve kabul ettiğimi beyan ederim.
+                          </span>
+                        </label>
+                        <Button
+                          disabled={
+                            !contractAccepted || acceptCourierContract.isPending
+                          }
+                          onClick={() =>
+                            acceptCourierContract.mutate({
+                              ...contractForm,
+                              accepted: true,
+                            })
+                          }
+                          className="mt-2 w-full bg-[#e54725]"
+                        >
+                          Sözleşmeyi kabul et ve kaydet
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="rounded-3xl border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle>Geçmiş siparişler ve kişisel muhasebe</CardTitle>
+                <p className="text-sm text-slate-500">
+                  Bu üyeliğe ait sipariş ve ödeme kayıtları.
+                </p>
+              </CardHeader>
+              <CardContent>
+                {accounting.data && (
+                  <div className="mb-5 grid gap-3 rounded-2xl bg-orange-50 p-4 sm:grid-cols-3">
+                    <div>
+                      <p className="text-xs text-slate-500">Toplam işlem</p>
+                      <strong className="text-xl">
+                        {accounting.data.totalOrders}
+                      </strong>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Toplam ödeme</p>
+                      <strong className="text-xl">
+                        {money(accounting.data.gross)}
+                      </strong>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">
+                        {accounting.data.role === "courier"
+                          ? "Courier kazancı"
+                          : "Kişisel kayıt"}
+                      </p>
+                      <strong className="text-xl text-[#c9381b]">
+                        {accounting.data.role === "courier"
+                          ? money(accounting.data.courierEarnings)
+                          : "Güvenli"}
+                      </strong>
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-3">
+                  {mine.data?.map(order => (
+                    <div
+                      key={order.id}
+                      className="flex items-center justify-between rounded-2xl bg-slate-50 p-4"
+                    >
+                      <div>
+                        <strong>{order.trackingCode}</strong>
+                        <p className="text-sm text-slate-500">
+                          {statusText[order.status]}
+                        </p>
+                      </div>
+                      <strong>{money(order.totalPrice)}</strong>
+                    </div>
+                  )) ?? <p className="text-slate-500">Henüz sipariş yok.</p>}
+                </div>
+                <div className="mt-6 border-t pt-5">
+                  <p className="mb-3 font-bold">Son bildirimler</p>
+                  {notifications.data?.slice(0, 3).map(note => (
+                    <div
+                      key={note.id}
+                      className="mb-2 rounded-xl bg-orange-50 p-3 text-sm"
+                    >
+                      <strong>{note.title}</strong>
+                      <p className="text-slate-600">{note.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      )}
 
-    {section === "panel" && isStaff && <main className="mx-auto max-w-6xl px-4 py-10 lg:px-8"><div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><Badge className="bg-slate-900 text-white">Operasyon merkezi</Badge><h1 className="mt-3 text-4xl font-black">Run Courier yönetimi</h1></div><div className="flex gap-2"><Button variant="outline" onClick={() => nav("track")}>Takip ekranı</Button><Button onClick={() => nav("order")} className="bg-[#e54725]">Yeni sipariş</Button></div></div><div className="grid gap-4 sm:grid-cols-3"><Card className="rounded-3xl border-0 shadow-sm"><CardContent className="p-6"><Clock3 className="text-[#e54725]"/><p className="mt-4 text-sm text-slate-500">Toplam sipariş</p><p className="text-3xl font-black">{mine.data?.length ?? 0}</p></CardContent></Card><Card className="rounded-3xl border-0 shadow-sm"><CardContent className="p-6"><WalletCards className="text-emerald-600"/><p className="mt-4 text-sm text-slate-500">Operasyon rolü</p><p className="text-3xl font-black capitalize">{user?.role}</p></CardContent></Card><Card className="rounded-3xl border-0 shadow-sm"><CardContent className="p-6"><ShieldCheck className="text-blue-600"/><p className="mt-4 text-sm text-slate-500">Komisyon standardı</p><p className="text-3xl font-black">%20</p></CardContent></Card></div>{courierLeaderboard.data && <Card className="mt-6 rounded-3xl border-0 bg-[#111827] text-white shadow-sm"><CardHeader><div className="flex items-start justify-between gap-4"><div><CardTitle>Courier liderlik tablosu</CardTitle><p className="mt-1 text-sm text-slate-400">Sıralama yalnızca tamamlanan gerçek teslimatlardan kazanılan puanlarla hesaplanır.</p></div><Award className="text-orange-300" size={24}/></div></CardHeader><CardContent className="space-y-3 p-6 pt-0">{myLeaderboardEntry && <div className="rounded-2xl border border-orange-300/30 bg-orange-400/10 p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.12em] text-orange-200">Sizin sıranız</p><p className="mt-1 text-2xl font-black">#{myLeaderboardEntry.rank}</p></div><div className="text-right"><p className="text-xl font-black text-orange-200">{myLeaderboardEntry.points} puan</p><p className="text-xs text-slate-300">{myLeaderboardEntry.completedDeliveries} teslimat</p></div></div></div>}{courierLeaderboard.data.length > 0 ? courierLeaderboard.data.map(entry => <div key={entry.courierId} className={`flex items-center gap-3 rounded-2xl p-3 ${entry.courierId === user?.id ? "bg-orange-400/15 ring-1 ring-orange-300/30" : "bg-white/5"}`}><div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10 font-black text-orange-200">{entry.rank}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="truncate font-bold">{entry.displayName}</p><span className="text-xs text-slate-400">{entry.badgeLabel}</span></div><p className="text-xs text-slate-400">{entry.completedDeliveries} tamamlanan teslimat</p></div><strong className="shrink-0 text-orange-200">{entry.points} puan</strong></div>) : <p className="rounded-2xl bg-white/5 p-4 text-sm text-slate-400">Henüz tamamlanan teslimat bulunmuyor.</p>}</CardContent></Card>}{(user?.role === "admin" || user?.role === "accountant") && courierDocuments.data && <Card className="mt-6 rounded-3xl border-0 shadow-sm"><CardHeader><CardTitle>Courier belge inceleme</CardTitle><p className="text-sm text-slate-500">Belgeler varsayılan olarak gizlidir; yalnızca yetkili personel süreli bağlantıyla açabilir.</p></CardHeader><CardContent className="space-y-2">{courierDocuments.data.length > 0 ? courierDocuments.data.map(document => <div key={document.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4"><div><p className="font-bold">{document.originalName}</p><p className="text-xs text-slate-500">Courier #{document.courierId} · {document.documentType === "identity" ? "Kimlik" : document.documentType === "license" ? "Ehliyet" : "Araç ruhsatı"} · {document.status === "approved" ? "Onaylandı" : document.status === "rejected" ? "Geri gönderildi" : "İnceleniyor"}</p></div><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => openCourierDocument(document.id)}>Görüntüle</Button>{document.status !== "approved" && <Button size="sm" onClick={() => reviewCourierDocument.mutate({ documentId: document.id, status: "approved" })} className="bg-emerald-600">Onayla</Button>}{document.status !== "rejected" && <Button size="sm" variant="outline" onClick={() => reviewCourierDocument.mutate({ documentId: document.id, status: "rejected", reviewNote: "Belge yeniden yüklenmeli." })} className="border-red-200 text-red-700">Geri gönder</Button>}</div></div>) : <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Henüz kurye belgesi yüklenmedi.</p>}</CardContent></Card>}{accounting.data && <Card className="mt-6 rounded-3xl border-0 bg-[#111827] text-white shadow-sm"><CardHeader><CardTitle>{accounting.data.role === "courier" ? "Courier kazanç özeti" : accounting.data.role === "user" ? "Hesabımın ödeme özeti" : "Firma muhasebe özeti"}</CardTitle><p className="text-sm text-slate-400">Yalnızca bu üyelik hesabının yetkili olduğu kayıtlar gösterilir.</p></CardHeader><CardContent className="grid gap-5 p-6 pt-0 sm:grid-cols-4"><div><p className="text-sm text-slate-400">{accounting.data.role === "user" ? "Toplam harcama" : "Toplam işlem"}</p><p className="mt-1 text-2xl font-black">{accounting.data.role === "user" ? money(accounting.data.gross) : accounting.data.totalOrders}</p></div><div><p className="text-sm text-slate-400">Sipariş toplamı</p><p className="mt-1 text-2xl font-black">{accounting.data.totalOrders}</p></div><div><p className="text-sm text-slate-400">{accounting.data.role === "courier" ? "Courier kazancı" : "Komisyon"}</p><p className="mt-1 text-2xl font-black text-orange-300">{money(accounting.data.role === "courier" ? accounting.data.courierEarnings : accounting.data.commission)}</p></div><div><p className="text-sm text-slate-400">{accounting.data.role === "courier" ? "Ödenecek kazanç" : accounting.data.role === "user" ? "Kişisel bakiye" : "Firma geliri"}</p><p className="mt-1 text-2xl font-black text-emerald-300">{money(accounting.data.role === "courier" ? accounting.data.courierEarnings : accounting.data.role === "user" ? accounting.data.gross : accounting.data.companyRevenue)}</p></div></CardContent></Card>}<Card className="mt-6 rounded-3xl border-0 shadow-sm"><CardHeader><CardTitle>Çevrilmiş canlı destek</CardTitle><p className="text-sm text-slate-500">Müşteri hangi dilde yazarsa yazsın mesajlar Türkçe görünür; yanıtınız müşterinin diline çevrilir.</p></CardHeader><CardContent><div className="flex flex-wrap gap-2">{mine.data?.map(order => <Button key={order.id} size="sm" variant={panelOrderId === order.id ? "default" : "outline"} onClick={() => setPanelOrderId(order.id)}>{order.trackingCode}</Button>)}</div><div className="mt-4 max-h-48 space-y-2 overflow-auto">{panelMessages.data?.map(message => <div key={message.id} className="rounded-xl bg-slate-50 p-3 text-sm"><p>{message.senderRole === "customer" ? message.translatedContent || message.content : message.content}</p>{message.attachmentUrl && <button type="button" className="mt-2 block w-full cursor-zoom-in rounded-lg text-left focus:outline-none focus:ring-2 focus:ring-orange-400" onClick={() => openPhotoPreview(message.attachmentUrl!, message.attachmentName || "Sohbet fotoğrafı")} aria-label="Fotoğrafı tam ekran aç"><img src={message.attachmentUrl} alt={message.attachmentName || "Sohbet fotoğrafı"} className="max-h-48 w-full rounded-lg object-cover" loading="lazy"/></button>}<span className="text-[10px] text-slate-400">{message.senderRole === "customer" ? `${message.detectedLanguage} → Türkçe` : "Türkçe → müşteri dili"}</span></div>) ?? <p className="text-sm text-slate-400">Bir sipariş seçin.</p>}</div><div className="mt-3 flex flex-wrap gap-2" aria-label="Hazır kurye mesajları">{courierChatTemplates.map(template => <Button key={template.id} type="button" size="sm" variant="outline" disabled={!panelOrderId || sendPanelMessage.isPending} onClick={() => sendQuickPanelMessage(template.content)} className="rounded-full border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-700 hover:bg-emerald-100">{template.label}</Button>)}</div><div className="mt-3 flex flex-wrap gap-2"><input ref={panelPhotoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={event => { handleChatPhoto(event.target.files?.[0], panelOrderId, "operator"); event.currentTarget.value = ""; }}/><Button type="button" variant="outline" disabled={!panelOrderId || sendChatPhoto.isPending} onClick={() => panelPhotoInputRef.current?.click()} aria-label="Fotoğraf gönder" className="gap-2"><FileUp size={16}/> Fotoğraf</Button><div className="flex min-w-[min(100%,24rem)] flex-1 gap-2"><Input placeholder="Türkçe yanıtınızı yazın" value={panelMessage} onChange={e => setPanelMessage(e.target.value)}/><Button disabled={!panelOrderId || sendPanelMessage.isPending} onClick={() => sendPanelMessage.mutate({ orderId: panelOrderId, content: panelMessage, senderRole: "operator" })} className="bg-[#e54725]">Yanıtla</Button></div></div></CardContent></Card><Card className="mt-6 rounded-3xl border-0 shadow-sm"><CardHeader><CardTitle>Gelen siparişler · ödeme geçmişi</CardTitle><p className="text-sm text-slate-500">Her satırda toplam ödeme, %20 komisyon ve kurye kazancı ayrıştırılır.</p></CardHeader><CardContent><div className="space-y-3">{mine.data?.map(order => <div key={order.id} className="flex flex-col justify-between gap-3 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center"><div><div className="flex items-center gap-2"><strong>{order.trackingCode}</strong><Badge variant="outline">{statusText[order.status]}</Badge></div><p className="mt-1 text-sm text-slate-500">{order.pickupAddress} → {order.deliveryAddress}</p></div><div className="flex items-center gap-3 text-left sm:text-right"><div><strong>{money(order.totalPrice)}</strong>{user?.role === "admin" || user?.role === "accountant" ? <><p className="text-xs text-slate-500">Komisyon: {money(order.commission)}</p><p className="text-xs text-slate-500">Courier: {money(order.courierEarning)} · Firma: {money(order.companyRevenue)}</p></> : user?.role === "courier" ? <p className="text-xs text-emerald-700">Kazancınız: {money(order.courierEarning)}</p> : <p className="text-xs text-slate-500">Kişisel ödeme kaydı</p>}</div><div className="flex flex-wrap items-center justify-end gap-2">{user?.role === "admin" && <><Input className="h-8 w-24 text-xs" placeholder="Courier ID" value={assignCourierId} onChange={e => setAssignCourierId(e.target.value)}/><Button size="sm" variant="outline" disabled={updateStatus.isPending || !assignCourierId} onClick={() => updateStatus.mutate({ orderId: order.id, status: order.status, courierId: Number(assignCourierId) })}>Ata</Button></>} {(user?.role === "admin" || user?.role === "courier") && <Button size="sm" variant="outline" disabled={updateStatus.isPending || order.status === "delivered"} onClick={() => updateStatus.mutate({ orderId: order.id, status: order.status === "received" ? "on_the_way" : "delivered" })}>{order.status === "received" ? "Yola çıkar" : "Teslim edildi"}</Button>}</div></div></div>) ?? <p className="py-8 text-center text-slate-500">Henüz sipariş bulunmuyor.</p>}</div></CardContent></Card></main>}
+      {section === "panel" && isStaff && (
+        <main className="mx-auto max-w-6xl px-4 py-10 lg:px-8">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <Badge className="bg-slate-900 text-white">
+                Operasyon merkezi
+              </Badge>
+              <h1 className="mt-3 text-4xl font-black">Run Courier yönetimi</h1>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => nav("track")}>
+                Takip ekranı
+              </Button>
+              <Button onClick={() => nav("order")} className="bg-[#e54725]">
+                Yeni sipariş
+              </Button>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Card className="rounded-3xl border-0 shadow-sm">
+              <CardContent className="p-6">
+                <Clock3 className="text-[#e54725]" />
+                <p className="mt-4 text-sm text-slate-500">Toplam sipariş</p>
+                <p className="text-3xl font-black">{mine.data?.length ?? 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-3xl border-0 shadow-sm">
+              <CardContent className="p-6">
+                <WalletCards className="text-emerald-600" />
+                <p className="mt-4 text-sm text-slate-500">Operasyon rolü</p>
+                <p className="text-3xl font-black capitalize">{user?.role}</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-3xl border-0 shadow-sm">
+              <CardContent className="p-6">
+                <ShieldCheck className="text-blue-600" />
+                <p className="mt-4 text-sm text-slate-500">
+                  Komisyon standardı
+                </p>
+                <p className="text-3xl font-black">%20</p>
+              </CardContent>
+            </Card>
+          </div>
+          {courierLeaderboard.data && (
+            <Card className="mt-6 rounded-3xl border-0 bg-[#111827] text-white shadow-sm">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <CardTitle>Courier liderlik tablosu</CardTitle>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Sıralama yalnızca tamamlanan gerçek teslimatlardan
+                      kazanılan puanlarla hesaplanır.
+                    </p>
+                  </div>
+                  <Award className="text-orange-300" size={24} />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3 p-6 pt-0">
+                {myLeaderboardEntry && (
+                  <div className="rounded-2xl border border-orange-300/30 bg-orange-400/10 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[.12em] text-orange-200">
+                          Sizin sıranız
+                        </p>
+                        <p className="mt-1 text-2xl font-black">
+                          #{myLeaderboardEntry.rank}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-black text-orange-200">
+                          {myLeaderboardEntry.points} puan
+                        </p>
+                        <p className="text-xs text-slate-300">
+                          {myLeaderboardEntry.completedDeliveries} teslimat
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {courierLeaderboard.data.length > 0 ? (
+                  courierLeaderboard.data.map(entry => (
+                    <div
+                      key={entry.courierId}
+                      className={`flex items-center gap-3 rounded-2xl p-3 ${entry.courierId === user?.id ? "bg-orange-400/15 ring-1 ring-orange-300/30" : "bg-white/5"}`}
+                    >
+                      <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10 font-black text-orange-200">
+                        {entry.rank}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate font-bold">
+                            {entry.displayName}
+                          </p>
+                          <span className="text-xs text-slate-400">
+                            {entry.badgeLabel}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400">
+                          {entry.completedDeliveries} tamamlanan teslimat
+                        </p>
+                      </div>
+                      <strong className="shrink-0 text-orange-200">
+                        {entry.points} puan
+                      </strong>
+                    </div>
+                  ))
+                ) : (
+                  <p className="rounded-2xl bg-white/5 p-4 text-sm text-slate-400">
+                    Henüz tamamlanan teslimat bulunmuyor.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          {(user?.role === "admin" || user?.role === "accountant") &&
+            courierDocuments.data && (
+              <Card className="mt-6 rounded-3xl border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle>Courier belge inceleme</CardTitle>
+                  <p className="text-sm text-slate-500">
+                    Belgeler varsayılan olarak gizlidir; yalnızca yetkili
+                    personel süreli bağlantıyla açabilir.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {courierDocuments.data.length > 0 ? (
+                    courierDocuments.data.map(document => (
+                      <div
+                        key={document.id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4"
+                      >
+                        <div>
+                          <p className="font-bold">{document.originalName}</p>
+                          <p className="text-xs text-slate-500">
+                            Courier #{document.courierId} ·{" "}
+                            {document.documentType === "identity"
+                              ? "Kimlik"
+                              : document.documentType === "license"
+                                ? "Ehliyet"
+                                : "Araç ruhsatı"}{" "}
+                            ·{" "}
+                            {document.status === "approved"
+                              ? "Onaylandı"
+                              : document.status === "rejected"
+                                ? "Geri gönderildi"
+                                : "İnceleniyor"}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openCourierDocument(document.id)}
+                          >
+                            Görüntüle
+                          </Button>
+                          {document.status !== "approved" && (
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                reviewCourierDocument.mutate({
+                                  documentId: document.id,
+                                  status: "approved",
+                                })
+                              }
+                              className="bg-emerald-600"
+                            >
+                              Onayla
+                            </Button>
+                          )}
+                          {document.status !== "rejected" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                reviewCourierDocument.mutate({
+                                  documentId: document.id,
+                                  status: "rejected",
+                                  reviewNote: "Belge yeniden yüklenmeli.",
+                                })
+                              }
+                              className="border-red-200 text-red-700"
+                            >
+                              Geri gönder
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">
+                      Henüz kurye belgesi yüklenmedi.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          {accounting.data && (
+            <Card className="mt-6 rounded-3xl border-0 bg-[#111827] text-white shadow-sm">
+              <CardHeader>
+                <CardTitle>
+                  {accounting.data.role === "courier"
+                    ? "Courier kazanç özeti"
+                    : accounting.data.role === "user"
+                      ? "Hesabımın ödeme özeti"
+                      : "Firma muhasebe özeti"}
+                </CardTitle>
+                <p className="text-sm text-slate-400">
+                  Yalnızca bu üyelik hesabının yetkili olduğu kayıtlar
+                  gösterilir.
+                </p>
+              </CardHeader>
+              <CardContent className="grid gap-5 p-6 pt-0 sm:grid-cols-4">
+                <div>
+                  <p className="text-sm text-slate-400">
+                    {accounting.data.role === "user"
+                      ? "Toplam harcama"
+                      : "Toplam işlem"}
+                  </p>
+                  <p className="mt-1 text-2xl font-black">
+                    {accounting.data.role === "user"
+                      ? money(accounting.data.gross)
+                      : accounting.data.totalOrders}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400">Sipariş toplamı</p>
+                  <p className="mt-1 text-2xl font-black">
+                    {accounting.data.totalOrders}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400">
+                    {accounting.data.role === "courier"
+                      ? "Courier kazancı"
+                      : "Komisyon"}
+                  </p>
+                  <p className="mt-1 text-2xl font-black text-orange-300">
+                    {money(
+                      accounting.data.role === "courier"
+                        ? accounting.data.courierEarnings
+                        : accounting.data.commission
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400">
+                    {accounting.data.role === "courier"
+                      ? "Ödenecek kazanç"
+                      : accounting.data.role === "user"
+                        ? "Kişisel bakiye"
+                        : "Firma geliri"}
+                  </p>
+                  <p className="mt-1 text-2xl font-black text-emerald-300">
+                    {money(
+                      accounting.data.role === "courier"
+                        ? accounting.data.courierEarnings
+                        : accounting.data.role === "user"
+                          ? accounting.data.gross
+                          : accounting.data.companyRevenue
+                    )}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          <Card className="mt-6 rounded-3xl border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle>Çevrilmiş canlı destek</CardTitle>
+              <p className="text-sm text-slate-500">
+                Müşteri hangi dilde yazarsa yazsın mesajlar Türkçe görünür;
+                yanıtınız müşterinin diline çevrilir.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {mine.data?.map(order => (
+                  <Button
+                    key={order.id}
+                    size="sm"
+                    variant={panelOrderId === order.id ? "default" : "outline"}
+                    onClick={() => setPanelOrderId(order.id)}
+                  >
+                    {order.trackingCode}
+                  </Button>
+                ))}
+              </div>
+              <div className="mt-4 max-h-48 space-y-2 overflow-auto">
+                {panelMessages.data?.map(message => (
+                  <div
+                    key={message.id}
+                    className="rounded-xl bg-slate-50 p-3 text-sm"
+                  >
+                    <p>
+                      {message.senderRole === "customer"
+                        ? message.translatedContent || message.content
+                        : message.content}
+                    </p>
+                    {message.attachmentUrl && (
+                      <button
+                        type="button"
+                        className="mt-2 block w-full cursor-zoom-in rounded-lg text-left focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        onClick={() =>
+                          openPhotoPreview(
+                            message.attachmentUrl!,
+                            message.attachmentName || "Sohbet fotoğrafı"
+                          )
+                        }
+                        aria-label="Fotoğrafı tam ekran aç"
+                      >
+                        <img
+                          src={message.attachmentUrl}
+                          alt={message.attachmentName || "Sohbet fotoğrafı"}
+                          className="max-h-48 w-full rounded-lg object-cover"
+                          loading="lazy"
+                        />
+                      </button>
+                    )}
+                    <span className="text-[10px] text-slate-400">
+                      {message.senderRole === "customer"
+                        ? `${message.detectedLanguage} → Türkçe`
+                        : "Türkçe → müşteri dili"}
+                    </span>
+                  </div>
+                )) ?? (
+                  <p className="text-sm text-slate-400">Bir sipariş seçin.</p>
+                )}
+              </div>
+              <div
+                className="mt-3 flex flex-wrap gap-2"
+                aria-label="Hazır kurye mesajları"
+              >
+                {courierChatTemplates.map(template => (
+                  <Button
+                    key={template.id}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!panelOrderId || sendPanelMessage.isPending}
+                    onClick={() => sendQuickPanelMessage(template.content)}
+                    className="rounded-full border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
+                  >
+                    {template.label}
+                  </Button>
+                ))}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <input
+                  ref={panelPhotoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={event => {
+                    handleChatPhoto(
+                      event.target.files?.[0],
+                      panelOrderId,
+                      "operator"
+                    );
+                    event.currentTarget.value = "";
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!panelOrderId || sendChatPhoto.isPending}
+                  onClick={() => panelPhotoInputRef.current?.click()}
+                  aria-label="Fotoğraf gönder"
+                  className="gap-2"
+                >
+                  <FileUp size={16} /> Fotoğraf
+                </Button>
+                <div className="flex min-w-[min(100%,24rem)] flex-1 gap-2">
+                  <Input
+                    placeholder="Türkçe yanıtınızı yazın"
+                    value={panelMessage}
+                    onChange={e => setPanelMessage(e.target.value)}
+                  />
+                  <Button
+                    disabled={!panelOrderId || sendPanelMessage.isPending}
+                    onClick={() =>
+                      sendPanelMessage.mutate({
+                        orderId: panelOrderId,
+                        content: panelMessage,
+                        senderRole: "operator",
+                      })
+                    }
+                    className="bg-[#e54725]"
+                  >
+                    Yanıtla
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="mt-6 rounded-3xl border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle>Gelen siparişler · ödeme geçmişi</CardTitle>
+              <p className="text-sm text-slate-500">
+                Her satırda toplam ödeme, %20 komisyon ve kurye kazancı
+                ayrıştırılır.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {mine.data?.map(order => (
+                  <div
+                    key={order.id}
+                    className="flex flex-col justify-between gap-3 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <strong>{order.trackingCode}</strong>
+                        <Badge variant="outline">
+                          {statusText[order.status]}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-sm text-slate-500">
+                        {order.pickupAddress} → {order.deliveryAddress}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 text-left sm:text-right">
+                      <div>
+                        <strong>{money(order.totalPrice)}</strong>
+                        {user?.role === "admin" ||
+                        user?.role === "accountant" ? (
+                          <>
+                            <p className="text-xs text-slate-500">
+                              Komisyon: {money(order.commission)}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              Courier: {money(order.courierEarning)} · Firma:{" "}
+                              {money(order.companyRevenue)}
+                            </p>
+                          </>
+                        ) : user?.role === "courier" ? (
+                          <p className="text-xs text-emerald-700">
+                            Kazancınız: {money(order.courierEarning)}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-slate-500">
+                            Kişisel ödeme kaydı
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        {user?.role === "admin" && (
+                          <>
+                            <Input
+                              className="h-8 w-24 text-xs"
+                              placeholder="Courier ID"
+                              value={assignCourierId}
+                              onChange={e => setAssignCourierId(e.target.value)}
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={
+                                updateStatus.isPending || !assignCourierId
+                              }
+                              onClick={() =>
+                                updateStatus.mutate({
+                                  orderId: order.id,
+                                  status: order.status,
+                                  courierId: Number(assignCourierId),
+                                })
+                              }
+                            >
+                              Ata
+                            </Button>
+                          </>
+                        )}{" "}
+                        {(user?.role === "admin" ||
+                          user?.role === "courier") && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={
+                              updateStatus.isPending ||
+                              order.status === "delivered"
+                            }
+                            onClick={() =>
+                              updateStatus.mutate({
+                                orderId: order.id,
+                                status:
+                                  order.status === "received"
+                                    ? "on_the_way"
+                                    : "delivered",
+                              })
+                            }
+                          >
+                            {order.status === "received"
+                              ? "Yola çıkar"
+                              : "Teslim edildi"}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )) ?? (
+                  <p className="py-8 text-center text-slate-500">
+                    Henüz sipariş bulunmuyor.
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      )}
 
-    <footer className="border-t border-slate-200 bg-white"><div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between lg:px-8"><span className="font-black text-slate-900">run <span className="text-[#e54725]">courier</span></span><span>İstanbul içi teslimat · 7/24 destek</span></div></footer>
-  </div>;
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+          <span className="font-black text-slate-900">
+            run <span className="text-[#e54725]">courier</span>
+          </span>
+          <span>Türkiye geneli teslimat · 7/24 destek</span>
+        </div>
+      </footer>
+    </div>
+  );
 }

@@ -4,7 +4,7 @@ import { savedAddressInputSchema } from "./routers";
 describe("saved address directory", () => {
   const validAddress = {
     label: "Ev",
-    province: "İstanbul" as const,
+    province: "İstanbul",
     district: "Kadıköy",
     neighborhood: "Caferağa",
     street: "Moda Caddesi",
@@ -15,7 +15,7 @@ describe("saved address directory", () => {
     addressDetail: "Apartman giriş kapısı, mavi tabela.",
   };
 
-  it("accepts a complete Istanbul address with apartment, floor and courier note", () => {
+  it("accepts a complete saved address with apartment, floor and courier note", () => {
     expect(savedAddressInputSchema.parse(validAddress)).toMatchObject(validAddress);
   });
 
@@ -23,8 +23,8 @@ describe("saved address directory", () => {
     expect(savedAddressInputSchema.parse(validAddress)).not.toHaveProperty("isFavorite");
   });
 
-  it("rejects non-Istanbul saved addresses", () => {
-    expect(() => savedAddressInputSchema.parse({ ...validAddress, province: "Ankara" })).toThrow();
+  it("accepts saved addresses from every Turkish province", () => {
+    expect(savedAddressInputSchema.parse({ ...validAddress, province: "Ankara", postalCode: "06000" })).toMatchObject({ province: "Ankara", postalCode: "06000" });
   });
 
   it("rejects saved addresses without a valid building number or detail", () => {

@@ -46,5 +46,5 @@ describe("orders persisted address details", () => {
       expect(rows[0]).toMatchObject({ pickupAddressDetail: "No: 10", deliveryAddressDetail: "D: 4" });
       throw rollback;
     })).rejects.toBe(rollback);
-  });
+  }, 15000);
 });

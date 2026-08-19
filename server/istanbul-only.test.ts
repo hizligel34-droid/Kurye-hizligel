@@ -1,83 +1,46 @@
 import { createElement } from "react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AddressPicker } from "../client/src/pages/Home";
-import { filterIstanbulProvince, getDistricts, getNeighborhoods, getProvinces, ISTANBUL_PROVINCE_ID } from "../client/src/lib/addressDirectory";
+import { getDistricts, getNeighborhoods, getProvinces, resetAddressDirectoryCache } from "../client/src/lib/addressDirectory";
 import { OFFLINE_MAP_PACKAGES } from "../client/src/lib/offlinePackages";
 
-describe("İstanbul-only adres kapsamı", () => {
-  it("yalnızca İstanbul ilini seçilebilir bırakır", () => {
-    const result = filterIstanbulProvince([
-      { id: 34, name: "İstanbul" },
-      { id: 6, name: "Ankara" },
-      { id: 35, name: "İzmir" },
-    ]);
+describe("Türkiye geneli adres kapsamı", () => {
+  beforeEach(() => resetAddressDirectoryCache());
 
-    expect(ISTANBUL_PROVINCE_ID).toBe(34);
-    expect(result).toEqual([{ id: 34, name: "İstanbul" }]);
-  });
-
-  it("offline paket manifestinde yalnızca İstanbul bulunur", () => {
-    expect(OFFLINE_MAP_PACKAGES).toHaveLength(1);
-    expect(OFFLINE_MAP_PACKAGES[0]?.city).toBe("İstanbul");
-    expect(OFFLINE_MAP_PACKAGES[0]?.downloadUrl).toBe("/api/offline-maps/istanbul");
-  });
-
-  it("AddressPicker render'ında il alanını İstanbul'a sabitler ve devre dışı bırakır", () => {
+  it("adres seçicide boş il seçimiyle başlar; il alanı etkin kalır", () => {
     const markup = renderToStaticMarkup(createElement(AddressPicker, { label: "Alış adresi", onChange: () => undefined }));
     expect(markup).toContain('aria-label="İl"');
-    expect(markup).toContain('value="34"');
-    expect(markup).toContain("disabled");
-    expect(markup).toContain(">İstanbul</option>");
+    expect(markup).toContain(">İl seçin</option>");
     expect(markup).toContain(">İlçe seçin</option>");
     expect(markup).toContain(">Mahalle seçin</option>");
     expect(markup).toContain('placeholder="Sokak / cadde"');
-    expect(markup).not.toContain(">Ankara</option>");
+    expect(markup).not.toContain('value="34" disabled');
   });
 
-  it("İstanbul seçildikten sonra ilçe ve mahalleleri parent id ile yükler", async () => {
+  it("il, ilçe ve mahalleleri seçilen ilin kimliğiyle yükler", async () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = (async (input: RequestInfo | URL) => {
       const url = String(input);
       const data = url.endsWith("/provinces")
-        ? [{ id: 34, name: "İstanbul" }, { id: 6, name: "Ankara" }]
-        : url.includes("districts?provinceId=34")
-          ? [{ id: 101, name: "Kadıköy", provinceId: 34 }]
-          : [{ id: 1001, name: "Caferağa", districtId: 101 }];
+        ? [{ id: 6, name: "Ankara", postalCode: "06000" }, { id: 34, name: "İstanbul", postalCode: "34000" }]
+        : url.includes("districts?provinceId=6")
+          ? [{ id: 101, name: "Çankaya", provinceId: 6, postalCode: "06680" }]
+          : [{ id: 1001, name: "Kızılay", provinceId: 6, districtId: 101, postalCode: "06420" }];
       return { ok: true, json: async () => ({ status: "OK", data }) } as Response;
     }) as typeof fetch;
 
     try {
-      expect(await getProvinces()).toEqual([{ id: 34, name: "İstanbul" }]);
-      expect(await getDistricts(34)).toEqual([{ id: 101, name: "Kadıköy", provinceId: 34 }]);
-      expect(await getNeighborhoods(101)).toEqual([{ id: 1001, name: "Caferağa", districtId: 101 }]);
+      expect(await getProvinces()).toEqual([{ id: 6, name: "Ankara", postalCode: "06000" }, { id: 34, name: "İstanbul", postalCode: "34000" }]);
+      expect(await getDistricts(6)).toEqual([{ id: 101, name: "Çankaya", provinceId: 6, postalCode: "06680" }]);
+      expect(await getNeighborhoods(6, 101)).toEqual([{ id: 1001, name: "Kızılay", provinceId: 6, districtId: 101, postalCode: "06420" }]);
     } finally {
       globalThis.fetch = originalFetch;
     }
   });
 
-  it("ilçe yanıtındaki gömülü mahalleler, mahalle endpointi başarısız olduğunda yedeklenir", async () => {
-    const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async (input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.includes("districts?provinceId=99")) {
-        return { ok: true, json: async () => ({ status: "OK", data: [{ id: 909, name: "Deneme", provinceId: 99, neighborhoods: [{ id: 9001, name: "Yedek Mahalle" }] }] }) } as Response;
-      }
-      return { ok: false, json: async () => ({ status: "ERROR", data: [] }) } as Response;
-    }) as typeof fetch;
-
-    try {
-      expect(await getDistricts(99)).toEqual([{ id: 909, name: "Deneme", provinceId: 99 }]);
-      expect(await getNeighborhoods(909)).toEqual([{ id: 9001, name: "Yedek Mahalle", districtId: 909 }]);
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
-  });
-
-  it("ilçe, mahalle, cadde ve açık adresi birlikte korur", () => {
-    const address = ["Merkez Mahallesi", "Bağdat Caddesi", "No: 10", "Kadıköy", "İstanbul"].join(", ");
-    expect(address).toContain("İstanbul");
-    expect(address).toContain("Kadıköy");
-    expect(address).toContain("Bağdat Caddesi");
+  it("offline harita paketinin kapsamını adres dizininden bağımsız tutar", () => {
+    expect(OFFLINE_MAP_PACKAGES).toHaveLength(1);
+    expect(OFFLINE_MAP_PACKAGES[0]?.city).toBe("İstanbul");
   });
 });

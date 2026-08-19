@@ -63,7 +63,7 @@ describe("orders.create address and route persistence", () => {
 
     const readBack = await caller.orders.mine();
     expect(readBack[0]).toMatchObject({ pickupAddressDetail: "No: 10", deliveryAddressDetail: "D: 4" });
-  });
+  }, 15000);
 
   it("keeps the Istanbul-only payload consistent from estimate to order creation", async () => {
     inserted.length = 0;

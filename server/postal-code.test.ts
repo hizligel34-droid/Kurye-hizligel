@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { getPostalCodeForNeighborhood, getPostalCodesForNeighborhood } from "../client/src/lib/addressDirectory";
+import { getPostalCodeForAddressOption } from "../client/src/lib/addressDirectory";
 
-describe("İstanbul otomatik posta kodu eşleştirmesi", () => {
-  it("ilçe ve mahalle seçimiyle veri setindeki posta kodunu döndürür", () => {
-    expect(getPostalCodeForNeighborhood("Adalar", "Burgazada Mahallesi")).toBe("34975");
-    expect(getPostalCodeForNeighborhood("adalar", "burgazada mahallesi")).toBe("34975");
+describe("kaynaklı otomatik posta kodu", () => {
+  it("seçilen mahalle kaydındaki posta kodunu döndürür", () => {
+    expect(getPostalCodeForAddressOption({ postalCode: "06420" })).toBe("06420");
   });
 
-  it("eşleşmeyen veya eksik seçimde boş fallback döndürür", () => {
-    expect(getPostalCodesForNeighborhood("", "")).toEqual([]);
-    expect(getPostalCodeForNeighborhood("Bilinmeyen İlçe", "Bilinmeyen Mahalle")).toBe("");
+  it("posta kodu olmayan veya eksik kayıtta boş değer döndürür", () => {
+    expect(getPostalCodeForAddressOption({})).toBe("");
+    expect(getPostalCodeForAddressOption()).toBe("");
   });
 });

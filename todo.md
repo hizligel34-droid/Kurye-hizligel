@@ -482,3 +482,10 @@
 - [x] Filtrelenmiş üyelik sonuçlarını Türkçe karakter uyumlu CSV olarak dışa aktar
 - [x] 5 kg üzeri ek ücret uyarısına hesaplama ayrıntılarını gösteren erişilebilir modal ekle
 - [x] Yeni tercih, filtre, CSV ve modal akışları için Vitest, TypeScript, production build ve mobil görsel doğrulama yap
+
+- [x] Mevcut İstanbul adres verisi, kayıtlı adresler ve sipariş bağımlılıklarını envanterle
+- [x] Açık lisanslı Türkiye geneli adres veri kaynağını araştırıp seç
+- [x] Türkiye adres dizini için veri modeli, postal kodu ve arama sözleşmesini hazırla
+- [x] Eski İstanbul adres kaynaklarını kaldır ve mevcut tüm kayıtlı kullanıcı adreslerini sıfırla
+- [x] Yeni Türkiye geneli adres verisini güvenli biçimde içe aktar ve adres seçiciyi bağla
+- [x] Adres arama, posta kodu, sipariş oluşturma, test ve mobil görünüm akışlarını doğrula

@@ -1,30 +1,16 @@
-import postalCodeData from "@/data/istanbul-neighborhood-postal-codes.json";
-
-export type AddressOption = { id: number; name: string; provinceId?: number; districtId?: number };
-
-type PostalCodeEntry = { district: string; neighborhood: string; postalCodes: string[] };
-type PostalCodeDataset = { entries: PostalCodeEntry[] };
-
-const normalizeTurkishAddressPart = (value: string) => value.trim().toLocaleLowerCase("tr-TR").replace(/İ/g, "i").replace(/ı/g, "i").replace(/ş/g, "s").replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ö/g, "o").replace(/ç/g, "c").replace(/[^a-z0-9]+/g, " ").replace(/\bmah(?:alle(?:si)?)?\b/g, " ").replace(/\s+/g, " ").trim();
-const postalCodeLookup = new Map<string, string[]>();
-for (const entry of (postalCodeData as PostalCodeDataset).entries) {
-  postalCodeLookup.set(`${normalizeTurkishAddressPart(entry.district)}|${normalizeTurkishAddressPart(entry.neighborhood)}`, entry.postalCodes);
-}
-
-export function getPostalCodesForNeighborhood(district: string, neighborhood: string) {
-  return postalCodeLookup.get(`${normalizeTurkishAddressPart(district)}|${normalizeTurkishAddressPart(neighborhood)}`) ?? [];
-}
-
-export function getPostalCodeForNeighborhood(district: string, neighborhood: string) {
-  return getPostalCodesForNeighborhood(district, neighborhood)[0] ?? "";
-}
+export type AddressOption = {
+  id: number;
+  name: string;
+  provinceId?: number;
+  districtId?: number;
+  neighborhoodId?: number;
+  postalCode?: string;
+};
 
 type ApiResponse<T> = { status: string; data: T };
 
 const API_BASE = "/api/address";
-export const ISTANBUL_PROVINCE_ID = 34;
 const cache = new Map<string, AddressOption[]>();
-const embeddedNeighborhoods = new Map<number, AddressOption[]>();
 
 async function get<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`);
@@ -34,56 +20,42 @@ async function get<T>(path: string): Promise<T> {
   return payload.data;
 }
 
-export function filterIstanbulProvince(provinces: AddressOption[]) {
-  return provinces.filter(province => province.id === ISTANBUL_PROVINCE_ID);
+export function resetAddressDirectoryCache() {
+  cache.clear();
+}
+
+export function getPostalCodeForAddressOption(option?: Pick<AddressOption, "postalCode"> | null) {
+  return option?.postalCode?.trim() ?? "";
 }
 
 export async function getProvinces() {
-  const key = "provinces:istanbul-only";
-  if (!cache.has(key)) {
-    const provinces = await get<AddressOption[]>("/provinces");
-    cache.set(key, filterIstanbulProvince(provinces));
-  }
+  const key = "provinces:turkiye";
+  if (!cache.has(key)) cache.set(key, await get<AddressOption[]>("/provinces"));
   return cache.get(key)!;
 }
 
 export async function getDistricts(provinceId: number) {
   const key = `districts:${provinceId}`;
-  if (!cache.has(key)) {
-    const districts = await get<Array<AddressOption & { provinceId: number; neighborhoods?: Array<AddressOption & { districtId?: number }> }>>(`/districts?provinceId=${provinceId}`);
-    cache.set(key, districts.map(({ id, name, provinceId: parentId, neighborhoods }) => {
-      if (neighborhoods?.length) embeddedNeighborhoods.set(id, neighborhoods.map(item => ({ id: item.id, name: item.name, districtId: id })));
-      return { id, name, provinceId: parentId };
-    }));
-  }
+  if (!cache.has(key)) cache.set(key, await get<AddressOption[]>(`/districts?provinceId=${provinceId}`));
   return cache.get(key)!;
 }
 
-export async function getNeighborhoods(districtId: number) {
-  const key = `neighborhoods:${districtId}`;
-  if (!cache.has(key)) {
-    try {
-      const neighborhoods = await get<Array<AddressOption & { districtId: number }>>(`/neighborhoods?districtId=${districtId}`);
-      cache.set(key, neighborhoods.map(({ id, name, districtId: parentId }) => ({ id, name, districtId: parentId })));
-    } catch (error) {
-      const fallback = embeddedNeighborhoods.get(districtId);
-      if (!fallback) throw error;
-      cache.set(key, fallback);
-    }
-  }
+export async function getNeighborhoods(provinceId: number, districtId: number) {
+  const key = `neighborhoods:${provinceId}:${districtId}`;
+  if (!cache.has(key)) cache.set(key, await get<AddressOption[]>(`/neighborhoods?provinceId=${provinceId}&districtId=${districtId}`));
   return cache.get(key)!;
 }
 
-export async function getStreetSuggestions(params: { district: string; neighborhood: string; query?: string }) {
+export async function getStreetSuggestions(params: { provinceId: number; districtId: number; neighborhoodId: number; query?: string }) {
   const query = params.query?.trim() ?? "";
-  const key = `streets:${params.district}:${params.neighborhood}:${query.toLocaleLowerCase("tr-TR")}`;
+  const key = `streets:${params.provinceId}:${params.districtId}:${params.neighborhoodId}:${query.toLocaleLowerCase("tr-TR")}`;
   if (!cache.has(key)) {
-    const suggestions = await get<Array<AddressOption & { district: string; neighborhood: string }>>(`/streets?district=${encodeURIComponent(params.district)}&neighborhood=${encodeURIComponent(params.neighborhood)}&q=${encodeURIComponent(query)}`);
+    const suggestions = await get<AddressOption[]>(`/streets?provinceId=${params.provinceId}&districtId=${params.districtId}&neighborhoodId=${params.neighborhoodId}&q=${encodeURIComponent(query)}`);
     const unique = new Map<string, AddressOption>();
     for (const item of suggestions) {
       const name = item.name.trim();
       const normalized = name.toLocaleLowerCase("tr-TR");
-      if (name && !unique.has(normalized)) unique.set(normalized, { id: item.id, name });
+      if (name && !unique.has(normalized)) unique.set(normalized, { ...item, name });
     }
     cache.set(key, Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, "tr-TR")));
   }
