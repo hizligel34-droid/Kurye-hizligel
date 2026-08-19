@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Award, Bell, Bike, Calculator, CheckCircle2, Clock3, FileUp, Headphones, MapPin, MessageCircle, Package, RotateCcw, ShieldCheck, Sparkles, Truck, WalletCards, X, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "sonner";
 import { canConfirmOrder } from "@shared/routing";
-import { isOrderFormComplete, isRouteAddressComplete, ORDER_FORM_INCOMPLETE_MESSAGE } from "@shared/orderValidation";
+import { isOrderFormComplete, isRouteAddressComplete, isValidTurkishMobilePhone, normalizeTurkishMobilePhone, ORDER_ADDRESS_DETAIL_MAX, ORDER_BUILDING_NO_MAX, ORDER_FORM_INCOMPLETE_MESSAGE, ORDER_PRODUCT_DESCRIPTION_MAX } from "@shared/orderValidation";
 import { OfflineIstanbulMap } from "@/components/OfflineIstanbulMap";
 import { Progress } from "@/components/ui/progress";
 import { getStoredLanguage, supportedLanguages, translations, type LanguageCode } from "@/lib/i18n";
@@ -80,7 +80,7 @@ export default function Home() {
   const [trackingCode, setTrackingCode] = useState("");
   const [question, setQuestion] = useState("");
   const [botAnswer, setBotAnswer] = useState("");
-  const [form, setForm] = useState({ pickupAddress: "", pickupProvince: "", pickupDistrict: "", pickupNeighborhood: "", pickupStreet: "", pickupAddressDetail: "", deliveryAddress: "", deliveryProvince: "", deliveryDistrict: "", deliveryNeighborhood: "", deliveryStreet: "", deliveryAddressDetail: "", productDescription: "", customerPhone: "" });
+  const [form, setForm] = useState({ pickupAddress: "", pickupProvince: "", pickupDistrict: "", pickupNeighborhood: "", pickupStreet: "", pickupBuildingNo: "", pickupAddressDetail: "", deliveryAddress: "", deliveryProvince: "", deliveryDistrict: "", deliveryNeighborhood: "", deliveryStreet: "", deliveryBuildingNo: "", deliveryAddressDetail: "", productDescription: "", customerPhone: "" });
   const [paymentForm, setPaymentForm] = useState({ cardNumber: "4242 4242 4242 4242", expiry: "12/30", cvv: "123" });
   const [paymentMethod, setPaymentMethod] = useState<"sandbox_card" | "cash_on_delivery">("sandbox_card");
   const [paymentReference, setPaymentReference] = useState<string | null>(null);

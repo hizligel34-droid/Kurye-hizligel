@@ -379,3 +379,8 @@
 
 - [x] Ana ekrandaki Fiyat özeti kartını kaldır; sipariş içi fiyat hesaplamasını koru
 - [x] Fiyat özeti kaldırma değişikliğini mobil görünüm, test ve build ile doğrula
+
+- [x] v7 adres dizini ZIP’ini çıkarıp dosya ve veri envanterini oluştur
+- [x] v7 adres dizini ile mevcut İstanbul-only adres akışı arasındaki farkları incele
+- [x] Uyarlanabilir v7 adres dizini özelliklerini adres seçimi ve rota akışına entegre et
+- [x] v7 adres dizini için adres, rota/fiyat, test, TypeScript, build ve mobil doğrulama yap

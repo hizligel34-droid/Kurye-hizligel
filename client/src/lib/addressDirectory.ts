@@ -60,7 +60,13 @@ export async function getStreetSuggestions(params: { district: string; neighborh
   const key = `streets:${params.district}:${params.neighborhood}:${query.toLocaleLowerCase("tr-TR")}`;
   if (!cache.has(key)) {
     const suggestions = await get<Array<AddressOption & { district: string; neighborhood: string }>>(`/streets?district=${encodeURIComponent(params.district)}&neighborhood=${encodeURIComponent(params.neighborhood)}&q=${encodeURIComponent(query)}`);
-    cache.set(key, suggestions.map(item => ({ id: item.id, name: item.name })));
+    const unique = new Map<string, AddressOption>();
+    for (const item of suggestions) {
+      const name = item.name.trim();
+      const normalized = name.toLocaleLowerCase("tr-TR");
+      if (name && !unique.has(normalized)) unique.set(normalized, { id: item.id, name });
+    }
+    cache.set(key, Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name, "tr-TR")));
   }
   return cache.get(key)!;
 }

@@ -12,7 +12,7 @@ describe("sandbox payment", () => {
 });
 
 describe("order payment method validation", () => {
-  const addresses = { pickupAddress: "İstanbul Kadıköy Bostancı Bağdat Caddesi 10", pickupProvince: "İstanbul", pickupDistrict: "Kadıköy", pickupNeighborhood: "Bostancı", pickupStreet: "Bağdat Caddesi", pickupAddressDetail: "No:10", deliveryAddress: "İstanbul Beşiktaş Abbasağa Ihlamur Yolu 20", deliveryProvince: "İstanbul", deliveryDistrict: "Beşiktaş", deliveryNeighborhood: "Abbasağa", deliveryStreet: "Ihlamur Yolu", deliveryAddressDetail: "No:20", productDescription: "Demo paket", customerPhone: "05550000000" };
+  const addresses = { pickupAddress: "İstanbul Kadıköy Bostancı Bağdat Caddesi 10", pickupProvince: "İstanbul", pickupDistrict: "Kadıköy", pickupNeighborhood: "Bostancı", pickupStreet: "Bağdat Caddesi", pickupBuildingNo: "10", pickupAddressDetail: "No:10", deliveryAddress: "İstanbul Beşiktaş Abbasağa Ihlamur Yolu 20", deliveryProvince: "İstanbul", deliveryDistrict: "Beşiktaş", deliveryNeighborhood: "Abbasağa", deliveryStreet: "Ihlamur Yolu", deliveryBuildingNo: "20", deliveryAddressDetail: "No:20", productDescription: "Demo paket", customerPhone: "05550000000" };
   it("accepts cash on delivery without a card reference", () => {
     expect(orderCreateInputSchema.safeParse({ ...addresses, paymentMethod: "cash_on_delivery" }).success).toBe(true);
   });

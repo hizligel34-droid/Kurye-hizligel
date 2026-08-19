@@ -43,11 +43,24 @@ export function registerAddressProxy(app: Express) {
       search.searchParams.set("q", [query, neighborhood, district, "İstanbul", "Türkiye"].filter(Boolean).join(", "));
       search.searchParams.set("featuretype", "street");
       search.searchParams.set("addressdetails", "1");
-      search.searchParams.set("limit", "8");
+      search.searchParams.set("limit", "20");
+      search.searchParams.set("countrycodes", "tr");
       const upstream = await fetch(search, { headers: { accept: "application/json", "user-agent": "RunKurye/1.0 address search" } });
       if (!upstream.ok) return res.json({ status: "OK", data: [] });
-      const payload = (await upstream.json()) as Array<{ osm_id?: number; display_name?: string; name?: string; type?: string }>;
-      const data = payload.map((item, index) => ({ id: item.osm_id ?? index + 1, name: item.name ?? item.display_name?.split(",")[0] ?? "", district, neighborhood })).filter(item => item.name);
+      const payload = (await upstream.json()) as Array<{ osm_id?: number; display_name?: string; name?: string; type?: string; address?: Record<string, string> }>;
+      const allowedTypes = new Set(["residential", "road", "street", "pedestrian", "tertiary", "secondary", "primary", "unclassified", "living_street", "service"]);
+      const seen = new Set<string>();
+      const data = payload
+        .map((item, index) => ({ id: item.osm_id ?? index + 1, name: (item.name ?? item.display_name?.split(",")[0] ?? "").trim(), type: item.type ?? "", district, neighborhood }))
+        .filter(item => item.name && (allowedTypes.has(item.type) || /(cadde|caddesi|sokak|sokağı|bulvar|bulvarı|yolu)$/i.test(item.name)))
+        .filter(item => {
+          const key = item.name.toLocaleLowerCase("tr-TR");
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, 15)
+        .map(({ id, name, district: itemDistrict, neighborhood: itemNeighborhood }) => ({ id, name, district: itemDistrict, neighborhood: itemNeighborhood }));
       return res.json({ status: "OK", data });
     } catch {
       return res.json({ status: "OK", data: [] });
