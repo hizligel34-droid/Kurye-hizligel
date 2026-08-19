@@ -42,13 +42,40 @@ export const orders = mysqlTable("orders", {
   deliveryLongitude: decimal("deliveryLongitude", { precision: 10, scale: 7 }),
   totalPrice: decimal("totalPrice", { precision: 10, scale: 2 }).notNull(),
   paymentMethod: mysqlEnum("paymentMethod", ["sandbox_card", "cash_on_delivery"]).default("sandbox_card").notNull(),
-  paymentStatus: mysqlEnum("paymentStatus", ["pending", "paid", "collect_on_delivery", "failed"]).default("pending").notNull(),
+  paymentStatus: mysqlEnum("paymentStatus", ["pending", "paid", "collect_on_delivery", "failed", "refunded"]).default("pending").notNull(),
   paymentReference: varchar("paymentReference", { length: 80 }),
   commission: decimal("commission", { precision: 10, scale: 2 }).notNull(),
   courierEarning: decimal("courierEarning", { precision: 10, scale: 2 }).notNull(),
   companyRevenue: decimal("companyRevenue", { precision: 10, scale: 2 }).notNull(),
   status: mysqlEnum("status", ["received", "on_the_way", "delivered", "cancelled"]).default("received").notNull(),
+  deliveryOtpHash: varchar("deliveryOtpHash", { length: 64 }).default("").notNull(),
+  deliveryPhotoKey: varchar("deliveryPhotoKey", { length: 360 }),
+  deliveryPhotoUrl: varchar("deliveryPhotoUrl", { length: 480 }),
+  assignedAt: timestamp("assignedAt"),
+  deliveredAt: timestamp("deliveredAt"),
+  cancelledAt: timestamp("cancelledAt"),
+  cancelledByRole: varchar("cancelledByRole", { length: 20 }),
+  cancellationReason: varchar("cancellationReason", { length: 300 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const pricingSettings = mysqlTable("pricingSettings", {
+  id: int("id").primaryKey(),
+  openingFeeTl: decimal("openingFeeTl", { precision: 10, scale: 2 }).notNull(),
+  ratePerKmTl: decimal("ratePerKmTl", { precision: 10, scale: 2 }).notNull(),
+  commissionRate: decimal("commissionRate", { precision: 5, scale: 4 }).notNull(),
+  updatedBy: int("updatedBy"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const courierOperations = mysqlTable("courierOperations", {
+  courierId: int("courierId").primaryKey(),
+  availability: mysqlEnum("availability", ["offline", "available", "busy", "break"]).default("offline").notNull(),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  accuracy: decimal("accuracy", { precision: 8, scale: 2 }),
+  lastLocationAt: timestamp("lastLocationAt"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
@@ -112,6 +139,8 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Order = typeof orders.$inferSelect;
 export type Message = typeof messages.$inferSelect;
+export type PricingSettings = typeof pricingSettings.$inferSelect;
+export type CourierOperation = typeof courierOperations.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type CourierContract = typeof courierContracts.$inferSelect;
 export type CourierDocument = typeof courierDocuments.$inferSelect;

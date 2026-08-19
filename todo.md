@@ -345,3 +345,34 @@
 - [x] Yetkili fotoğraf URL’si ve mevcut sohbet erişim kontrollerini koru
 - [x] Fotoğraf önizleme için test, TypeScript, production build ve mobil görsel denetim yap
 - [x] Fotoğraf detay önizleme sürümünü checkpoint olarak kaydet
+
+
+## Project archive delivery
+- [x] Run Kurye kaynak kodunu geçici ve üretim dışı klasörleri hariç tutarak ZIP arşivle
+- [x] ZIP arşivini doğrula ve kullanıcıya teslim et
+
+
+## Uploaded secure-delivery archive adaptation
+- [ ] Yüklenen run-kurye-v5-guvenli-teslimat.zip arşivini güvenli biçimde aç ve dosya envanteri çıkar
+- [ ] Arşivdeki güvenli teslimat modüllerini mevcut proje ile karşılaştır
+- [ ] Uyarlanabilir güvenli teslimat özelliklerini Run Kurye’ye entegre et
+- [ ] Uyarlanan özellikleri güvenlik, test, TypeScript, build ve görsel denetimden geçir
+- [ ] Uyarlanmış sürümü checkpoint olarak kaydet
+
+
+## Uploaded secure-delivery archive adaptation
+- [ ] Yüklenen run-kurye-v5-guvenli-teslimat.zip arşivini güvenli biçimde aç ve dosya envanteri çıkar
+- [ ] Arşivdeki güvenli teslimat modüllerini mevcut proje ile karşılaştır
+- [ ] Uyarlanabilir güvenli teslimat özelliklerini Run Kurye’ye entegre et
+- [ ] Uyarlanan özellikleri güvenlik, test, TypeScript, build ve görsel denetimden geçir
+- [ ] Uyarlanmış sürümü checkpoint olarak kaydet
+
+- [x] Secure Delivery: arşivdeki OTP, teslim fotoğrafı ve teslim kanıtı alanlarını mevcut sipariş şemasına uyarlama
+- [x] Secure Delivery: teslim fotoğrafı yükleme ve OTP doğrulamalı teslim tamamlama prosedürlerini ekleme
+- [x] Secure Delivery: müşteri ve kurye demo arayüzünü güvenli teslimat adımlarıyla senkronize etme
+- [x] Secure Delivery: OTP/fotoğraf/teslim statüsü regresyon testleri, TypeScript ve production build doğrulaması
+
+- [x] v6 operasyon ZIP kaynağını çıkarıp dosya ve migration farklarını incele
+- [x] v6 operasyon akışını mevcut Run Kurye backend ve UI sözleşmelerine uyarlama
+- [x] v6 güvenli teslimat ve rol bazlı operasyon akışlarını entegre etme
+- [x] v6 entegrasyonu için test, TypeScript, production build ve mobil görünüm doğrulaması

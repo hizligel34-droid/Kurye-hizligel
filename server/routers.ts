@@ -1,4 +1,5 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
+import { createHash, randomInt } from "node:crypto";
 import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -6,8 +7,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { makeRequest, type DirectionsResult, type GeocodingResult } from "./_core/map";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
-import { orders } from "../drizzle/schema";
+import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, listCourierOperations, roadApproxDistanceKm, upsertCourierOperation, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
+import { orders, users } from "../drizzle/schema";
 import { nanoid } from "nanoid";
 import { RUN_KURYE_CONTRACT_VERSION, runKuryeContractNotice, runKuryeContractSections } from "@shared/courierContract";
 import { createValhallaProvider } from "./valhallaAdapter";
@@ -39,6 +40,20 @@ export function decodeChatPhoto(dataBase64: string, contentType: string) {
   if (!valid) throw new Error("Fotoğraf içeriği seçilen dosya türüyle eşleşmiyor");
   return { raw, bytes };
 }
+
+const deliveryPhotoTypes = ["image/jpeg", "image/png", "image/webp"] as const;
+export function decodeDeliveryPhoto(dataBase64: string, contentType: string) {
+  if (!deliveryPhotoTypes.includes(contentType as typeof deliveryPhotoTypes[number])) throw new Error("Teslim fotoğrafı JPG, PNG veya WebP olmalıdır");
+  const raw = dataBase64.replace(/^data:[^;]+;base64,/, "");
+  const bytes = Buffer.from(raw, "base64");
+  if (!bytes.length || bytes.length > 6 * 1024 * 1024) throw new Error("Teslim fotoğrafı 6 MB’tan küçük olmalıdır");
+  const header = bytes.subarray(0, 12);
+  const valid = contentType === "image/jpeg" ? header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff : contentType === "image/png" ? header[0] === 0x89 && header[1] === 0x50 && header[2] === 0x4e && header[3] === 0x47 : header.subarray(0, 4).toString("ascii") === "RIFF" && header.subarray(8, 12).toString("ascii") === "WEBP";
+  if (!valid) throw new Error("Teslim fotoğrafı içeriği dosya türüyle eşleşmiyor");
+  return bytes;
+}
+function createDeliveryOtp() { return String(randomInt(100000, 1000000)); }
+export function hashDeliveryOtp(code: string) { return createHash("sha256").update(code).digest("hex"); }
 
 const statusLabels = { received: "Alındı", on_the_way: "Yolda", delivered: "Teslim Edildi", cancelled: "İptal Edildi" } as const;
 export const supportedLanguages = ["tr", "en", "de", "ru", "ar", "zh", "el"] as const;
@@ -175,9 +190,10 @@ export const appRouter = router({
       const addressDetails = buildOrderAddressDetails(input);
       const paymentStatus = input.paymentMethod === "cash_on_delivery" ? "collect_on_delivery" as const : "paid" as const;
       const trackingCode = `RUN-${nanoid(8).toUpperCase()}`;
-      await db.insert(orders).values({ trackingCode, customerId: ctx.user.id, pickupAddress: input.pickupAddress, pickupProvince: addressPart(input.pickupProvince), pickupDistrict: addressPart(input.pickupDistrict), pickupNeighborhood: addressPart(input.pickupNeighborhood), pickupStreet: addressPart(input.pickupStreet), ...addressDetails, deliveryAddress: input.deliveryAddress, deliveryProvince: addressPart(input.deliveryProvince), deliveryDistrict: addressPart(input.deliveryDistrict), deliveryNeighborhood: addressPart(input.deliveryNeighborhood), deliveryStreet: addressPart(input.deliveryStreet), productDescription: input.productDescription, customerPhone: input.customerPhone, distanceKm: financials.distanceKm.toFixed(2), routeDurationMinutes: route.durationMinutes.toFixed(1), routeStatus: route.status, routeProvider: route.provider, pickupLatitude: route.pickup.lat.toFixed(7), pickupLongitude: route.pickup.lng.toFixed(7), deliveryLatitude: route.delivery.lat.toFixed(7), deliveryLongitude: route.delivery.lng.toFixed(7), totalPrice: financials.total.toFixed(2), paymentMethod: input.paymentMethod, paymentStatus, paymentReference: input.paymentReference ?? null, commission: financials.commission.toFixed(2), courierEarning: financials.courierEarning.toFixed(2), companyRevenue: financials.companyRevenue.toFixed(2), status: "received" });
-      await addNotification({ userId: ctx.user.id, title: "Siparişiniz alındı", content: `${trackingCode} numaralı siparişiniz oluşturuldu. ${input.paymentMethod === "cash_on_delivery" ? "Ödeme teslimatta nakit tahsil edilecektir." : "Sandbox kart ödemesi onaylandı."}` });
-      return { trackingCode, ...financials, durationMinutes: route.durationMinutes, routeStatus: route.status, paymentMethod: input.paymentMethod, paymentStatus, status: "received" as const };
+      const deliveryOtp = createDeliveryOtp();
+      await db.insert(orders).values({ trackingCode, customerId: ctx.user.id, pickupAddress: input.pickupAddress, pickupProvince: addressPart(input.pickupProvince), pickupDistrict: addressPart(input.pickupDistrict), pickupNeighborhood: addressPart(input.pickupNeighborhood), pickupStreet: addressPart(input.pickupStreet), ...addressDetails, deliveryAddress: input.deliveryAddress, deliveryProvince: addressPart(input.deliveryProvince), deliveryDistrict: addressPart(input.deliveryDistrict), deliveryNeighborhood: addressPart(input.deliveryNeighborhood), deliveryStreet: addressPart(input.deliveryStreet), productDescription: input.productDescription, customerPhone: input.customerPhone, distanceKm: financials.distanceKm.toFixed(2), routeDurationMinutes: route.durationMinutes.toFixed(1), routeStatus: route.status, routeProvider: route.provider, pickupLatitude: route.pickup.lat.toFixed(7), pickupLongitude: route.pickup.lng.toFixed(7), deliveryLatitude: route.delivery.lat.toFixed(7), deliveryLongitude: route.delivery.lng.toFixed(7), totalPrice: financials.total.toFixed(2), paymentMethod: input.paymentMethod, paymentStatus, paymentReference: input.paymentReference ?? null, commission: financials.commission.toFixed(2), courierEarning: financials.courierEarning.toFixed(2), companyRevenue: financials.companyRevenue.toFixed(2), deliveryOtpHash: hashDeliveryOtp(deliveryOtp), status: "received" });
+      await addNotification({ userId: ctx.user.id, title: "Siparişiniz alındı", content: `${trackingCode} numaralı siparişiniz oluşturuldu. Teslimat doğrulama kodunuz: ${deliveryOtp}. Bu kodu yalnızca paketi teslim alırken kuryeyle paylaşın. ${input.paymentMethod === "cash_on_delivery" ? "Ödeme teslimatta nakit tahsil edilecektir." : "Sandbox kart ödemesi onaylandı."}` });
+      return { trackingCode, deliveryOtp, ...financials, durationMinutes: route.durationMinutes, routeStatus: route.status, paymentMethod: input.paymentMethod, paymentStatus, status: "received" as const };
     }),
     mine: protectedProcedure.query(({ ctx }) => listOrders(ctx.user.id, ctx.user.role)),
     track: publicProcedure.input(z.object({ trackingCode: z.string().min(4) })).query(async ({ input }) => {
@@ -203,9 +219,36 @@ export const appRouter = router({
       if (!current[0]) throw new Error("Sipariş bulunamadı");
       if (ctx.user.role === "courier" && current[0].courierId !== ctx.user.id) throw new Error("Yalnızca size atanmış siparişleri güncelleyebilirsiniz");
       if (!canTransitionStatus(current[0].status, input.status)) throw new Error("Bu sipariş durumu geçişi geçersiz");
-      await db.update(orders).set({ status: input.status, courierId: ctx.user.role === "admin" ? (input.courierId ?? current[0].courierId) : current[0].courierId }).where(eq(orders.id, input.orderId));
+      if (input.status === "delivered") throw new Error("Teslimat, fotoğraf ve teslimat OTP doğrulamasıyla tamamlanmalıdır");
+      const assignedCourierId = ctx.user.role === "admin" ? (input.courierId ?? current[0].courierId) : current[0].courierId;
+      await db.update(orders).set({ status: input.status, courierId: assignedCourierId, assignedAt: !current[0].courierId && assignedCourierId ? new Date() : undefined, cancelledAt: input.status === "cancelled" ? new Date() : undefined, cancelledByRole: input.status === "cancelled" ? ctx.user.role : undefined }).where(eq(orders.id, input.orderId));
+      if (assignedCourierId && input.status === "on_the_way") await upsertCourierOperation({ courierId: assignedCourierId, availability: "busy" });
       await addNotification({ userId: current[0].customerId, orderId: input.orderId, title: `Sipariş durumu: ${statusLabels[input.status]}`, content: `${current[0].trackingCode} numaralı siparişinizin durumu güncellendi.` });
       return { success: true, status: input.status };
+    }),
+    uploadDeliveryPhoto: protectedProcedure.input(z.object({ orderId: z.number().int().positive(), fileName: z.string().min(1).max(180), contentType: z.string(), dataBase64: z.string().min(20) })).mutation(async ({ ctx, input }) => {
+      const { order } = await getAccessibleOrder(input.orderId, ctx.user);
+      if (ctx.user.role !== "courier" || order.courierId !== ctx.user.id) throw new Error("Teslim fotoğrafını yalnızca atanmış kurye yükleyebilir");
+      if (order.status !== "on_the_way") throw new Error("Teslim fotoğrafı yalnızca yoldaki siparişte yüklenebilir");
+      const bytes = decodeDeliveryPhoto(input.dataBase64, input.contentType);
+      const safeName = safeDocumentName(input.fileName);
+      const stored = await storagePut(`orders/${order.id}/delivery/${nanoid(10)}-${safeName}`, bytes, input.contentType);
+      await (await getDb())!.update(orders).set({ deliveryPhotoKey: stored.key, deliveryPhotoUrl: stored.url }).where(eq(orders.id, order.id));
+      return { success: true, url: stored.url };
+    }),
+    completeDelivery: protectedProcedure.input(z.object({ orderId: z.number().int().positive(), deliveryCode: z.string().regex(/^\d{6}$/) })).mutation(async ({ ctx, input }) => {
+      const { order, db } = await getAccessibleOrder(input.orderId, ctx.user);
+      if (ctx.user.role !== "courier" || order.courierId !== ctx.user.id) throw new Error("Teslimatı yalnızca atanmış kurye tamamlayabilir");
+      if (order.status !== "on_the_way") throw new Error("Sipariş teslimata hazır durumda değil");
+      if (!order.deliveryPhotoKey) throw new Error("Önce teslim fotoğrafı yükleyin");
+      if (!order.deliveryOtpHash || hashDeliveryOtp(input.deliveryCode) !== order.deliveryOtpHash) throw new Error("Teslimat doğrulama kodu hatalı");
+      await db.update(orders).set({ status: "delivered", deliveredAt: new Date(), paymentStatus: order.paymentMethod === "cash_on_delivery" ? "paid" : order.paymentStatus }).where(eq(orders.id, order.id));
+      if (order.courierId) {
+        const active = await db.select({ id: orders.id }).from(orders).where(inArray(orders.status, ["received", "on_the_way"]));
+        if (!active.some(row => row.id !== order.id)) await upsertCourierOperation({ courierId: order.courierId, availability: "available" });
+      }
+      await addNotification({ userId: order.customerId, orderId: order.id, title: "Teslimat tamamlandı", content: `${order.trackingCode} numaralı siparişiniz doğrulama kodu ve teslim fotoğrafı ile tamamlandı.` });
+      return { success: true, status: "delivered" as const };
     }),
   }),
   chat: router({
@@ -247,6 +290,44 @@ send: protectedProcedure.input(z.object({ orderId: z.number(), content: z.string
     }),
   }),
   courier: router({
+    operationStatus: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "courier") throw new Error("Operasyon durumu yalnızca kuryeler içindir");
+      const rows = await listCourierOperations();
+      return rows.find(row => row.courierId === ctx.user.id) ?? { courierId: ctx.user.id, availability: "offline" as const, latitude: null, longitude: null, accuracy: null, lastLocationAt: null };
+    }),
+    setAvailability: protectedProcedure.input(z.object({ availability: z.enum(["offline", "available", "break"]), lat: z.number().optional(), lng: z.number().optional(), accuracy: z.number().nullable().optional() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "courier") throw new Error("Müsaitlik durumunu yalnızca kurye değiştirebilir");
+      if ((input.lat != null || input.lng != null) && (!Number.isFinite(input.lat) || !Number.isFinite(input.lng) || !isValidIstanbulLocation({ lat: input.lat!, lng: input.lng! }))) throw new Error("Kurye konumu İstanbul hizmet alanı dışında");
+      return upsertCourierOperation({ courierId: ctx.user.id, availability: input.availability, lat: input.lat, lng: input.lng, accuracy: input.accuracy ?? null });
+    }),
+    operations: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new Error("Operasyon görünümü yalnızca admin içindir");
+      const db = await getDb(); if (!db) throw new Error("Database unavailable");
+      const courierRows = await db.select({ id: users.id, name: users.name }).from(users).where(eq(users.role, "courier"));
+      const ops = await listCourierOperations();
+      const active = await db.select({ courierId: orders.courierId, status: orders.status }).from(orders).where(inArray(orders.status, ["received", "on_the_way"]));
+      const loads = new Map<number, number>(); active.forEach(row => { if (row.courierId) loads.set(row.courierId, (loads.get(row.courierId) ?? 0) + 1); });
+      const byId = new Map(ops.map(op => [op.courierId, op]));
+      return courierRows.map(courier => ({ ...courier, availability: byId.get(courier.id)?.availability ?? "offline", latitude: byId.get(courier.id)?.latitude ?? null, longitude: byId.get(courier.id)?.longitude ?? null, lastLocationAt: byId.get(courier.id)?.lastLocationAt ?? null, activeOrders: loads.get(courier.id) ?? 0 }));
+    }),
+    assignNext: protectedProcedure.input(z.object({ orderId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new Error("Otomatik atama yalnızca admin içindir");
+      const db = await getDb(); if (!db) throw new Error("Database unavailable");
+      const current = await db.select().from(orders).where(eq(orders.id, input.orderId)).limit(1);
+      if (!current[0]) throw new Error("Sipariş bulunamadı");
+      if (current[0].courierId) throw new Error("Sipariş zaten bir kuryeye atanmış");
+      const couriers = await db.select({ id: users.id, name: users.name }).from(users).where(eq(users.role, "courier"));
+      const ops = await listCourierOperations();
+      const active = await db.select({ courierId: orders.courierId }).from(orders).where(inArray(orders.status, ["received", "on_the_way"]));
+      const loads = new Map<number, number>(); active.forEach(row => { if (row.courierId) loads.set(row.courierId, (loads.get(row.courierId) ?? 0) + 1); });
+      const candidates = couriers.map(courier => { const op = ops.find(item => item.courierId === courier.id); return { ...courier, op, load: loads.get(courier.id) ?? 0 }; }).filter(candidate => candidate.op?.availability === "available");
+      if (!candidates.length) throw new Error("Müsait kurye bulunamadı");
+      const selected = candidates.sort((a, b) => a.load - b.load || a.id - b.id)[0];
+      await db.update(orders).set({ courierId: selected.id, assignedAt: new Date() }).where(eq(orders.id, input.orderId));
+      await upsertCourierOperation({ courierId: selected.id, availability: "busy" });
+      await addNotification({ userId: current[0].customerId, orderId: input.orderId, title: "Kurye atandı", content: `${current[0].trackingCode} numaralı siparişinize kurye atandı.` });
+      return { success: true, courierId: selected.id, courierName: selected.name, activeOrdersBeforeAssignment: selected.load };
+    }),
     performance: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== "courier") throw new Error("Bu başarı profili yalnızca kuryeler içindir");
       const rows = await listOrders(ctx.user.id, ctx.user.role);

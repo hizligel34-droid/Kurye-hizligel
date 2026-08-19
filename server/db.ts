@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { CourierContract, CourierDocument, InsertUser, Message, courierContracts, courierDocuments, messages, notifications, orders, users } from "../drizzle/schema";
+import { CourierContract, CourierDocument, CourierOperation, InsertUser, Message, courierContracts, courierDocuments, courierOperations, messages, notifications, orders, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -10,6 +10,26 @@ export async function getDb() {
     try { _db = drizzle(process.env.DATABASE_URL); } catch (error) { console.warn("[Database] Failed to connect:", error); _db = null; }
   }
   return _db;
+}
+
+export async function upsertCourierOperation(input: { courierId: number; availability?: "offline" | "available" | "busy" | "break"; lat?: number; lng?: number; accuracy?: number | null }) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  const values = { courierId: input.courierId, availability: input.availability ?? "offline" as const, latitude: input.lat?.toFixed(7), longitude: input.lng?.toFixed(7), accuracy: input.accuracy == null ? null : input.accuracy.toFixed(2), lastLocationAt: input.lat != null && input.lng != null ? new Date() : undefined };
+  await db.insert(courierOperations).values(values).onDuplicateKeyUpdate({ set: { ...values, updatedAt: new Date() } });
+  const rows = await db.select().from(courierOperations).where(eq(courierOperations.courierId, input.courierId)).limit(1);
+  return rows[0];
+}
+
+export async function listCourierOperations(): Promise<CourierOperation[]> {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(courierOperations);
+}
+
+export function roadApproxDistanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const rad = (value: number) => value * Math.PI / 180;
+  const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return Number((6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)) * 1.25).toFixed(2));
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
