@@ -475,3 +475,10 @@
 - [x] Yönetim paneline müşteri, kurye ve mağaza üyelikleri için rol, arama ve sıralama filtreleri ekle
 - [x] 5 kg üzeri ağırlık seçildiğinde ek ücret için anlık erişilebilir uyarı ekle
 - [x] Yeni adres, yönetim ve ağırlık akışları için Vitest, TypeScript, production build ve mobil görsel doğrulama yap
+
+- [x] Kullanıcı profilinde varsayılan alış ve teslimat favori adresi tercihini ekle
+- [x] Sipariş formunda kullanıcı tercihlerindeki varsayılan favori adresleri güvenli biçimde uygula
+- [x] Yönetici üyelik listesine başlangıç ve bitiş tarihi filtresi ekle
+- [x] Filtrelenmiş üyelik sonuçlarını Türkçe karakter uyumlu CSV olarak dışa aktar
+- [x] 5 kg üzeri ek ücret uyarısına hesaplama ayrıntılarını gösteren erişilebilir modal ekle
+- [x] Yeni tercih, filtre, CSV ve modal akışları için Vitest, TypeScript, production build ve mobil görsel doğrulama yap

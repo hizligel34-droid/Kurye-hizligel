@@ -8,6 +8,8 @@ export const users = mysqlTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin", "courier", "store", "accountant"]).default("user").notNull(),
   phone: varchar("phone", { length: 32 }),
+  defaultPickupAddressId: int("defaultPickupAddressId"),
+  defaultDeliveryAddressId: int("defaultDeliveryAddressId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

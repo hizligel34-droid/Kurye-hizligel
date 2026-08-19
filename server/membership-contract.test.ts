@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterAndSortAdminMembers, isMembershipRoleSelectable, platformFeatureKeys, selfAssignableMembershipRoles, type PlatformFeatureSnapshot } from "@shared/membership";
+import { adminMembersToCsv, filterAndSortAdminMembers, isMembershipRoleSelectable, platformFeatureKeys, selfAssignableMembershipRoles, type PlatformFeatureSnapshot } from "@shared/membership";
 
 const allEnabled: PlatformFeatureSnapshot = { ordersEnabled: true, courierPortalEnabled: true, storePortalEnabled: true, liveTrackingEnabled: true };
 
@@ -30,5 +30,18 @@ describe("membership and admin module contract", () => {
     expect(filterAndSortAdminMembers(members, { role: "courier", sort: "recently_active" }).map(member => member.id)).toEqual([1]);
     expect(filterAndSortAdminMembers(members, { query: "05555", sort: "recently_active" }).map(member => member.id)).toEqual([2]);
     expect(filterAndSortAdminMembers(members, { sort: "name_asc" }).map(member => member.id)).toEqual([2, 3, 1]);
+  });
+
+  it("filters members inclusively by a membership date interval and exports quoted UTF-8 CSV rows", () => {
+    const members = [
+      { id: 1, name: "Özge, Kaya", email: "ozge@example.com", phone: null, role: "courier" as const, createdAt: new Date("2026-08-02T11:00:00Z"), lastSignedIn: new Date("2026-08-10T10:00:00Z") },
+      { id: 2, name: "Ahmet", email: "ahmet@example.com", phone: "05555555555", role: "store" as const, createdAt: new Date("2026-08-04T12:00:00Z"), lastSignedIn: new Date("2026-08-09T10:00:00Z") },
+      { id: 3, name: "Müşteri", email: "customer@example.com", phone: null, role: "user" as const, createdAt: new Date("2026-08-06T12:00:00Z"), lastSignedIn: new Date("2026-08-11T10:00:00Z") },
+    ];
+    const filtered = filterAndSortAdminMembers(members, { createdFrom: "2026-08-04", createdTo: "2026-08-04", sort: "newest" });
+    expect(filtered.map(member => member.id)).toEqual([2]);
+    const csv = adminMembersToCsv(filtered);
+    expect(csv.startsWith("\uFEFF\"Ad Soyad\"")).toBe(true);
+    expect(csv).toContain("\"Ahmet\",\"ahmet@example.com\"");
   });
 });

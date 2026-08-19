@@ -37,6 +37,8 @@ export async function createSavedAddress(input: {
 
 export async function deleteSavedAddress(userId: number, addressId: number) {
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  await db.update(users).set({ defaultPickupAddressId: null }).where(and(eq(users.id, userId), eq(users.defaultPickupAddressId, addressId)));
+  await db.update(users).set({ defaultDeliveryAddressId: null }).where(and(eq(users.id, userId), eq(users.defaultDeliveryAddressId, addressId)));
   await db.delete(savedAddresses).where(and(eq(savedAddresses.id, addressId), eq(savedAddresses.userId, userId)));
   return { deleted: true };
 }
@@ -44,7 +46,31 @@ export async function deleteSavedAddress(userId: number, addressId: number) {
 export async function setSavedAddressFavorite(userId: number, addressId: number, isFavorite: boolean) {
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
   await db.update(savedAddresses).set({ isFavorite: isFavorite ? 1 : 0 }).where(and(eq(savedAddresses.id, addressId), eq(savedAddresses.userId, userId)));
+  if (!isFavorite) {
+    await db.update(users).set({ defaultPickupAddressId: null }).where(and(eq(users.id, userId), eq(users.defaultPickupAddressId, addressId)));
+    await db.update(users).set({ defaultDeliveryAddressId: null }).where(and(eq(users.id, userId), eq(users.defaultDeliveryAddressId, addressId)));
+  }
   return { id: addressId, isFavorite };
+}
+
+export type SavedAddressDefaultSide = "pickup" | "delivery";
+
+export async function getSavedAddressPreferences(userId: number) {
+  const db = await getDb(); if (!db) return { defaultPickupAddressId: null, defaultDeliveryAddressId: null };
+  const rows = await db.select({ defaultPickupAddressId: users.defaultPickupAddressId, defaultDeliveryAddressId: users.defaultDeliveryAddressId }).from(users).where(eq(users.id, userId)).limit(1);
+  return rows[0] ?? { defaultPickupAddressId: null, defaultDeliveryAddressId: null };
+}
+
+export async function setSavedAddressDefault(userId: number, side: SavedAddressDefaultSide, addressId: number | null) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  if (addressId !== null) {
+    const address = await db.select({ id: savedAddresses.id, isFavorite: savedAddresses.isFavorite }).from(savedAddresses).where(and(eq(savedAddresses.id, addressId), eq(savedAddresses.userId, userId))).limit(1);
+    if (!address[0]) throw new Error("Yalnızca kendi kayıtlı adresinizi varsayılan yapabilirsiniz");
+    if (address[0].isFavorite !== 1) throw new Error("Varsayılan adres olarak seçmek için önce adresi favorilere ekleyin");
+  }
+  if (side === "pickup") await db.update(users).set({ defaultPickupAddressId: addressId }).where(eq(users.id, userId));
+  else await db.update(users).set({ defaultDeliveryAddressId: addressId }).where(eq(users.id, userId));
+  return getSavedAddressPreferences(userId);
 }
 
 export async function upsertCourierOperation(input: { courierId: number; availability?: "offline" | "available" | "busy" | "break"; lat?: number; lng?: number; accuracy?: number | null }) {

@@ -8,7 +8,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { makeRequest, type DirectionsResult, type GeocodingResult } from "./_core/map";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, createSavedAddress, deleteSavedAddress, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, getPlatformFeatureSettings, listCourierOperations, listSavedAddresses, listUsersForAdmin, roadApproxDistanceKm, setSavedAddressFavorite, updatePlatformFeatureSettings, updateUserRole, upsertCourierOperation, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
+import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, createSavedAddress, deleteSavedAddress, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, getPlatformFeatureSettings, getSavedAddressPreferences, listCourierOperations, listSavedAddresses, listUsersForAdmin, roadApproxDistanceKm, setSavedAddressDefault, setSavedAddressFavorite, updatePlatformFeatureSettings, updateUserRole, upsertCourierOperation, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
 import { orders, users } from "../drizzle/schema";
 import { nanoid } from "nanoid";
 import { RUN_KURYE_CONTRACT_VERSION, runKuryeContractNotice, runKuryeContractSections } from "@shared/courierContract";
@@ -181,6 +181,7 @@ export const appRouter = router({
   }),
   profile: router({
     update: protectedProcedure.input(z.object({ name: z.string().min(2), phone: z.string().min(7) })).mutation(({ ctx, input }) => updateUserProfile(ctx.user.id, input)),
+    addressPreferences: protectedProcedure.query(({ ctx }) => getSavedAddressPreferences(ctx.user.id)),
     setMembershipRole: protectedProcedure.input(z.object({ role: z.enum(selfAssignableMembershipRoles) })).mutation(async ({ ctx, input }) => {
       const features = await getPlatformFeatureSettings();
       if (input.role === "courier" && !features.courierPortalEnabled) throw new Error("Kurye üyeliği yönetici tarafından geçici olarak kapatıldı");
@@ -207,6 +208,7 @@ export const appRouter = router({
     list: protectedProcedure.query(({ ctx }) => listSavedAddresses(ctx.user.id)),
     create: protectedProcedure.input(savedAddressInputSchema).mutation(({ ctx, input }) => createSavedAddress({ userId: ctx.user.id, ...input })),
     setFavorite: protectedProcedure.input(z.object({ id: z.number().int().positive(), isFavorite: z.boolean() })).mutation(({ ctx, input }) => setSavedAddressFavorite(ctx.user.id, input.id, input.isFavorite)),
+    setDefault: protectedProcedure.input(z.object({ side: z.enum(["pickup", "delivery"]), id: z.number().int().positive().nullable() })).mutation(({ ctx, input }) => setSavedAddressDefault(ctx.user.id, input.side, input.id)),
     remove: protectedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ ctx, input }) => deleteSavedAddress(ctx.user.id, input.id)),
   }),
   pricing: router({
