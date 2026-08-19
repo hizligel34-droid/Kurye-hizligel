@@ -54,12 +54,17 @@ describe("Run Kurye courier leaderboard", () => {
 
 describe("Run Kurye pricing", () => {
   it("charges 600 TL for distances up to 5 km", () => {
-    expect(calculateOrderFinancials(5)).toEqual({ distanceKm: 5, total: 600, commission: 120, courierEarning: 480, companyRevenue: 120 });
-    expect(calculateOrderFinancials(2)).toEqual({ distanceKm: 2, total: 600, commission: 120, courierEarning: 480, companyRevenue: 120 });
+    expect(calculateOrderFinancials(5)).toMatchObject({ distanceKm: 5, total: 600, commission: 120, courierEarning: 480, companyRevenue: 120, packageWeightKg: 1, weightSurcharge: 0 });
+    expect(calculateOrderFinancials(2)).toMatchObject({ distanceKm: 2, total: 600, commission: 120, courierEarning: 480, companyRevenue: 120, packageWeightKg: 1, weightSurcharge: 0 });
   });
 
   it("adds 100 TL for each km after the first 5 km", () => {
-    expect(calculateOrderFinancials(8)).toEqual({ distanceKm: 8, total: 900, commission: 180, courierEarning: 720, companyRevenue: 180 });
+    expect(calculateOrderFinancials(8)).toMatchObject({ distanceKm: 8, total: 900, commission: 180, courierEarning: 720, companyRevenue: 180, packageWeightKg: 1, weightSurcharge: 0 });
+  });
+
+  it("adds 500 TL for parcels heavier than 5 kg", () => {
+    expect(calculateOrderFinancials(5, 5)).toMatchObject({ total: 600, weightSurcharge: 0 });
+    expect(calculateOrderFinancials(5, 5.1)).toMatchObject({ total: 1100, weightSurcharge: 500, commission: 220, courierEarning: 880 });
   });
 
   it("keeps the commission fixed at 20 percent", () => {

@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { CourierContract, CourierDocument, CourierOperation, InsertUser, Message, courierContracts, courierDocuments, courierOperations, messages, notifications, orders, savedAddresses, users } from "../drizzle/schema";
+import { CourierContract, CourierDocument, CourierOperation, InsertUser, Message, courierContracts, courierDocuments, courierOperations, messages, notifications, orders, platformSettings, savedAddresses, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -91,6 +91,52 @@ export async function updateUserProfile(userId: number, input: { name?: string; 
   return result[0];
 }
 
+export type PlatformFeatureKey = "ordersEnabled" | "courierPortalEnabled" | "storePortalEnabled" | "liveTrackingEnabled";
+export type PlatformFeatureSettings = Record<PlatformFeatureKey, boolean>;
+
+function serializePlatformSettings(row: typeof platformSettings.$inferSelect): PlatformFeatureSettings {
+  return {
+    ordersEnabled: row.ordersEnabled === 1,
+    courierPortalEnabled: row.courierPortalEnabled === 1,
+    storePortalEnabled: row.storePortalEnabled === 1,
+    liveTrackingEnabled: row.liveTrackingEnabled === 1,
+  };
+}
+
+export async function getPlatformFeatureSettings(): Promise<PlatformFeatureSettings> {
+  const db = await getDb();
+  if (!db) return { ordersEnabled: true, courierPortalEnabled: true, storePortalEnabled: true, liveTrackingEnabled: true };
+  await db.insert(platformSettings).values({ id: 1 }).onDuplicateKeyUpdate({ set: { id: 1 } });
+  const rows = await db.select().from(platformSettings).where(eq(platformSettings.id, 1)).limit(1);
+  return serializePlatformSettings(rows[0]);
+}
+
+export async function updatePlatformFeatureSettings(userId: number, changes: Partial<PlatformFeatureSettings>) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  const values = {
+    id: 1,
+    ordersEnabled: changes.ordersEnabled === undefined ? undefined : changes.ordersEnabled ? 1 : 0,
+    courierPortalEnabled: changes.courierPortalEnabled === undefined ? undefined : changes.courierPortalEnabled ? 1 : 0,
+    storePortalEnabled: changes.storePortalEnabled === undefined ? undefined : changes.storePortalEnabled ? 1 : 0,
+    liveTrackingEnabled: changes.liveTrackingEnabled === undefined ? undefined : changes.liveTrackingEnabled ? 1 : 0,
+    updatedBy: userId,
+  };
+  await db.insert(platformSettings).values({ id: 1 }).onDuplicateKeyUpdate({ set: values });
+  return getPlatformFeatureSettings();
+}
+
+export async function listUsersForAdmin() {
+  const db = await getDb(); if (!db) return [];
+  return db.select({ id: users.id, name: users.name, email: users.email, phone: users.phone, role: users.role, createdAt: users.createdAt, lastSignedIn: users.lastSignedIn }).from(users).orderBy(desc(users.lastSignedIn));
+}
+
+export async function updateUserRole(userId: number, role: "user" | "courier" | "store" | "accountant") {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  await db.update(users).set({ role }).where(eq(users.id, userId));
+  const rows = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  return rows[0];
+}
+
 export async function getCourierContract(courierId: number) {
   const db = await getDb(); if (!db) return undefined;
   const result = await db.select().from(courierContracts).where(eq(courierContracts.courierId, courierId)).limit(1);
@@ -144,11 +190,12 @@ export function evaluateSandboxPayment(input: { cardNumber: string; amount: numb
   return { status: "approved" as const, message: "Sandbox ödeme başarılı. Gerçek tahsilat yapılmadı.", amount: Number(input.amount.toFixed(2)) };
 }
 
-export function calculateOrderFinancials(distanceKm: number) {
+export function calculateOrderFinancials(distanceKm: number, packageWeightKg = 1) {
   const safeDistance = Math.max(0, Number(distanceKm) || 0);
-  const total = 600 + Math.max(0, safeDistance - 5) * 100;
+  const weightSurcharge = Number(packageWeightKg) > 5 ? 500 : 0;
+  const total = 600 + Math.max(0, safeDistance - 5) * 100 + weightSurcharge;
   const commission = total * 0.2;
-  return { distanceKm: Number(safeDistance.toFixed(2)), total: Number(total.toFixed(2)), commission: Number(commission.toFixed(2)), courierEarning: Number((total - commission).toFixed(2)), companyRevenue: Number(commission.toFixed(2)) };
+  return { distanceKm: Number(safeDistance.toFixed(2)), packageWeightKg: Number(packageWeightKg), weightSurcharge, total: Number(total.toFixed(2)), commission: Number(commission.toFixed(2)), courierEarning: Number((total - commission).toFixed(2)), companyRevenue: Number(commission.toFixed(2)) };
 }
 
 export async function listOrders(userId: number, role: string) {

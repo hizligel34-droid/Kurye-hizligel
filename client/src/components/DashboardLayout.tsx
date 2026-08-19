@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { BarChart3, LayoutDashboard, LogOut, PanelLeft, UserRound, Users } from "lucide-react";
+import { BarChart3, LayoutDashboard, LogOut, PanelLeft, ShieldCheck, UserRound, Users } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -32,6 +32,7 @@ const menuItems = [
   { icon: BarChart3, label: "Ads performansı", path: "/ads-report" },
   { icon: Users, label: "Operasyon", path: "/panel" },
   { icon: UserRound, label: "Kurye profilim", path: "/courier-profile" },
+  { icon: ShieldCheck, label: "Yönetim merkezi", path: "/admin-control" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

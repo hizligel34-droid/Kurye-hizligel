@@ -6,7 +6,7 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin", "courier", "accountant"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin", "courier", "store", "accountant"]).default("user").notNull(),
   phone: varchar("phone", { length: 32 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -59,6 +59,8 @@ export const orders = mysqlTable("orders", {
   deliveryCourierNote: varchar("deliveryCourierNote", { length: 500 }).default("").notNull(),
   deliveryAddressDetail: varchar("deliveryAddressDetail", { length: 240 }).notNull(),
   productDescription: text("productDescription").notNull(),
+  serviceType: mysqlEnum("serviceType", ["standard", "pharmacy_on_call", "vip", "mall", "airport", "express"]).default("standard").notNull(),
+  packageWeightKg: decimal("packageWeightKg", { precision: 6, scale: 2 }).default("1.00").notNull(),
   customerPhone: varchar("customerPhone", { length: 32 }).notNull(),
   distanceKm: decimal("distanceKm", { precision: 8, scale: 2 }).notNull(),
   routeDurationMinutes: decimal("routeDurationMinutes", { precision: 8, scale: 1 }).notNull(),
@@ -93,6 +95,16 @@ export const pricingSettings = mysqlTable("pricingSettings", {
   openingFeeTl: decimal("openingFeeTl", { precision: 10, scale: 2 }).notNull(),
   ratePerKmTl: decimal("ratePerKmTl", { precision: 10, scale: 2 }).notNull(),
   commissionRate: decimal("commissionRate", { precision: 5, scale: 4 }).notNull(),
+  updatedBy: int("updatedBy"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const platformSettings = mysqlTable("platformSettings", {
+  id: int("id").primaryKey(),
+  ordersEnabled: int("ordersEnabled").default(1).notNull(),
+  courierPortalEnabled: int("courierPortalEnabled").default(1).notNull(),
+  storePortalEnabled: int("storePortalEnabled").default(1).notNull(),
+  liveTrackingEnabled: int("liveTrackingEnabled").default(1).notNull(),
   updatedBy: int("updatedBy"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -170,6 +182,7 @@ export type InsertSavedAddress = typeof savedAddresses.$inferInsert;
 export type Order = typeof orders.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type PricingSettings = typeof pricingSettings.$inferSelect;
+export type PlatformSettings = typeof platformSettings.$inferSelect;
 export type CourierOperation = typeof courierOperations.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type CourierContract = typeof courierContracts.$inferSelect;

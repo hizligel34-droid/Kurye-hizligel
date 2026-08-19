@@ -1,13 +1,14 @@
 import { eq, inArray } from "drizzle-orm";
 import { createHash, randomInt } from "node:crypto";
 import { z } from "zod";
+import { platformFeatureKeys, selfAssignableMembershipRoles } from "@shared/membership";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { makeRequest, type DirectionsResult, type GeocodingResult } from "./_core/map";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, createSavedAddress, deleteSavedAddress, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, listCourierOperations, listSavedAddresses, roadApproxDistanceKm, upsertCourierOperation, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
+import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, createSavedAddress, deleteSavedAddress, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, getPlatformFeatureSettings, listCourierOperations, listSavedAddresses, listUsersForAdmin, roadApproxDistanceKm, updatePlatformFeatureSettings, updateUserRole, upsertCourierOperation, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
 import { orders, users } from "../drizzle/schema";
 import { nanoid } from "nanoid";
 import { RUN_KURYE_CONTRACT_VERSION, runKuryeContractNotice, runKuryeContractSections } from "@shared/courierContract";
@@ -157,7 +158,7 @@ async function getAccessibleOrder(orderId: number, user: { id: number; role: str
   return { db, order };
 }
 
-export const orderCreateInputSchema = z.object({ pickupAddress: z.string().min(5), pickupProvince: z.string().min(1), pickupPostalCode: z.string().regex(/^\d{5}$/).or(z.literal("")).default(""), pickupDistrict: z.string().min(1), pickupNeighborhood: z.string().min(1), pickupStreet: z.string().min(1), pickupBuildingNo: z.string().min(1).max(30), pickupApartmentNo: z.string().max(30).default(""), pickupFloor: z.string().max(20).default(""), pickupCourierNote: z.string().max(500).default(""), pickupAddressDetail: z.string().max(240), deliveryAddress: z.string().min(5), deliveryProvince: z.string().min(1), deliveryPostalCode: z.string().regex(/^\d{5}$/).or(z.literal("")).default(""), deliveryDistrict: z.string().min(1), deliveryNeighborhood: z.string().min(1), deliveryStreet: z.string().min(1), deliveryBuildingNo: z.string().min(1).max(30), deliveryApartmentNo: z.string().max(30).default(""), deliveryFloor: z.string().max(20).default(""), deliveryCourierNote: z.string().max(500).default(""), deliveryAddressDetail: z.string().max(240), productDescription: z.string().min(2).max(500), customerPhone: z.string().min(7), paymentMethod: z.enum(["sandbox_card", "cash_on_delivery"]).default("cash_on_delivery"), paymentReference: z.string().regex(/^SANDBOX-[A-Z0-9]{10}$/).optional() }).superRefine((input, ctx) => { if (!isValidTurkishPostalCode(input.pickupPostalCode)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["pickupPostalCode"], message: "Alış posta kodu 5 haneli olmalı" }); if (!isValidTurkishPostalCode(input.deliveryPostalCode)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["deliveryPostalCode"], message: "Teslim posta kodu 5 haneli olmalı" }); if (!isValidBuildingNo(input.pickupBuildingNo)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["pickupBuildingNo"], message: "Alış bina/kapı numarası gerekli" }); if (!isValidBuildingNo(input.deliveryBuildingNo)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["deliveryBuildingNo"], message: "Teslim bina/kapı numarası gerekli" }); if (!isValidTurkishMobilePhone(input.customerPhone)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["customerPhone"], message: "Geçerli Türkiye cep telefonu gerekli" }); if (!arePickupAndDeliveryDifferent(input)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["deliveryBuildingNo"], message: "Alış ve teslim adresleri aynı olamaz" }); if (input.paymentMethod === "sandbox_card" && !input.paymentReference) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["paymentReference"], message: "Kart ödemesi için sandbox onayı gereklidir" }); if (input.paymentMethod === "cash_on_delivery" && input.paymentReference) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["paymentReference"], message: "Kapıda nakit siparişte kart referansı kullanılamaz" }); });
+export const orderCreateInputSchema = z.object({ pickupAddress: z.string().min(5), pickupProvince: z.string().min(1), pickupPostalCode: z.string().regex(/^\d{5}$/).or(z.literal("")).default(""), pickupDistrict: z.string().min(1), pickupNeighborhood: z.string().min(1), pickupStreet: z.string().min(1), pickupBuildingNo: z.string().min(1).max(30), pickupApartmentNo: z.string().max(30).default(""), pickupFloor: z.string().max(20).default(""), pickupCourierNote: z.string().max(500).default(""), pickupAddressDetail: z.string().max(240), deliveryAddress: z.string().min(5), deliveryProvince: z.string().min(1), deliveryPostalCode: z.string().regex(/^\d{5}$/).or(z.literal("")).default(""), deliveryDistrict: z.string().min(1), deliveryNeighborhood: z.string().min(1), deliveryStreet: z.string().min(1), deliveryBuildingNo: z.string().min(1).max(30), deliveryApartmentNo: z.string().max(30).default(""), deliveryFloor: z.string().max(20).default(""), deliveryCourierNote: z.string().max(500).default(""), deliveryAddressDetail: z.string().max(240), productDescription: z.string().min(2).max(500), serviceType: z.enum(["standard", "pharmacy_on_call", "vip", "mall", "airport", "express"]).default("standard"), packageWeightKg: z.number().min(0.01).max(50).default(1), customerPhone: z.string().min(7), paymentMethod: z.enum(["sandbox_card", "cash_on_delivery"]).default("cash_on_delivery"), paymentReference: z.string().regex(/^SANDBOX-[A-Z0-9]{10}$/).optional() }).superRefine((input, ctx) => { if (!isValidTurkishPostalCode(input.pickupPostalCode)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["pickupPostalCode"], message: "Alış posta kodu 5 haneli olmalı" }); if (!isValidTurkishPostalCode(input.deliveryPostalCode)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["deliveryPostalCode"], message: "Teslim posta kodu 5 haneli olmalı" }); if (!isValidBuildingNo(input.pickupBuildingNo)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["pickupBuildingNo"], message: "Alış bina/kapı numarası gerekli" }); if (!isValidBuildingNo(input.deliveryBuildingNo)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["deliveryBuildingNo"], message: "Teslim bina/kapı numarası gerekli" }); if (!isValidTurkishMobilePhone(input.customerPhone)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["customerPhone"], message: "Geçerli Türkiye cep telefonu gerekli" }); if (!arePickupAndDeliveryDifferent(input)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["deliveryBuildingNo"], message: "Alış ve teslim adresleri aynı olamaz" }); if (input.paymentMethod === "sandbox_card" && !input.paymentReference) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["paymentReference"], message: "Kart ödemesi için sandbox onayı gereklidir" }); if (input.paymentMethod === "cash_on_delivery" && input.paymentReference) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["paymentReference"], message: "Kapıda nakit siparişte kart referansı kullanılamaz" }); });
 
 export const savedAddressInputSchema = z.object({
   label: z.string().trim().min(1).max(80), province: z.literal("İstanbul"), postalCode: z.string().regex(/^\d{5}$/).or(z.literal("")).default(""), district: z.string().trim().min(1).max(100),
@@ -175,19 +176,45 @@ export const appRouter = router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => { ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 }); return { success: true } as const; }),
   }),
-  profile: router({ update: protectedProcedure.input(z.object({ name: z.string().min(2), phone: z.string().min(7) })).mutation(({ ctx, input }) => updateUserProfile(ctx.user.id, input)) }),
+  platform: router({
+    features: publicProcedure.query(() => getPlatformFeatureSettings()),
+  }),
+  profile: router({
+    update: protectedProcedure.input(z.object({ name: z.string().min(2), phone: z.string().min(7) })).mutation(({ ctx, input }) => updateUserProfile(ctx.user.id, input)),
+    setMembershipRole: protectedProcedure.input(z.object({ role: z.enum(selfAssignableMembershipRoles) })).mutation(async ({ ctx, input }) => {
+      const features = await getPlatformFeatureSettings();
+      if (input.role === "courier" && !features.courierPortalEnabled) throw new Error("Kurye üyeliği yönetici tarafından geçici olarak kapatıldı");
+      if (input.role === "store" && !features.storePortalEnabled) throw new Error("Mağaza üyeliği yönetici tarafından geçici olarak kapatıldı");
+      return updateUserRole(ctx.user.id, input.role);
+    }),
+  }),
+  admin: router({
+    overview: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new Error("Bu alan yalnızca yöneticiye açıktır");
+      const [featureSettings, members] = await Promise.all([getPlatformFeatureSettings(), listUsersForAdmin()]);
+      return { featureSettings, members };
+    }),
+    setFeature: protectedProcedure.input(z.object({ key: z.enum(platformFeatureKeys), enabled: z.boolean() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new Error("Bu işlem yalnızca yöneticiye açıktır");
+      return updatePlatformFeatureSettings(ctx.user.id, { [input.key]: input.enabled });
+    }),
+    setMemberRole: protectedProcedure.input(z.object({ userId: z.number().int().positive(), role: z.enum(["user", "courier", "store", "accountant"]) })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new Error("Bu işlem yalnızca yöneticiye açıktır");
+      return updateUserRole(input.userId, input.role);
+    }),
+  }),
   savedAddresses: router({
     list: protectedProcedure.query(({ ctx }) => listSavedAddresses(ctx.user.id)),
     create: protectedProcedure.input(savedAddressInputSchema).mutation(({ ctx, input }) => createSavedAddress({ userId: ctx.user.id, ...input })),
     remove: protectedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ ctx, input }) => deleteSavedAddress(ctx.user.id, input.id)),
   }),
   pricing: router({
-    estimate: publicProcedure.input(z.object({ distanceKm: z.number().min(0).optional(), pickupAddress: z.string().min(5).optional(), deliveryAddress: z.string().min(5).optional() })).query(async ({ input }) => {
+    estimate: publicProcedure.input(z.object({ distanceKm: z.number().min(0).optional(), pickupAddress: z.string().min(5).optional(), deliveryAddress: z.string().min(5).optional(), packageWeightKg: z.number().min(0.01).max(50).default(1) })).query(async ({ input }) => {
       if (input.pickupAddress && input.deliveryAddress) {
         const route = await resolveRoadRoute(input.pickupAddress, input.deliveryAddress);
-        return { ...calculateOrderFinancials(route.distanceKm), durationMinutes: route.durationMinutes, routeStatus: route.status, provider: route.provider };
+        return { ...calculateOrderFinancials(route.distanceKm, input.packageWeightKg), durationMinutes: route.durationMinutes, routeStatus: route.status, provider: route.provider };
       }
-      if (input.distanceKm !== undefined) return { ...calculateOrderFinancials(input.distanceKm), durationMinutes: null, routeStatus: "unavailable" as const, provider: "manual" as const };
+      if (input.distanceKm !== undefined) return { ...calculateOrderFinancials(input.distanceKm, input.packageWeightKg), durationMinutes: null, routeStatus: "unavailable" as const, provider: "manual" as const };
       throw new Error("Rota adresleri veya mesafe gerekli");
     }),
   }),
@@ -199,15 +226,17 @@ export const appRouter = router({
   }),
   orders: router({
     create: protectedProcedure.input(orderCreateInputSchema).mutation(async ({ ctx, input }) => {
+      const featureSettings = await getPlatformFeatureSettings();
+      if (!featureSettings.ordersEnabled) throw new Error("Yeni sipariş alımı yönetici tarafından geçici olarak kapatıldı");
       validateIstanbulAddress(input);
       const db = await getDb(); if (!db) throw new Error("Database unavailable");
       const route = await resolveRoadRoute(input.pickupAddress, input.deliveryAddress);
-      const financials = calculateOrderFinancials(route.distanceKm);
+      const financials = calculateOrderFinancials(route.distanceKm, input.packageWeightKg);
       const addressDetails = buildOrderAddressDetails(input);
       const paymentStatus = input.paymentMethod === "cash_on_delivery" ? "collect_on_delivery" as const : "paid" as const;
       const trackingCode = `RUN-${nanoid(8).toUpperCase()}`;
       const deliveryOtp = createDeliveryOtp();
-      await db.insert(orders).values({ trackingCode, customerId: ctx.user.id, pickupAddress: input.pickupAddress, pickupProvince: addressPart(input.pickupProvince), pickupDistrict: addressPart(input.pickupDistrict), pickupNeighborhood: addressPart(input.pickupNeighborhood), pickupStreet: addressPart(input.pickupStreet), ...addressDetails, deliveryAddress: input.deliveryAddress, deliveryProvince: addressPart(input.deliveryProvince), deliveryDistrict: addressPart(input.deliveryDistrict), deliveryNeighborhood: addressPart(input.deliveryNeighborhood), deliveryStreet: addressPart(input.deliveryStreet), productDescription: input.productDescription, customerPhone: normalizeTurkishMobilePhone(input.customerPhone), distanceKm: financials.distanceKm.toFixed(2), routeDurationMinutes: route.durationMinutes.toFixed(1), routeStatus: route.status, routeProvider: route.provider, pickupLatitude: route.pickup.lat.toFixed(7), pickupLongitude: route.pickup.lng.toFixed(7), deliveryLatitude: route.delivery.lat.toFixed(7), deliveryLongitude: route.delivery.lng.toFixed(7), totalPrice: financials.total.toFixed(2), paymentMethod: input.paymentMethod, paymentStatus, paymentReference: input.paymentReference ?? null, commission: financials.commission.toFixed(2), courierEarning: financials.courierEarning.toFixed(2), companyRevenue: financials.companyRevenue.toFixed(2), deliveryOtpHash: hashDeliveryOtp(deliveryOtp), status: "received" });
+      await db.insert(orders).values({ trackingCode, customerId: ctx.user.id, pickupAddress: input.pickupAddress, pickupProvince: addressPart(input.pickupProvince), pickupDistrict: addressPart(input.pickupDistrict), pickupNeighborhood: addressPart(input.pickupNeighborhood), pickupStreet: addressPart(input.pickupStreet), ...addressDetails, deliveryAddress: input.deliveryAddress, deliveryProvince: addressPart(input.deliveryProvince), deliveryDistrict: addressPart(input.deliveryDistrict), deliveryNeighborhood: addressPart(input.deliveryNeighborhood), deliveryStreet: addressPart(input.deliveryStreet), productDescription: input.productDescription, serviceType: input.serviceType, packageWeightKg: input.packageWeightKg.toFixed(2), customerPhone: normalizeTurkishMobilePhone(input.customerPhone), distanceKm: financials.distanceKm.toFixed(2), routeDurationMinutes: route.durationMinutes.toFixed(1), routeStatus: route.status, routeProvider: route.provider, pickupLatitude: route.pickup.lat.toFixed(7), pickupLongitude: route.pickup.lng.toFixed(7), deliveryLatitude: route.delivery.lat.toFixed(7), deliveryLongitude: route.delivery.lng.toFixed(7), totalPrice: financials.total.toFixed(2), paymentMethod: input.paymentMethod, paymentStatus, paymentReference: input.paymentReference ?? null, commission: financials.commission.toFixed(2), courierEarning: financials.courierEarning.toFixed(2), companyRevenue: financials.companyRevenue.toFixed(2), deliveryOtpHash: hashDeliveryOtp(deliveryOtp), status: "received" });
       await addNotification({ userId: ctx.user.id, title: "Siparişiniz alındı", content: `${trackingCode} numaralı siparişiniz oluşturuldu. Teslimat doğrulama kodunuz: ${deliveryOtp}. Bu kodu yalnızca paketi teslim alırken kuryeyle paylaşın. ${input.paymentMethod === "cash_on_delivery" ? "Ödeme teslimatta nakit tahsil edilecektir." : "Sandbox kart ödemesi onaylandı."}` });
       return { trackingCode, deliveryOtp, ...financials, durationMinutes: route.durationMinutes, routeStatus: route.status, paymentMethod: input.paymentMethod, paymentStatus, status: "received" as const };
     }),

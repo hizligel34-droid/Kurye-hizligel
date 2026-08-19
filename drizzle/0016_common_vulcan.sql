@@ -1,0 +1,2 @@
+ALTER TABLE `orders` ADD `serviceType` enum('standard','pharmacy_on_call','vip','mall','airport','express') DEFAULT 'standard' NOT NULL;--> statement-breakpoint
+ALTER TABLE `orders` ADD `packageWeightKg` decimal(6,2) DEFAULT '1.00' NOT NULL;

@@ -449,3 +449,23 @@
 - [x] Başarılı sipariş sonrası anlık onay bildirimi ekle
 - [x] Sipariş deneyimi geliştirmeleri için test, TypeScript, production build ve responsive görsel doğrulama yap
 - [x] Sipariş deneyimi geliştirme sürecini yeniden kullanılabilir bir beceri olarak oluştur ve doğrula
+
+- [x] Sipariş adres alanlarında gerçek zamanlı doğrulama ve otomatik tamamlama önerileri ekle
+- [x] Başarı onayına rota temelli tahmini kurye atanma ve teslimat süresi bilgisini ekle
+- [x] Kayıtlı adres kaydetme ve sonraki siparişlerde hızlı seçim akışını görünür biçimde tamamla
+- [x] Yeni adres ve teslimat deneyimi için test, TypeScript, production build ve responsive görsel doğrulama yap
+- [x] courier-order-experience becerisini yeni adres ve süre deneyimiyle güncelle ve doğrula
+
+- [x] Ana sayfada nöbetçi eczane, VIP, AVM, havaalanı, Express ve standart kurye hizmet kartlarını görselleriyle ekle
+- [x] Sipariş formuna hizmet türü ile gönderi ağırlığı seçimini ekle
+- [x] VIP için 60 dakika, diğer hizmetler için 2-3 saat teslimat hedeflerini göster
+- [x] 5 kg üzeri gönderiler için kilometre hesaplamasına ek 500 TL ücret kuralını uygula
+- [x] Hizmet ve fiyatlandırma akışı için test, TypeScript, production build ve responsive görsel doğrulama yap
+- [x] courier-order-experience becerisini hizmet, ağırlık ve teslimat hedefleriyle güncelle ve doğrula
+
+- [x] Müşteri, kurye ve mağaza üyeliği için rol/profil veri modelini genişlet
+- [x] Rol bazlı giriş ve kullanıcı alanlarını müşteri, kurye ve mağaza akışlarıyla düzenle
+- [x] Admin panelinde kullanıcı, rol ve mağaza görünürlüğü ekle
+- [x] Admin için temel modülleri tek tıkla açıp kapatan güvenli kontrol anahtarları ekle
+- [x] Üyelik ve admin yönetimi için migration, test, TypeScript, production build ve responsive görsel doğrulama yap
+- [x] Kurye yönetimi becerisini üyelik rolleri ve admin açma-kapama kontrolleriyle güncelle ve doğrula
