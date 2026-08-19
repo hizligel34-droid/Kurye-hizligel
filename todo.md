@@ -443,3 +443,9 @@
 - [x] Adres, rota/fiyat ve orders.create zincirindeki sipariş gönderim hatasını düzelt
 - [x] Sipariş oluşturma regresyon testleri, TypeScript ve production build doğrulaması yap
 - [x] Tarayıcıda giriş yönlendirmesi ile sunucu tarafı örnek sipariş akışını yeniden doğrula
+
+- [x] Sipariş formuna adım adım ilerleme göstergesi ekle
+- [x] Rota hesaplama hatasında güvenli yeniden dene denetimi ekle
+- [x] Başarılı sipariş sonrası anlık onay bildirimi ekle
+- [x] Sipariş deneyimi geliştirmeleri için test, TypeScript, production build ve responsive görsel doğrulama yap
+- [x] Sipariş deneyimi geliştirme sürecini yeniden kullanılabilir bir beceri olarak oluştur ve doğrula
