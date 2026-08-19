@@ -1,4 +1,23 @@
+import postalCodeData from "@/data/istanbul-neighborhood-postal-codes.json";
+
 export type AddressOption = { id: number; name: string; provinceId?: number; districtId?: number };
+
+type PostalCodeEntry = { district: string; neighborhood: string; postalCodes: string[] };
+type PostalCodeDataset = { entries: PostalCodeEntry[] };
+
+const normalizeTurkishAddressPart = (value: string) => value.trim().toLocaleLowerCase("tr-TR").replace(/İ/g, "i").replace(/ı/g, "i").replace(/ş/g, "s").replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ö/g, "o").replace(/ç/g, "c").replace(/[^a-z0-9]+/g, " ").replace(/\bmah(?:alle(?:si)?)?\b/g, " ").replace(/\s+/g, " ").trim();
+const postalCodeLookup = new Map<string, string[]>();
+for (const entry of (postalCodeData as PostalCodeDataset).entries) {
+  postalCodeLookup.set(`${normalizeTurkishAddressPart(entry.district)}|${normalizeTurkishAddressPart(entry.neighborhood)}`, entry.postalCodes);
+}
+
+export function getPostalCodesForNeighborhood(district: string, neighborhood: string) {
+  return postalCodeLookup.get(`${normalizeTurkishAddressPart(district)}|${normalizeTurkishAddressPart(neighborhood)}`) ?? [];
+}
+
+export function getPostalCodeForNeighborhood(district: string, neighborhood: string) {
+  return getPostalCodesForNeighborhood(district, neighborhood)[0] ?? "";
+}
 
 type ApiResponse<T> = { status: string; data: T };
 
