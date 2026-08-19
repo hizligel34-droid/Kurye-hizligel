@@ -498,3 +498,13 @@
 - [x] Sipariş sırasında il kapsamı ve çalışma saatine göre dinamik teslimat süresi göster
 - [x] Türkiye adres kapsam yönetimi sürecini yeniden kullanılabilir bir beceri paketi olarak oluştur ve doğrula
 - [x] Yeni kapsam, yönetim ve süre akışları için Vitest, TypeScript, production build ve responsive görsel doğrulama yap
+
+- [x] Güncel Run Courier kaynaklarını güvenli bir ZIP arşivi olarak hazırla ve teslim et
+
+- [x] ZIP arşivini temiz dizinde açıp paket bütünlüğünü ve bağımlılık tanımlarını doğrula
+- [x] ZIP içeriğinde birim ve entegrasyon testlerini çalıştırıp sonuçları kaydet
+- [x] Yönetici adres kaynağı sağlık API uç noktalarını ve hata yönetimi akışını incele
+- [x] Kapsam dışı bölge uyarısının sipariş arayüzü bileşenlerini incele
+- [x] ZIP denetimi, API incelemesi ve kapsam uyarısı doğrulaması sürecini yeniden kullanılabilir beceriye dönüştür
+
+- [x] Run Courier’ın güncel kaynaklarını GitHub `ana` dalı ile güvenli biçimde senkronize et ve uzak commit durumunu doğrula
