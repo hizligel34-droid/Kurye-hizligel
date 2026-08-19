@@ -18,13 +18,13 @@ export async function listSavedAddresses(userId: number) {
 }
 
 export async function createSavedAddress(input: {
-  userId: number; label: string; province: string; district: string; neighborhood: string;
+  userId: number; label: string; province: string; postalCode?: string; district: string; neighborhood: string;
   street: string; buildingNo: string; apartmentNo?: string; floor?: string;
   courierNote?: string; addressDetail: string;
 }) {
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
   const values = {
-    userId: input.userId, label: input.label.trim(), province: input.province.trim(),
+    userId: input.userId, label: input.label.trim(), province: input.province.trim(), postalCode: input.postalCode?.trim() ?? "",
     district: input.district.trim(), neighborhood: input.neighborhood.trim(), street: input.street.trim(),
     buildingNo: input.buildingNo.trim(), apartmentNo: input.apartmentNo?.trim() ?? "",
     floor: input.floor?.trim() ?? "", courierNote: input.courierNote?.trim() ?? "",
@@ -265,11 +265,13 @@ export async function getMessages(orderId: number) {
   return db.select().from(messages).where(eq(messages.orderId, orderId)).orderBy(messages.createdAt);
 }
 
-export function buildOrderAddressDetails(input: { pickupAddressDetail?: string; deliveryAddressDetail?: string; pickupBuildingNo?: string; deliveryBuildingNo?: string; pickupApartmentNo?: string; deliveryApartmentNo?: string; pickupFloor?: string; deliveryFloor?: string; pickupCourierNote?: string; deliveryCourierNote?: string }) {
+export function buildOrderAddressDetails(input: { pickupAddressDetail?: string; pickupPostalCode?: string; deliveryPostalCode?: string; deliveryAddressDetail?: string; pickupBuildingNo?: string; deliveryBuildingNo?: string; pickupApartmentNo?: string; deliveryApartmentNo?: string; pickupFloor?: string; deliveryFloor?: string; pickupCourierNote?: string; deliveryCourierNote?: string }) {
   const normalize = (value: string | undefined) => (value ?? "Belirtilmedi").trim().slice(0, 240) || "Belirtilmedi";
   const optional = (value: string | undefined, max: number) => (value ?? "").trim().slice(0, max);
   return {
     pickupAddressDetail: normalize(input.pickupAddressDetail),
+    pickupPostalCode: optional(input.pickupPostalCode, 5),
+    deliveryPostalCode: optional(input.deliveryPostalCode, 5),
     deliveryAddressDetail: normalize(input.deliveryAddressDetail),
     pickupBuildingNo: optional(input.pickupBuildingNo, 30),
     deliveryBuildingNo: optional(input.deliveryBuildingNo, 30),

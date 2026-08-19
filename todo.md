@@ -398,3 +398,8 @@
 - [x] Site marka adını Run Courier olarak güncelle
 - [x] Logo metni, tarayıcı başlığı ve uygulama görünen adını Run Courier ile senkronize et
 - [x] Marka değişikliğini test, build ve başlık doğrulamasıyla kontrol et
+
+- [x] Kaggle Turkey postal codes 2025 veri setini indirip dosya yapısını ve lisans bilgisini doğrula
+- [x] İstanbul posta kodlarını mevcut adres diziniyle eşleştir ve veri kalite raporu çıkar
+- [x] Posta kodu alanını kayıtlı adres, sipariş doğrulaması ve adres formuna entegre et
+- [x] Veri aktarımı, test, TypeScript, production build ve mobil adres akışını doğrula

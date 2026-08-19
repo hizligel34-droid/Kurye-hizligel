@@ -1,6 +1,7 @@
 export type OrderFormFields = {
   pickupAddress: string;
   pickupProvince: string;
+  pickupPostalCode?: string;
   pickupDistrict: string;
   pickupNeighborhood: string;
   pickupStreet: string;
@@ -11,6 +12,7 @@ export type OrderFormFields = {
   pickupAddressDetail: string;
   deliveryAddress: string;
   deliveryProvince: string;
+  deliveryPostalCode?: string;
   deliveryDistrict: string;
   deliveryNeighborhood: string;
   deliveryStreet: string;
@@ -24,6 +26,11 @@ export type OrderFormFields = {
 };
 
 export const ORDER_PRODUCT_DESCRIPTION_MAX = 500;
+export const ORDER_POSTAL_CODE_MAX = 5;
+
+export function isValidTurkishPostalCode(value: string) {
+  return value.trim() === "" || /^\d{5}$/.test(value.trim());
+}
 export const ORDER_ADDRESS_DETAIL_MAX = 240;
 export const ORDER_BUILDING_NO_MAX = 30;
 export const ORDER_APARTMENT_NO_MAX = 30;
@@ -54,8 +61,8 @@ function normalizedAddressKey(parts: string[]) {
 }
 
 export function arePickupAndDeliveryDifferent(form: Pick<OrderFormFields,
-  "pickupProvince" | "pickupDistrict" | "pickupNeighborhood" | "pickupStreet" | "pickupBuildingNo" |
-  "deliveryProvince" | "deliveryDistrict" | "deliveryNeighborhood" | "deliveryStreet" | "deliveryBuildingNo"
+  "pickupProvince" | "pickupPostalCode" | "pickupDistrict" | "pickupNeighborhood" | "pickupStreet" | "pickupBuildingNo" |
+  "deliveryProvince" | "deliveryPostalCode" | "deliveryDistrict" | "deliveryNeighborhood" | "deliveryStreet" | "deliveryBuildingNo"
 >) {
   return normalizedAddressKey([
     form.pickupProvince, form.pickupDistrict, form.pickupNeighborhood, form.pickupStreet, form.pickupBuildingNo,
@@ -78,6 +85,8 @@ export function isOrderFormComplete(form: OrderFormFields) {
     && (form.deliveryFloor ?? "").length <= ORDER_FLOOR_MAX
     && (form.pickupCourierNote ?? "").length <= ORDER_COURIER_NOTE_MAX
     && (form.deliveryCourierNote ?? "").length <= ORDER_COURIER_NOTE_MAX
+    && isValidTurkishPostalCode(form.pickupPostalCode ?? "")
+    && isValidTurkishPostalCode(form.deliveryPostalCode ?? "")
     && form.pickupAddressDetail.length <= ORDER_ADDRESS_DETAIL_MAX
     && form.deliveryAddressDetail.length <= ORDER_ADDRESS_DETAIL_MAX
     && form.productDescription.trim().length >= 2
@@ -89,8 +98,8 @@ export function isOrderFormComplete(form: OrderFormFields) {
 export const ORDER_FORM_INCOMPLETE_MESSAGE = "İki adresin ilçe, mahalle, cadde/sokak ve bina/kapı numarasını; en az 2 karakter ürün açıklamasını ve geçerli Türkiye cep telefonu numarasını doldurun. Alış ve teslim adresleri aynı olamaz.";
 
 export function isRouteAddressComplete(form: Pick<OrderFormFields,
-  "pickupProvince" | "pickupDistrict" | "pickupNeighborhood" | "pickupStreet" | "pickupBuildingNo" |
-  "deliveryProvince" | "deliveryDistrict" | "deliveryNeighborhood" | "deliveryStreet" | "deliveryBuildingNo"
+  "pickupProvince" | "pickupPostalCode" | "pickupDistrict" | "pickupNeighborhood" | "pickupStreet" | "pickupBuildingNo" |
+  "deliveryProvince" | "deliveryPostalCode" | "deliveryDistrict" | "deliveryNeighborhood" | "deliveryStreet" | "deliveryBuildingNo"
 >) {
   return [
     form.pickupProvince, form.pickupDistrict, form.pickupNeighborhood, form.pickupStreet,
@@ -98,5 +107,7 @@ export function isRouteAddressComplete(form: Pick<OrderFormFields,
   ].every(value => value.trim().length > 0)
     && isValidBuildingNo(form.pickupBuildingNo)
     && isValidBuildingNo(form.deliveryBuildingNo)
+    && isValidTurkishPostalCode(form.pickupPostalCode ?? "")
+    && isValidTurkishPostalCode(form.deliveryPostalCode ?? "")
     && arePickupAndDeliveryDifferent(form);
 }
