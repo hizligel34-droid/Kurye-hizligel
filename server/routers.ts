@@ -7,7 +7,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { makeRequest, type DirectionsResult, type GeocodingResult } from "./_core/map";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, listCourierOperations, roadApproxDistanceKm, upsertCourierOperation, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
+import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, createSavedAddress, deleteSavedAddress, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, listCourierOperations, listSavedAddresses, roadApproxDistanceKm, upsertCourierOperation, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
 import { orders, users } from "../drizzle/schema";
 import { nanoid } from "nanoid";
 import { RUN_KURYE_CONTRACT_VERSION, runKuryeContractNotice, runKuryeContractSections } from "@shared/courierContract";
@@ -159,6 +159,16 @@ async function getAccessibleOrder(orderId: number, user: { id: number; role: str
 
 export const orderCreateInputSchema = z.object({ pickupAddress: z.string().min(5), pickupProvince: z.string().min(1), pickupDistrict: z.string().min(1), pickupNeighborhood: z.string().min(1), pickupStreet: z.string().min(1), pickupBuildingNo: z.string().min(1).max(30), pickupApartmentNo: z.string().max(30).default(""), pickupFloor: z.string().max(20).default(""), pickupCourierNote: z.string().max(500).default(""), pickupAddressDetail: z.string().max(240), deliveryAddress: z.string().min(5), deliveryProvince: z.string().min(1), deliveryDistrict: z.string().min(1), deliveryNeighborhood: z.string().min(1), deliveryStreet: z.string().min(1), deliveryBuildingNo: z.string().min(1).max(30), deliveryApartmentNo: z.string().max(30).default(""), deliveryFloor: z.string().max(20).default(""), deliveryCourierNote: z.string().max(500).default(""), deliveryAddressDetail: z.string().max(240), productDescription: z.string().min(2).max(500), customerPhone: z.string().min(7), paymentMethod: z.enum(["sandbox_card", "cash_on_delivery"]).default("cash_on_delivery"), paymentReference: z.string().regex(/^SANDBOX-[A-Z0-9]{10}$/).optional() }).superRefine((input, ctx) => { if (!isValidBuildingNo(input.pickupBuildingNo)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["pickupBuildingNo"], message: "Alış bina/kapı numarası gerekli" }); if (!isValidBuildingNo(input.deliveryBuildingNo)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["deliveryBuildingNo"], message: "Teslim bina/kapı numarası gerekli" }); if (!isValidTurkishMobilePhone(input.customerPhone)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["customerPhone"], message: "Geçerli Türkiye cep telefonu gerekli" }); if (!arePickupAndDeliveryDifferent(input)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["deliveryBuildingNo"], message: "Alış ve teslim adresleri aynı olamaz" }); if (input.paymentMethod === "sandbox_card" && !input.paymentReference) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["paymentReference"], message: "Kart ödemesi için sandbox onayı gereklidir" }); if (input.paymentMethod === "cash_on_delivery" && input.paymentReference) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["paymentReference"], message: "Kapıda nakit siparişte kart referansı kullanılamaz" }); });
 
+export const savedAddressInputSchema = z.object({
+  label: z.string().trim().min(1).max(80), province: z.literal("İstanbul"), district: z.string().trim().min(1).max(100),
+  neighborhood: z.string().trim().min(1).max(140), street: z.string().trim().min(1).max(180),
+  buildingNo: z.string().trim().min(1).max(30), apartmentNo: z.string().trim().max(30).default(""),
+  floor: z.string().trim().max(20).default(""), courierNote: z.string().trim().max(500).default(""),
+  addressDetail: z.string().trim().min(5).max(240),
+}).superRefine((input, refinement) => {
+  if (!isValidBuildingNo(input.buildingNo)) refinement.addIssue({ code: z.ZodIssueCode.custom, path: ["buildingNo"], message: "Geçerli bina/kapı numarası gerekli" });
+});
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -166,6 +176,11 @@ export const appRouter = router({
     logout: publicProcedure.mutation(({ ctx }) => { ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 }); return { success: true } as const; }),
   }),
   profile: router({ update: protectedProcedure.input(z.object({ name: z.string().min(2), phone: z.string().min(7) })).mutation(({ ctx, input }) => updateUserProfile(ctx.user.id, input)) }),
+  savedAddresses: router({
+    list: protectedProcedure.query(({ ctx }) => listSavedAddresses(ctx.user.id)),
+    create: protectedProcedure.input(savedAddressInputSchema).mutation(({ ctx, input }) => createSavedAddress({ userId: ctx.user.id, ...input })),
+    remove: protectedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ ctx, input }) => deleteSavedAddress(ctx.user.id, input.id)),
+  }),
   pricing: router({
     estimate: publicProcedure.input(z.object({ distanceKm: z.number().min(0).optional(), pickupAddress: z.string().min(5).optional(), deliveryAddress: z.string().min(5).optional() })).query(async ({ input }) => {
       if (input.pickupAddress && input.deliveryAddress) {

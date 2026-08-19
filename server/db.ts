@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { CourierContract, CourierDocument, CourierOperation, InsertUser, Message, courierContracts, courierDocuments, courierOperations, messages, notifications, orders, users } from "../drizzle/schema";
+import { CourierContract, CourierDocument, CourierOperation, InsertUser, Message, courierContracts, courierDocuments, courierOperations, messages, notifications, orders, savedAddresses, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -10,6 +10,35 @@ export async function getDb() {
     try { _db = drizzle(process.env.DATABASE_URL); } catch (error) { console.warn("[Database] Failed to connect:", error); _db = null; }
   }
   return _db;
+}
+
+export async function listSavedAddresses(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(savedAddresses).where(eq(savedAddresses.userId, userId)).orderBy(desc(savedAddresses.updatedAt));
+}
+
+export async function createSavedAddress(input: {
+  userId: number; label: string; province: string; district: string; neighborhood: string;
+  street: string; buildingNo: string; apartmentNo?: string; floor?: string;
+  courierNote?: string; addressDetail: string;
+}) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  const values = {
+    userId: input.userId, label: input.label.trim(), province: input.province.trim(),
+    district: input.district.trim(), neighborhood: input.neighborhood.trim(), street: input.street.trim(),
+    buildingNo: input.buildingNo.trim(), apartmentNo: input.apartmentNo?.trim() ?? "",
+    floor: input.floor?.trim() ?? "", courierNote: input.courierNote?.trim() ?? "",
+    addressDetail: input.addressDetail.trim(),
+  };
+  await db.insert(savedAddresses).values(values);
+  const rows = await db.select().from(savedAddresses).where(eq(savedAddresses.userId, input.userId)).orderBy(desc(savedAddresses.id)).limit(1);
+  return rows[0];
+}
+
+export async function deleteSavedAddress(userId: number, addressId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  await db.delete(savedAddresses).where(and(eq(savedAddresses.id, addressId), eq(savedAddresses.userId, userId)));
+  return { deleted: true };
 }
 
 export async function upsertCourierOperation(input: { courierId: number; availability?: "offline" | "available" | "busy" | "break"; lat?: number; lng?: number; accuracy?: number | null }) {

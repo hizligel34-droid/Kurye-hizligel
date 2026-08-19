@@ -389,3 +389,8 @@
 - [x] Yeni alanları orders şeması, sipariş doğrulaması ve backend kayıt akışına bağla
 - [x] Yeni adres alanlarını mobil formda göster ve sipariş özetinde doğru taşı
 - [x] Yeni alanlar için migration, test, TypeScript, build ve mobil görsel doğrulaması yap
+
+- [x] Kullanıcı hesabına bağlı kayıtlı adresler tablosu ve migration oluştur
+- [x] Kayıtlı adresleri listeleme, ekleme ve silme tRPC prosedürlerini yetki kontrolleriyle ekle
+- [x] Sipariş formuna kaydetme seçeneği ve kayıtlı adresleri tek tıkla seçme arayüzü ekle
+- [x] Kayıtlı adres defteri için doğrulama, test, TypeScript, build ve mobil görünüm doğrulaması yap

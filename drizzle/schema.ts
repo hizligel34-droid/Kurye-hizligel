@@ -13,6 +13,23 @@ export const users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
+export const savedAddresses = mysqlTable("savedAddresses", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  label: varchar("label", { length: 80 }).notNull(),
+  province: varchar("province", { length: 80 }).notNull(),
+  district: varchar("district", { length: 100 }).notNull(),
+  neighborhood: varchar("neighborhood", { length: 140 }).notNull(),
+  street: varchar("street", { length: 180 }).notNull(),
+  buildingNo: varchar("buildingNo", { length: 30 }).notNull(),
+  apartmentNo: varchar("apartmentNo", { length: 30 }).default("").notNull(),
+  floor: varchar("floor", { length: 20 }).default("").notNull(),
+  courierNote: varchar("courierNote", { length: 500 }).default("").notNull(),
+  addressDetail: varchar("addressDetail", { length: 240 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const orders = mysqlTable("orders", {
   id: int("id").autoincrement().primaryKey(),
   trackingCode: varchar("trackingCode", { length: 24 }).notNull().unique(),
@@ -145,6 +162,8 @@ export const notifications = mysqlTable("notifications", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+export type SavedAddress = typeof savedAddresses.$inferSelect;
+export type InsertSavedAddress = typeof savedAddresses.$inferInsert;
 export type Order = typeof orders.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type PricingSettings = typeof pricingSettings.$inferSelect;
