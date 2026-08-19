@@ -419,3 +419,8 @@
 - [x] Run Courier için Google Ads performans KPI’larını ve geçerli GAQL alanlarını belirle
 - [x] Günlük kampanya performansı için tarih parametreli salt-okuma GAQL sorgusu hazırla
 - [x] Sorgu kullanımını, beklenen çıktıyı ve bağlantı hazır olduğunda çalıştırma adımlarını belgeleyerek sun
+
+- [x] Google Ads günlük performans raporu için salt-okuma dashboard veri akışını ekle
+- [x] Kampanya KPI kartları, günlük performans grafiği ve detay tablosu oluştur
+- [x] Dashboard route/navigation, hata/boş/yetki durumları ve mobil uyumluluğu ekle
+- [x] Google Ads dashboardu için Vitest, TypeScript, production build ve görsel doğrulama yap
