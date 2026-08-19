@@ -376,3 +376,6 @@
 - [x] v6 operasyon akışını mevcut Run Kurye backend ve UI sözleşmelerine uyarlama
 - [x] v6 güvenli teslimat ve rol bazlı operasyon akışlarını entegre etme
 - [x] v6 entegrasyonu için test, TypeScript, production build ve mobil görünüm doğrulaması
+
+- [x] Ana ekrandaki Fiyat özeti kartını kaldır; sipariş içi fiyat hesaplamasını koru
+- [x] Fiyat özeti kaldırma değişikliğini mobil görünüm, test ve build ile doğrula
