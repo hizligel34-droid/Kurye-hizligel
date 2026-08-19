@@ -1,0 +1,1 @@
+ALTER TABLE `savedAddresses` ADD `isFavorite` int DEFAULT 0 NOT NULL;

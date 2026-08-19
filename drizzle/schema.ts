@@ -27,6 +27,7 @@ export const savedAddresses = mysqlTable("savedAddresses", {
   floor: varchar("floor", { length: 20 }).default("").notNull(),
   courierNote: varchar("courierNote", { length: 500 }).default("").notNull(),
   addressDetail: varchar("addressDetail", { length: 240 }).notNull(),
+  isFavorite: int("isFavorite").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

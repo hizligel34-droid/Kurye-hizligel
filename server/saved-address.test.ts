@@ -19,6 +19,10 @@ describe("saved address directory", () => {
     expect(savedAddressInputSchema.parse(validAddress)).toMatchObject(validAddress);
   });
 
+  it("keeps the favorite flag separate from address validation", () => {
+    expect(savedAddressInputSchema.parse(validAddress)).not.toHaveProperty("isFavorite");
+  });
+
   it("rejects non-Istanbul saved addresses", () => {
     expect(() => savedAddressInputSchema.parse({ ...validAddress, province: "Ankara" })).toThrow();
   });

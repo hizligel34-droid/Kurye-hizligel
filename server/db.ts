@@ -14,7 +14,7 @@ export async function getDb() {
 
 export async function listSavedAddresses(userId: number) {
   const db = await getDb(); if (!db) return [];
-  return db.select().from(savedAddresses).where(eq(savedAddresses.userId, userId)).orderBy(desc(savedAddresses.updatedAt));
+  return db.select().from(savedAddresses).where(eq(savedAddresses.userId, userId)).orderBy(desc(savedAddresses.isFavorite), desc(savedAddresses.updatedAt));
 }
 
 export async function createSavedAddress(input: {
@@ -39,6 +39,12 @@ export async function deleteSavedAddress(userId: number, addressId: number) {
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
   await db.delete(savedAddresses).where(and(eq(savedAddresses.id, addressId), eq(savedAddresses.userId, userId)));
   return { deleted: true };
+}
+
+export async function setSavedAddressFavorite(userId: number, addressId: number, isFavorite: boolean) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  await db.update(savedAddresses).set({ isFavorite: isFavorite ? 1 : 0 }).where(and(eq(savedAddresses.id, addressId), eq(savedAddresses.userId, userId)));
+  return { id: addressId, isFavorite };
 }
 
 export async function upsertCourierOperation(input: { courierId: number; availability?: "offline" | "available" | "busy" | "break"; lat?: number; lng?: number; accuracy?: number | null }) {

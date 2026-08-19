@@ -469,3 +469,9 @@
 - [x] Admin için temel modülleri tek tıkla açıp kapatan güvenli kontrol anahtarları ekle
 - [x] Üyelik ve admin yönetimi için migration, test, TypeScript, production build ve responsive görsel doğrulama yap
 - [x] Kurye yönetimi becerisini üyelik rolleri ve admin açma-kapama kontrolleriyle güncelle ve doğrula
+
+- [x] Kayıtlı adreslerde favori işareti, kalıcı veri alanı ve güvenli güncelleme akışı ekle
+- [x] Sipariş formunda favori adresleri önceliklendirip hızlı seçim deneyimini ekle
+- [x] Yönetim paneline müşteri, kurye ve mağaza üyelikleri için rol, arama ve sıralama filtreleri ekle
+- [x] 5 kg üzeri ağırlık seçildiğinde ek ücret için anlık erişilebilir uyarı ekle
+- [x] Yeni adres, yönetim ve ağırlık akışları için Vitest, TypeScript, production build ve mobil görsel doğrulama yap

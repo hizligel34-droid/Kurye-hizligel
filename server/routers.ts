@@ -8,7 +8,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
 import { makeRequest, type DirectionsResult, type GeocodingResult } from "./_core/map";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, createSavedAddress, deleteSavedAddress, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, getPlatformFeatureSettings, listCourierOperations, listSavedAddresses, listUsersForAdmin, roadApproxDistanceKm, updatePlatformFeatureSettings, updateUserRole, upsertCourierOperation, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
+import { addMessage, addNotification, buildOrderAddressDetails, buildSupportMessagePayload, calculateCourierAchievement, calculateOrderFinancials, canTransitionStatus, createSavedAddress, deleteSavedAddress, evaluateSandboxPayment, filterAndSortCourierReport, getCourierContract, getCourierDocument, getCourierLeaderboard, getDb, getMessages, getPlatformFeatureSettings, listCourierOperations, listSavedAddresses, listUsersForAdmin, roadApproxDistanceKm, setSavedAddressFavorite, updatePlatformFeatureSettings, updateUserRole, upsertCourierOperation, getOrderByTrackingCode, listCourierDocuments, listNotifications, listOrders, reviewCourierDocument, saveCourierContract, saveCourierDocument, summarizeAccountingRows, updateUserProfile } from "./db";
 import { orders, users } from "../drizzle/schema";
 import { nanoid } from "nanoid";
 import { RUN_KURYE_CONTRACT_VERSION, runKuryeContractNotice, runKuryeContractSections } from "@shared/courierContract";
@@ -206,6 +206,7 @@ export const appRouter = router({
   savedAddresses: router({
     list: protectedProcedure.query(({ ctx }) => listSavedAddresses(ctx.user.id)),
     create: protectedProcedure.input(savedAddressInputSchema).mutation(({ ctx, input }) => createSavedAddress({ userId: ctx.user.id, ...input })),
+    setFavorite: protectedProcedure.input(z.object({ id: z.number().int().positive(), isFavorite: z.boolean() })).mutation(({ ctx, input }) => setSavedAddressFavorite(ctx.user.id, input.id, input.isFavorite)),
     remove: protectedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ ctx, input }) => deleteSavedAddress(ctx.user.id, input.id)),
   }),
   pricing: router({
