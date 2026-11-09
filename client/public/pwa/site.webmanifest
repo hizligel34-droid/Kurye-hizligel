@@ -1,0 +1,27 @@
+{
+  "id": "https://kuryeler.tr/",
+  "name": "kuryeler.tr",
+  "short_name": "kuryeler.tr",
+  "description": "İstanbul kurye teslimat platformu.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0A0A0A",
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "/pwa/icons/site-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/icons/site-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -25,7 +25,23 @@ vi.mock("./_core/map", () => ({
 
 vi.mock("./db", async importOriginal => {
   const actual = await importOriginal<typeof import("./db")>();
-  return { ...actual, getDb: vi.fn(async () => fakeDb), listOrders: vi.fn(async () => inserted), addNotification: vi.fn(async () => undefined) };
+  const istanbulCoverage = {
+    provinceName: "İstanbul",
+    isEnabled: 1,
+    operatingStart: "00:00",
+    operatingEnd: "23:59",
+    etaBufferMinutes: 0,
+  };
+  return {
+    ...actual,
+    getDb: vi.fn(async () => fakeDb),
+    listOrders: vi.fn(async () => inserted),
+    addNotification: vi.fn(async () => undefined),
+    getProvinceCoverage: vi.fn(async (name: string) => ({ ...istanbulCoverage, provinceName: name })),
+    getProvinceCoverages: vi.fn(async (names: string[]) =>
+      Object.fromEntries(names.map(name => [name, { ...istanbulCoverage, provinceName: name }])),
+    ),
+  };
 });
 
 const { appRouter } = await import("./routers");
