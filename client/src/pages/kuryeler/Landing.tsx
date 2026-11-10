@@ -21,6 +21,9 @@ import {
   formatPriceInclusive,
   formatTariffInclusive,
   isShowcaseMode,
+  DEFAULT_DELIVERY_TARGET_TIERS,
+  DELIVERY_TARGET_DISCLAIMER,
+  deliveryTargetTable,
 } from "@shared/kuryeler";
 import { PWA_APPS } from "@shared/kuryelerPwa";
 import { Clock3, LayoutDashboard, Package, Phone, ShieldCheck, Smartphone, Sparkles, UserRound } from "lucide-react";
@@ -143,9 +146,12 @@ export default function Landing() {
                   <Link href="/takip">Siparişimi takip et</Link>
                 </Button>
               </div>
+              <p className="mt-5 text-sm text-[#8a7c52]">
+                Sipariş vermek için e-posta ve şifre ile üye olmanız gerekir. Takip koduyla giriş yapmadan bakabilirsiniz.
+              </p>
               <div className="mt-8 flex flex-wrap gap-4 text-sm font-semibold text-[#b4a882]">
                 <span className="inline-flex items-center gap-2">
-                  <Clock3 className="size-4 text-[#D4AF37]" /> Aynı gün teslim
+                  <Clock3 className="size-4 text-[#D4AF37]" /> Aynı gün teslimat
                 </span>
                 <span className="inline-flex items-center gap-2">
                   <Smartphone className="size-4 text-[#D4AF37]" /> iPhone ana ekrana ekle
@@ -202,6 +208,21 @@ export default function Landing() {
               </a>
             ))}
           </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 py-6" aria-labelledby="hedef-teslim-baslik">
+          <h2 id="hedef-teslim-baslik" className="text-2xl font-black">
+            Hedef teslim
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-[#b4a882]">Yol mesafesine göre hedef süre. {DELIVERY_TARGET_DISCLAIMER}</p>
+          <ul className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            {deliveryTargetTable(DEFAULT_DELIVERY_TARGET_TIERS).map(row => (
+              <li key={row.range} className={`${cardClass} p-4`}>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#8a7c52]">{row.range}</p>
+                <p className="mt-2 text-lg font-black text-[#D4AF37]">{row.label}</p>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section className="mx-auto max-w-6xl px-4 py-6">

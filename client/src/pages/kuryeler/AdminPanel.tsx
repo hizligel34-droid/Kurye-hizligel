@@ -4,6 +4,7 @@ import { RequireRole } from "@/components/kuryeler/RequireRole";
 import { EmptyState, ErrorState, FieldError, LoadingState } from "@/components/kuryeler/UiStates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useKuryelerAuth } from "@/contexts/KuryelerAuth";
 import {
   advanceStatus,
@@ -12,7 +13,10 @@ import {
   getPricing,
   listDistrictPrices,
   listOrdersFor,
+  listSupportMessages,
+  listSupportTickets,
   listUsers,
+  postSupportMessage,
   setPaymentStatus,
   subscribeToOrders,
   updateDistrictPrice,
@@ -20,7 +24,7 @@ import {
   updateUserRole,
 } from "@/lib/kuryelerApi";
 import { PriceLines } from "@/components/kuryeler/PriceLines";
-import { cardClass, fieldClass, goldBtn, ghostBtn, selectClass } from "@/lib/kuryelerTheme";
+import { areaClass, cardClass, fieldClass, goldBtn, ghostBtn, selectClass } from "@/lib/kuryelerTheme";
 import {
   calculateDeliveryPrice,
   DEFAULT_PRICING,
@@ -43,6 +47,7 @@ import {
   type RoutingProvider,
   type UserRole,
 } from "@shared/kuryeler";
+import { SUPPORT_KIND_LABELS, type SupportMessage, type SupportTicket } from "@shared/kuryelerSupport";
 import { firstError, validateDistrictPrice, validatePricingForm } from "@shared/kuryelerValidation";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -58,24 +63,33 @@ function AdminHome() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pricingErrors, setPricingErrors] = useState<Record<string, string>>({});
-  const [tab, setTab] = useState<"siparis" | "fiyat" | "hesaplar">("siparis");
+  const [tab, setTab] = useState<"siparis" | "destek" | "fiyat" | "hesaplar">("siparis");
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [ticketId, setTicketId] = useState<string | null>(null);
+  const [ticketMessages, setTicketMessages] = useState<SupportMessage[]>([]);
+  const [reply, setReply] = useState("");
   const [showDistricts, setShowDistricts] = useState(false);
 
   const load = async () => {
     if (!user) return;
     setError(null);
-    const [nextStats, nextOrders, nextUsers, nextPricing, nextDistricts] = await Promise.all([
+    const [nextStats, nextOrders, nextUsers, nextPricing, nextDistricts, nextTickets] = await Promise.all([
       getDashboard(user),
       listOrdersFor(user),
       listUsers(),
       getPricing(),
       listDistrictPrices(),
+      listSupportTickets(user),
     ]);
     setStats(nextStats);
     setOrders(nextOrders);
     setUsers(nextUsers);
     setPricing(nextPricing);
     setDistricts(nextDistricts);
+    setTickets(nextTickets);
+    const nextTicket = ticketId && nextTickets.some(t => t.id === ticketId) ? ticketId : nextTickets[0]?.id ?? null;
+    setTicketId(nextTicket);
+    if (nextTicket) setTicketMessages(await listSupportMessages(nextTicket));
   };
 
   useEffect(() => {
@@ -149,9 +163,10 @@ function AdminHome() {
               ))}
             </section>
 
-            <div className="grid grid-cols-3 gap-1 rounded-2xl border border-[#3a3014] bg-black p-1">
+            <div className="grid grid-cols-4 gap-1 rounded-2xl border border-[#3a3014] bg-black p-1">
               {([
                 ["siparis", "Siparişler"],
+                ["destek", `Destek (${tickets.filter(t => t.status !== "kapali").length})`],
                 ["fiyat", "Fiyat"],
                 ["hesaplar", "Hesaplar"],
               ] as const).map(([id, label]) => (
@@ -251,6 +266,89 @@ function AdminHome() {
               </section>
             ) : null}
 
+            {tab === "destek" ? (
+              <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+                <div className="space-y-2">
+                  <h2 className="text-lg font-black">Destek kuyruğu</h2>
+                  {tickets.length === 0 ? (
+                    <EmptyState title="Kayıt yok" body="Müşteri destek, iptal ve şikayetleri burada görünür." />
+                  ) : (
+                    tickets.map(ticket => (
+                      <button
+                        key={ticket.id}
+                        type="button"
+                        className={`${cardClass} w-full p-4 text-left ${ticket.id === ticketId ? "border-[#D4AF37]" : ""}`}
+                        onClick={() => {
+                          setTicketId(ticket.id);
+                          void listSupportMessages(ticket.id).then(setTicketMessages);
+                        }}
+                      >
+                        <p className="text-sm font-bold text-[#D4AF37]">{ticket.subject}</p>
+                        <p className="mt-1 text-xs text-[#8a7c52]">
+                          {SUPPORT_KIND_LABELS[ticket.kind]} · {ticket.status}
+                        </p>
+                      </button>
+                    ))
+                  )}
+                </div>
+                <div className={`${cardClass} space-y-3 p-4 sm:p-5`}>
+                  {ticketId ? (
+                    <>
+                      <div className="max-h-80 space-y-2 overflow-y-auto">
+                        {ticketMessages.map(message => (
+                          <div key={message.id} className="rounded-2xl border border-[#3a3014] bg-black p-3">
+                            <p className="text-[11px] font-bold uppercase text-[#8a7c52]">
+                              {message.sender === "customer" ? "Müşteri" : message.sender === "bot" ? "Bot" : "Yönetici"}
+                            </p>
+                            <p className="mt-1 whitespace-pre-wrap text-sm">{message.body}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <Textarea
+                        className={areaClass}
+                        placeholder="Cevap yazın (bot da aynı kuyruğa düşer)"
+                        value={reply}
+                        onChange={e => setReply(e.target.value)}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          className={goldBtn}
+                          onClick={() =>
+                            void postSupportMessage({ ticketId, body: reply })
+                              .then(() => {
+                                setReply("");
+                                toast.success("Cevap kayda düştü");
+                                return load();
+                              })
+                              .catch(err => toast.error(err instanceof Error ? err.message : "Gönderilemedi"))
+                          }
+                        >
+                          Cevapla
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className={ghostBtn}
+                          onClick={() =>
+                            void postSupportMessage({ ticketId, body: reply, asBot: true })
+                              .then(() => {
+                                setReply("");
+                                toast.success("Bot cevabı kayda düştü");
+                                return load();
+                              })
+                              .catch(err => toast.error(err instanceof Error ? err.message : "Gönderilemedi"))
+                          }
+                        >
+                          Bot olarak yaz
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-[#8a7c52]">Soldan bir kayıt seçin.</p>
+                  )}
+                </div>
+              </section>
+            ) : null}
+
             {tab === "fiyat" ? (
               <section className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
                 <form className={`${cardClass} h-fit space-y-3 p-5`} onSubmit={savePricing}>
@@ -316,6 +414,42 @@ function AdminHome() {
                     />
                     Vitrin modu (kayıt ve sipariş kapalı)
                   </label>
+                  <fieldset className="space-y-2">
+                    <legend className="text-sm font-bold">Hedef teslim kademeleri (yol km)</legend>
+                    <p className="text-xs text-[#8a7c52]">Boş km = son kademe (aynı gün). Garanti veya iade sözü yazılmaz.</p>
+                    {pricing.deliveryTargetTiers.map((tier, index) => (
+                      <div key={`${index}-${tier.label}`} className="grid grid-cols-[7rem_1fr] gap-2">
+                        <Input
+                          className={fieldClass}
+                          type="number"
+                          min={0}
+                          step="0.1"
+                          placeholder="km"
+                          aria-label={`${index + 1}. kademe km eşiği`}
+                          value={tier.maxKm ?? ""}
+                          onChange={e => {
+                            const raw = e.target.value.trim();
+                            const next = [...pricing.deliveryTargetTiers];
+                            next[index] = {
+                              ...tier,
+                              maxKm: raw === "" ? null : Number(raw),
+                            };
+                            setPricing({ ...pricing, deliveryTargetTiers: next });
+                          }}
+                        />
+                        <Input
+                          className={fieldClass}
+                          aria-label={`${index + 1}. kademe etiket`}
+                          value={tier.label}
+                          onChange={e => {
+                            const next = [...pricing.deliveryTargetTiers];
+                            next[index] = { ...tier, label: e.target.value };
+                            setPricing({ ...pricing, deliveryTargetTiers: next });
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </fieldset>
                   <label className="block text-sm">
                     Rota sağlayıcısı
                     <select

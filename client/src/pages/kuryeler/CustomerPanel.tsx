@@ -8,28 +8,35 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useKuryelerAuth } from "@/contexts/KuryelerAuth";
 import {
+  cancelOwnOrder,
   createOrder,
   estimateOrder,
   getPricing,
+  listNotifications,
   listOrdersFor,
   queueOrderConfirmation,
   subscribeToOrders,
   type CreateOrderInput,
 } from "@/lib/kuryelerApi";
+import { copyText } from "@/lib/kuryelerShare";
 import { PriceLines } from "@/components/kuryeler/PriceLines";
-import { areaClass, cardClass, fieldClass, goldBtn } from "@/lib/kuryelerTheme";
+import { areaClass, cardClass, fieldClass, goldBtn, ghostBtn } from "@/lib/kuryelerTheme";
 import {
+  BANNED_GOODS_HINT,
   BUSINESS,
   CONTACT_EMAIL,
   CONTACT_PHONE_DISPLAY,
   DEFAULT_PRICING,
+  HAVALE_HINT,
   MAX_WEIGHT_KG,
   VAT_INCL_LABEL,
   calculateDeliveryPrice,
   formatDateTimeTr,
   formatKm,
+  formatDeliveryTarget,
   formatPriceInclusive,
   formatTariffInclusive,
+  DELIVERY_TARGET_DISCLAIMER,
   isActiveOrder,
   isShowcaseMode,
   PAYMENT_METHOD_LABELS,
@@ -41,9 +48,11 @@ import {
   type PaymentMethod,
   type PricingSettings,
 } from "@shared/kuryeler";
+import { canCustomerCancel, cancelCopy, paymentHint } from "@shared/kuryelerSupport";
 import { firstError, validateDeliveryOrder, type FieldErrors } from "@shared/kuryelerValidation";
 import { normalizeTurkishMobilePhone } from "@shared/orderValidation";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Link } from "wouter";
 import { toast } from "sonner";
 
 function defaultSchedule() {
@@ -60,9 +69,14 @@ function CustomerHome() {
   const [routeError, setRouteError] = useState<string | undefined>();
   const [weightKg, setWeightKg] = useState("1");
   const [recipientName, setRecipientName] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [asap, setAsap] = useState(false);
   const [scheduledAt, setScheduledAt] = useState(defaultSchedule);
   const [notes, setNotes] = useState("");
   const [phone, setPhone] = useState(user?.phone ?? "");
+  const [cancelFor, setCancelFor] = useState<DeliveryOrder | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const seenNotes = useRef(new Set<string>());
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("nakit");
   const [pricing, setPricing] = useState<PricingSettings>(DEFAULT_PRICING);
   const [orders, setOrders] = useState<DeliveryOrder[]>([]);
@@ -90,6 +104,14 @@ function CustomerHome() {
     return subscribeToOrders(() => {
       void load();
       void refresh();
+      if (!user) return;
+      void listNotifications(user.id).then(notes => {
+        const unread = notes.filter(note => !note.readAt && !seenNotes.current.has(note.id));
+        unread.slice(0, 3).forEach(note => {
+          seenNotes.current.add(note.id);
+          toast(note.title, { description: note.body });
+        });
+      });
     });
   }, [user?.id]);
 
@@ -99,12 +121,14 @@ function CustomerHome() {
     pickupAddress: route?.pickupAddress ?? "",
     dropoffAddress: route?.dropoffAddress ?? "",
     recipientName,
-    scheduledAt,
+    recipientPhone,
+    scheduledAt: asap ? new Date().toISOString() : scheduledAt,
     notes,
     contactPhone: phone,
     paymentMethod,
     weightKg: weightValue,
     distanceKm: route?.distanceKm ?? 0,
+    durationMin: route?.durationMin ?? 0,
     pickupLat: route?.pickupLat ?? 0,
     pickupLng: route?.pickupLng ?? 0,
     dropoffLat: route?.dropoffLat ?? 0,
@@ -129,6 +153,7 @@ function CustomerHome() {
       pickupLng: route?.pickupLng,
       dropoffLat: route?.dropoffLat,
       dropoffLng: route?.dropoffLng,
+      asap,
     });
     if (routeError) nextErrors.route = routeError;
     setFieldErrors(nextErrors);
@@ -150,13 +175,19 @@ function CustomerHome() {
       const order = await createOrder(user.id, {
         ...input,
         contactPhone: normalizeTurkishMobilePhone(phone),
+        recipientPhone: normalizeTurkishMobilePhone(recipientPhone),
+      });
+      toast.success(`Sipariş alındı · ${order.trackingCode}`, {
+        action: {
+          label: "Kopyala",
+          onClick: () => void copyText(order.trackingCode),
+        },
       });
       try {
         await queueOrderConfirmation(order, user.email);
       } catch {
         toast.error("Sipariş alındı; onay e-postası kuyruğa alınamadı.");
       }
-      toast.success(`Sipariş alındı · ${order.trackingCode}. Onay e-postası kuyruğa alındı.`);
       setProduct("");
       setNotes("");
       setWeightKg("1");
@@ -239,6 +270,7 @@ function CustomerHome() {
                   onChange={e => setProduct(e.target.value)}
                 />
                 <FieldError id="product-err" message={fieldErrors.product} />
+                <p className="mt-1 text-xs text-[#8a7c52]">{BANNED_GOODS_HINT}</p>
               </div>
               <RoutePicker
                 pricing={pricing}
@@ -251,6 +283,12 @@ function CustomerHome() {
                 }}
               />
               <FieldError id="route-err" message={fieldErrors.route} />
+              {route && route.distanceKm > 0 ? (
+                <p className="text-sm text-[#b4a882]">
+                  {formatDeliveryTarget(route.distanceKm, pricing.deliveryTargetTiers)}
+                  <span className="mt-1 block text-xs text-[#8a7c52]">{DELIVERY_TARGET_DISCLAIMER}</span>
+                </p>
+              ) : null}
               <div>
                 <label className="mb-1 block text-sm font-bold text-[#D4AF37]" htmlFor="weight">
                   Ağırlık (kg) · en fazla {MAX_WEIGHT_KG} kg
@@ -289,23 +327,65 @@ function CustomerHome() {
                 <FieldError id="recipient-err" message={fieldErrors.recipientName} />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-bold text-[#D4AF37]" htmlFor="when">
-                  Gün ve saat
+                <label className="mb-1 block text-sm font-bold text-[#D4AF37]" htmlFor="recipient-phone">
+                  Alıcı telefonu
                 </label>
                 <Input
-                  id="when"
+                  id="recipient-phone"
                   className={fieldClass}
-                  type="datetime-local"
-                  value={scheduledAt}
-                  aria-invalid={Boolean(fieldErrors.scheduledAt)}
-                  aria-describedby={fieldErrors.scheduledAt ? "when-err" : undefined}
-                  onChange={e => setScheduledAt(e.target.value)}
+                  placeholder="05xx xxx xx xx"
+                  value={recipientPhone}
+                  aria-invalid={Boolean(fieldErrors.recipientPhone)}
+                  aria-describedby={fieldErrors.recipientPhone ? "recipient-phone-err" : undefined}
+                  onChange={e => setRecipientPhone(e.target.value)}
+                  inputMode="tel"
                 />
-                <FieldError id="when-err" message={fieldErrors.scheduledAt} />
+                <FieldError id="recipient-phone-err" message={fieldErrors.recipientPhone} />
               </div>
+              <fieldset>
+                <legend className="mb-2 text-sm font-bold text-[#D4AF37]">İstenen alım zamanı</legend>
+                <div className="mb-2 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    aria-pressed={asap}
+                    className={`min-h-11 rounded-xl border px-2 text-xs font-bold ${
+                      asap ? "border-[#D4AF37] bg-[#1a1508] text-[#D4AF37]" : "border-[#3a3014] text-[#b4a882]"
+                    }`}
+                    onClick={() => setAsap(true)}
+                  >
+                    Hemen
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={!asap}
+                    className={`min-h-11 rounded-xl border px-2 text-xs font-bold ${
+                      !asap ? "border-[#D4AF37] bg-[#1a1508] text-[#D4AF37]" : "border-[#3a3014] text-[#b4a882]"
+                    }`}
+                    onClick={() => setAsap(false)}
+                  >
+                    Saat seç
+                  </button>
+                </div>
+                {asap ? (
+                  <p className="text-xs text-[#8a7c52]">En kısa sürede alım talebi — süre garantisi değildir.</p>
+                ) : (
+                  <>
+                    <Input
+                      id="when"
+                      className={fieldClass}
+                      type="datetime-local"
+                      value={scheduledAt}
+                      aria-invalid={Boolean(fieldErrors.scheduledAt)}
+                      aria-describedby={fieldErrors.scheduledAt ? "when-err" : undefined}
+                      onChange={e => setScheduledAt(e.target.value)}
+                    />
+                    <FieldError id="when-err" message={fieldErrors.scheduledAt} />
+                  </>
+                )}
+              </fieldset>
               <div>
                 <label className="mb-1 block text-sm font-bold text-[#D4AF37]" htmlFor="contact-phone">
-                  İletişim telefonu
+                  Gönderen telefonu
                 </label>
                 <Input
                   id="contact-phone"
@@ -339,6 +419,8 @@ function CustomerHome() {
                     </button>
                   ))}
                 </div>
+                <p className="mt-2 text-xs text-[#8a7c52]">{paymentHint(paymentMethod, "bekliyor")}</p>
+                {paymentMethod === "havale" ? <p className="mt-1 text-xs text-[#8a7c52]">{HAVALE_HINT}</p> : null}
               </fieldset>
               <label className="block" htmlFor="order-notes">
                 <span className="mb-1 block text-sm font-bold text-[#D4AF37]">Notlar (isteğe bağlı)</span>
@@ -368,6 +450,10 @@ function CustomerHome() {
                   <p className="mt-1 text-xs text-[#8a7c52]">
                     Sürüş {formatKm(quote.distanceKm)} · {formatTariffInclusive(pricing)}
                   </p>
+                  <p className="mt-3 text-sm font-semibold text-[#f5edd6]">
+                    {formatDeliveryTarget(quote.distanceKm, pricing.deliveryTargetTiers)}
+                  </p>
+                  <p className="mt-1 text-xs text-[#8a7c52]">{DELIVERY_TARGET_DISCLAIMER}</p>
                 </>
               ) : (
                 <p className="mt-4 text-sm text-[#8a7c52]">Alım ve teslim noktalarını seçince sürüş ücreti görünür.</p>
@@ -436,10 +522,30 @@ function CustomerHome() {
                   order={order}
                   audience="consumer"
                   showMap
+                  showProof
                   extra={
                     <p className="mt-2 text-xs text-[#8a7c52]">
-                      Durum canlı güncellenir: {STATUS_LABELS[order.status]}
+                      Durum: {STATUS_LABELS[order.status]}
                     </p>
+                  }
+                  actions={
+                    <>
+                      <Button className={`${ghostBtn} w-full sm:w-auto`} asChild>
+                        <Link href={`/destek?siparis=${encodeURIComponent(order.id)}`}>Bu sipariş hakkında yaz</Link>
+                      </Button>
+                      {canCustomerCancel(order.status) ? (
+                        <Button
+                          variant="outline"
+                          className={`${ghostBtn} w-full sm:w-auto`}
+                          onClick={() => {
+                            setCancelFor(order);
+                            setCancelReason("");
+                          }}
+                        >
+                          İptal et
+                        </Button>
+                      ) : null}
+                    </>
                   }
                 />
               ))
@@ -452,7 +558,21 @@ function CustomerHome() {
             {history.length === 0 ? (
               <EmptyState title="Geçmiş boş" body="Teslim edilen veya iptal edilen siparişler burada görünür." />
             ) : (
-              history.map(order => <OrderCard key={order.id} order={order} audience="consumer" />)
+              history.map(order => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  audience="consumer"
+                  showProof
+                  actions={
+                    <Button className={`${ghostBtn} w-full sm:w-auto`} asChild>
+                      <Link href={`/destek?siparis=${encodeURIComponent(order.id)}&sekme=sikayet`}>
+                        Hasar / şikayet
+                      </Link>
+                    </Button>
+                  }
+                />
+              ))
             )}
           </div>
         )}
@@ -462,6 +582,45 @@ function CustomerHome() {
             Son sipariş{" "}
             <StatusBadge label={STATUS_LABELS[orders[0].status]} className={statusTone(orders[0].status)} />
           </p>
+        ) : null}
+        {cancelFor ? (
+          <div className="fixed inset-0 z-50 grid place-items-end bg-black/70 p-3 sm:place-items-center" role="dialog" aria-modal="true" aria-labelledby="cancel-title">
+            <div className={`${cardClass} w-full max-w-md p-4`}>
+              <h2 id="cancel-title" className="text-lg font-black text-[#D4AF37]">
+                {cancelCopy(cancelFor.status).title}
+              </h2>
+              <p className="mt-2 text-sm text-[#b4a882]">{cancelCopy(cancelFor.status).body}</p>
+              <label className="mt-3 block text-sm">
+                <span className="mb-1 block font-bold text-[#D4AF37]">Not (isteğe bağlı)</span>
+                <textarea
+                  className={areaClass}
+                  value={cancelReason}
+                  onChange={e => setCancelReason(e.target.value)}
+                />
+              </label>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" className={ghostBtn} onClick={() => setCancelFor(null)}>
+                  Vazgeç
+                </Button>
+                <Button
+                  type="button"
+                  className={goldBtn}
+                  onClick={() => {
+                    const id = cancelFor.id;
+                    void cancelOwnOrder(id, cancelReason)
+                      .then(() => {
+                        toast.success("İptal kaydı yöneticiye düştü");
+                        setCancelFor(null);
+                        return load();
+                      })
+                      .catch(err => toast.error(err instanceof Error ? err.message : "İptal edilemedi"));
+                  }}
+                >
+                  İptali gönder
+                </Button>
+              </div>
+            </div>
+          </div>
         ) : null}
       </div>
     </BrandShell>

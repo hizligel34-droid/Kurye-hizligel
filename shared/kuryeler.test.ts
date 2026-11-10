@@ -6,9 +6,12 @@ import {
   canTransitionStatus,
   CONTACT_PHONE_DISPLAY,
   CONTACT_WHATSAPP_E164,
+  DEFAULT_DELIVERY_TARGET_TIERS,
   DEFAULT_PRICING,
   DEFAULT_VAT_RATE,
+  deliveryTargetForDistance,
   displayStatus,
+  formatDeliveryTarget,
   formatPriceBreakdown,
   formatPriceHint,
   formatPriceInclusive,
@@ -54,14 +57,14 @@ describe("kuryeler.tr sipariş durumları", () => {
     expect(nextCourierStatus("pending")).toBeNull();
   });
 
-  it("müşteriye beş Türkçe durum gösterir", () => {
+  it("müşteriye atamayı ayrı Türkçe etiketle gösterir", () => {
     expect(STATUS_LABELS.pending).toBe("Bekliyor");
-    expect(STATUS_LABELS.assigned).toBe("Bekliyor");
+    expect(STATUS_LABELS.assigned).toBe("Kurye atandı, alıma gidiyor");
     expect(STATUS_LABELS.picked_up).toBe("Alındı");
     expect(STATUS_LABELS.en_route).toBe("Yolda");
     expect(STATUS_LABELS.delivered).toBe("Teslim edildi");
     expect(STATUS_LABELS.cancelled).toBe("İptal");
-    expect(displayStatus("assigned")).toBe("pending");
+    expect(displayStatus("assigned")).toBe("assigned");
   });
 });
 
@@ -130,6 +133,7 @@ describe("kuryeler.tr sürüş fiyatı", () => {
         "roundingDecimals",
         "routingProvider",
         "routingUrl",
+        "deliveryTargetTiers",
         "showcaseMode",
         "vatRate",
       ].sort(),
@@ -143,6 +147,33 @@ describe("kuryeler.tr sürüş fiyatı", () => {
         showcaseMode: false,
       }),
     );
+  });
+});
+
+describe("kuryeler.tr hedef teslim kademeleri", () => {
+  it("yol mesafesine göre kademe seçer", () => {
+    const cases: Array<[number, string]> = [
+      [5, "60 dakika"],
+      [5.1, "2 saat"],
+      [20, "2 saat"],
+      [40, "3 saat"],
+      [100, "4 saat"],
+      [100.1, "aynı gün"],
+    ];
+    for (const [km, label] of cases) {
+      expect(deliveryTargetForDistance(km).label).toBe(label);
+      expect(formatDeliveryTarget(km)).toBe(`Hedef teslim: ${label}`);
+    }
+  });
+
+  it("ayar dizisindeki eşikleri kullanır", () => {
+    const custom = [
+      { maxKm: 8, label: "90 dakika" },
+      { maxKm: null, label: "aynı gün" },
+    ];
+    expect(deliveryTargetForDistance(8, custom).label).toBe("90 dakika");
+    expect(deliveryTargetForDistance(8.1, custom).label).toBe("aynı gün");
+    expect(DEFAULT_DELIVERY_TARGET_TIERS.map(tier => tier.maxKm)).toEqual([5, 20, 40, 100, null]);
   });
 });
 
@@ -182,6 +213,7 @@ describe("kurye pano redaksiyonu", () => {
       dropoffAddress: "Büyükdere 120",
       bolge: "Beşiktaş",
       recipientName: "Ayşe",
+      recipientPhone: "05420000005",
       scheduledAt: null,
       notes: "kapı kodu 12",
       contactPhone: "05420000000",
@@ -192,6 +224,7 @@ describe("kurye pano redaksiyonu", () => {
       signatureData: null,
       weightKg: 2,
       distanceKm: 7.4,
+      durationMin: 18,
       netPriceTl: 970,
       vatTl: 194,
       totalPriceTl: 1164,
@@ -208,8 +241,11 @@ describe("kurye pano redaksiyonu", () => {
       pickedUpAt: null,
       deliveredAt: null,
       cancelledAt: null,
+      cancelReason: "",
+      cancelledBy: null,
     } satisfies DeliveryOrder);
     expect(redacted.boardOnly).toBe(true);
+    expect(redacted.recipientPhone).toBe("");
     expect(redacted.product).toBe("Gönderi");
     expect(redacted.pickupAddress).toBe("Beşiktaş");
     expect(redacted.recipientName).toBe("");
@@ -238,6 +274,7 @@ describe("sipariş teyit e-postası", () => {
         dropoffAddress: "Beşiktaş",
         bolge: "Beşiktaş",
         recipientName: "Ayşe",
+        recipientPhone: "05420000005",
         scheduledAt: "2026-11-10T14:00:00.000Z",
         notes: "",
         contactPhone: "05420000000",
@@ -248,6 +285,7 @@ describe("sipariş teyit e-postası", () => {
         signatureData: null,
         weightKg: 2,
         distanceKm: 10,
+        durationMin: 22,
         netPriceTl: quote.netTl,
         vatTl: quote.vatTl,
         totalPriceTl: quote.grossTl,
@@ -264,6 +302,8 @@ describe("sipariş teyit e-postası", () => {
         pickedUpAt: null,
         deliveredAt: null,
         cancelledAt: null,
+        cancelReason: "",
+        cancelledBy: null,
       },
       "musteri@ornek.tr",
     );

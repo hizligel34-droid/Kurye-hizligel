@@ -201,7 +201,9 @@ function CourierHome() {
                         showMap
                         extra={
                           <p className="mt-2 text-xs text-[#8a7c52]">
-                            Sürüş {formatKm(order.distanceKm)} · Tel: {order.contactPhone}
+                            Sürüş {formatKm(order.distanceKm)}
+                            {order.recipientPhone ? ` · Alıcı: ${order.recipientPhone}` : ""}
+                            {order.contactPhone ? ` · Gönderen: ${order.contactPhone}` : ""}
                           </p>
                         }
                         actions={

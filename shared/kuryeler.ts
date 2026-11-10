@@ -45,6 +45,8 @@ export const ORDER_STATUSES = [
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const PUBLIC_STATUSES = ["pending", "picked_up", "en_route", "delivered", "cancelled"] as const;
+export const TRACK_STEPS = ["pending", "assigned", "picked_up", "en_route", "delivered"] as const;
+export type TrackStep = (typeof TRACK_STEPS)[number];
 
 export const PAYMENT_METHODS = ["nakit", "havale", "kart_kapida"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
@@ -66,17 +68,20 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "Bekliyor",
-  assigned: "Bekliyor",
+  assigned: "Kurye atandı, alıma gidiyor",
   picked_up: "Alındı",
   en_route: "Yolda",
   delivered: "Teslim edildi",
   cancelled: "İptal",
 };
 
+/** Canlıda kurye kendi kaydı kapalı; yalnız yönetici kurye atar. Şerif açarsa true yapılır. */
+export const ALLOW_COURIER_SELF_SIGNUP = false;
+
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   nakit: "Nakit",
   havale: "Havale / EFT",
-  kart_kapida: "Kapıda kart",
+  kart_kapida: "Kapıda kart (POS henüz yok)",
 };
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
@@ -84,11 +89,115 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   odendi: "Ödendi",
 };
 
+export const HAVALE_HINT = "Havale bilgisi onayda iletilir.";
+
+export const BANNED_GOODS_HINT =
+  "Tehlikeli madde, canlı hayvan ve yasadışı ürün kabul edilmez.";
+
+export const ETA_DISCLAIMER = "tahmini, trafiğe göre değişebilir";
+
+export function paymentStatusLabel(method: PaymentMethod, status: PaymentStatus): string {
+  if (status === "odendi") return PAYMENT_STATUS_LABELS.odendi;
+  if (method === "nakit") return "Kapıda ödenecek";
+  if (method === "havale") return "Havale bekleniyor";
+  return "Kapıda tahsil edilecek";
+}
+
+export function formatEtaMinutes(durationMin: number | null | undefined): string | null {
+  if (!durationMin || !(durationMin > 0) || !Number.isFinite(durationMin)) return null;
+  return `Yaklaşık ${Math.round(durationMin)} dk (${ETA_DISCLAIMER})`;
+}
+
+export function trackStepReached(current: OrderStatus, step: TrackStep): boolean {
+  if (current === "cancelled") return false;
+  const currentIndex = TRACK_STEPS.indexOf(current as TrackStep);
+  const stepIndex = TRACK_STEPS.indexOf(step);
+  if (currentIndex < 0 || stepIndex < 0) return false;
+  return currentIndex >= stepIndex;
+}
+
+export function publicTrackingPath(code: string) {
+  return `/takip/${encodeURIComponent(code.trim().toUpperCase())}`;
+}
+
 export const ROUTING_PROVIDER_LABELS: Record<RoutingProvider, string> = {
   osrm: "OSRM (router.project-osrm.org)",
   ors: "OpenRouteService",
   custom: "Özel OSRM uyumlu sunucu",
 };
+
+export type DeliveryTargetTier = {
+  maxKm: number | null;
+  label: string;
+};
+
+export const DELIVERY_TARGET_DISCLAIMER =
+  "Hedef süredir; trafik ve hava koşullarına göre değişebilir.";
+
+export const DEFAULT_DELIVERY_TARGET_TIERS: DeliveryTargetTier[] = [
+  { maxKm: 5, label: "60 dakika" },
+  { maxKm: 20, label: "2 saat" },
+  { maxKm: 40, label: "3 saat" },
+  { maxKm: 100, label: "4 saat" },
+  { maxKm: null, label: "aynı gün" },
+];
+
+export function normalizeDeliveryTargetTiers(raw?: DeliveryTargetTier[] | null): DeliveryTargetTier[] {
+  const rows = (raw ?? [])
+    .filter(row => row && typeof row.label === "string" && row.label.trim())
+    .map(row => ({
+      maxKm: row.maxKm == null || !Number.isFinite(Number(row.maxKm)) ? null : Number(row.maxKm),
+      label: row.label.trim(),
+    }));
+  if (rows.length === 0) return DEFAULT_DELIVERY_TARGET_TIERS.map(tier => ({ ...tier }));
+  return rows;
+}
+
+export function deliveryTargetForDistance(
+  distanceKm: number,
+  tiers: DeliveryTargetTier[] = DEFAULT_DELIVERY_TARGET_TIERS,
+): DeliveryTargetTier {
+  const km = Math.max(0, Number(distanceKm) || 0);
+  const list = normalizeDeliveryTargetTiers(tiers);
+  const bounded = list
+    .filter(tier => tier.maxKm != null)
+    .sort((a, b) => (a.maxKm as number) - (b.maxKm as number));
+  const open = list.find(tier => tier.maxKm == null) ?? { maxKm: null, label: "aynı gün" };
+  for (const tier of bounded) {
+    if (km <= (tier.maxKm as number)) return tier;
+  }
+  return open;
+}
+
+export function formatDeliveryTarget(
+  distanceKm: number,
+  tiers: DeliveryTargetTier[] = DEFAULT_DELIVERY_TARGET_TIERS,
+) {
+  return `Hedef teslim: ${deliveryTargetForDistance(distanceKm, tiers).label}`;
+}
+
+export function deliveryTargetRangeLabel(tier: DeliveryTargetTier, previousMaxKm: number | null) {
+  if (tier.maxKm == null) {
+    return previousMaxKm == null ? "üst kademe" : `${previousMaxKm} km üstü`;
+  }
+  return `${tier.maxKm} km ve altı`;
+}
+
+export function deliveryTargetTable(tiers: DeliveryTargetTier[] = DEFAULT_DELIVERY_TARGET_TIERS) {
+  const list = normalizeDeliveryTargetTiers(tiers);
+  const bounded = list
+    .filter(tier => tier.maxKm != null)
+    .sort((a, b) => (a.maxKm as number) - (b.maxKm as number));
+  const open = list.find(tier => tier.maxKm == null) ?? { maxKm: null, label: "aynı gün" };
+  const rows: Array<{ range: string; label: string }> = [];
+  let previous: number | null = null;
+  for (const tier of bounded) {
+    rows.push({ range: deliveryTargetRangeLabel(tier, previous), label: tier.label });
+    previous = tier.maxKm;
+  }
+  rows.push({ range: deliveryTargetRangeLabel(open, previous), label: open.label });
+  return rows;
+}
 
 export type PricingSettings = {
   baseTry: number;
@@ -100,6 +209,7 @@ export type PricingSettings = {
   geocoder: Geocoder;
   commissionRate: number;
   showcaseMode: boolean;
+  deliveryTargetTiers: DeliveryTargetTier[];
 };
 
 export const DEFAULT_PRICING: PricingSettings = {
@@ -112,6 +222,7 @@ export const DEFAULT_PRICING: PricingSettings = {
   geocoder: "nominatim",
   commissionRate: 0.2,
   showcaseMode: false,
+  deliveryTargetTiers: DEFAULT_DELIVERY_TARGET_TIERS.map(tier => ({ ...tier })),
 };
 
 function readViteFlag(name: string): string {
@@ -159,8 +270,7 @@ export function courierStatusActionLabel(current: OrderStatus) {
   return null;
 }
 
-export function displayStatus(status: OrderStatus): Exclude<OrderStatus, "assigned"> {
-  if (status === "assigned") return "pending";
+export function displayStatus(status: OrderStatus): OrderStatus {
   return status;
 }
 
@@ -299,6 +409,7 @@ export function redactPendingForCourier(order: DeliveryOrder): DeliveryOrder {
     pickupAddress: district,
     dropoffAddress: district,
     recipientName: "",
+    recipientPhone: "",
     contactPhone: "",
     notes: "",
     pickupLat: null,
@@ -317,8 +428,10 @@ export function isActiveOrder(status: OrderStatus) {
 }
 
 export function statusTone(status: OrderStatus) {
-  switch (displayStatus(status)) {
+  switch (status) {
     case "pending":
+      return "bg-[#2a2410] text-[#D4AF37]";
+    case "assigned":
       return "bg-[#2a2410] text-[#D4AF37]";
     case "picked_up":
       return "bg-[#241a30] text-[#e6d9a8]";
@@ -356,6 +469,7 @@ export type DeliveryOrder = {
   dropoffAddress: string;
   bolge: string;
   recipientName: string;
+  recipientPhone: string;
   scheduledAt: string | null;
   notes: string;
   contactPhone: string;
@@ -366,6 +480,7 @@ export type DeliveryOrder = {
   signatureData: string | null;
   weightKg: number;
   distanceKm: number;
+  durationMin: number;
   netPriceTl: number;
   vatTl: number;
   totalPriceTl: number;
@@ -383,6 +498,8 @@ export type DeliveryOrder = {
   pickedUpAt: string | null;
   deliveredAt: string | null;
   cancelledAt: string | null;
+  cancelReason: string;
+  cancelledBy: string | null;
 };
 
 export type Profile = {

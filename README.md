@@ -56,9 +56,7 @@ pnpm build:static      # Turhost: dist/public + .htaccess
 pnpm dev:spa           # http://localhost:4173
 ```
 
-Supabase env yoksa **yerel demo** açılır; demo hesap düğmeleri yalnızca ilgili uygulamanın giriş ekranında görünür. Canlı veritabanında `supabase/seed.sql` içindeki demo kullanıcı bloğunu çalıştırmayın.
-
-Yanlış rol ile giriş reddedilir (ör. kurye hesabı Müşteri uygulamasına giremez).
+Yerel demoda hazır şifre yoktur; e-posta ve şifre ile kayıt olun. Yanlış rol ile giriş reddedilir (ör. kurye hesabı Müşteri uygulamasına giremez). Kurye hesabı canlıda yalnızca yönetici tarafından atanır.
 
 Vitrin yayını için `.env` içinde `VITE_VITRIN_MODU=true` veya Yönetici panelinden vitrin anahtarı: kayıt ve sipariş kapalı, tarife ve telefon görünür.
 

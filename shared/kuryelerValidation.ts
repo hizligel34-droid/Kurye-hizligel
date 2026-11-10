@@ -56,6 +56,7 @@ export function validateDeliveryOrder(input: {
   pickupAddress: string;
   dropoffAddress: string;
   recipientName: string;
+  recipientPhone?: string;
   scheduledAt: string;
   contactPhone: string;
   paymentMethod: string;
@@ -65,6 +66,7 @@ export function validateDeliveryOrder(input: {
   pickupLng?: number | null;
   dropoffLat?: number | null;
   dropoffLng?: number | null;
+  asap?: boolean;
 }): FieldErrors {
   const errors: FieldErrors = {};
   if (!input.product.trim() || input.product.trim().length < 2) {
@@ -92,8 +94,12 @@ export function validateDeliveryOrder(input: {
   if (!input.recipientName.trim() || input.recipientName.trim().length < 2) {
     errors.recipientName = "Teslim alan kişinin adını yazın.";
   }
-  if (!input.scheduledAt) errors.scheduledAt = "Gün ve saati seçin.";
-  if (!input.contactPhone.trim()) errors.contactPhone = "İletişim telefonu zorunludur.";
+  if (!input.recipientPhone?.trim()) errors.recipientPhone = "Alıcı telefonu zorunludur.";
+  else if (!isValidTurkishMobilePhone(input.recipientPhone)) {
+    errors.recipientPhone = "Geçerli bir Türkiye cep numarası girin (05xx xxx xx xx).";
+  }
+  if (!input.asap && !input.scheduledAt) errors.scheduledAt = "İstenen alım zamanını seçin.";
+  if (!input.contactPhone.trim()) errors.contactPhone = "Gönderen telefonu zorunludur.";
   else if (!isValidTurkishMobilePhone(input.contactPhone)) {
     errors.contactPhone = "Geçerli bir Türkiye cep numarası girin (05xx xxx xx xx).";
   }
