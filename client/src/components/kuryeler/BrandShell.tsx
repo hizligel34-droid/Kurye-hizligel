@@ -4,7 +4,7 @@ import { useKuryelerAuth } from "@/contexts/KuryelerAuth";
 import { Button } from "@/components/ui/button";
 import { goldBtn } from "@/lib/kuryelerTheme";
 import { PWA_APPS, type PwaPanel } from "@shared/kuryelerPwa";
-import { Bike, LayoutDashboard, LogOut, Package, UserRound } from "lucide-react";
+import { Bike, LayoutDashboard, LogOut, MessageCircle, Package, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 
@@ -25,6 +25,7 @@ const PANEL_NAV: Record<PwaPanel, { href: string; label: string; icon: typeof Bi
   musteri: [
     { href: "/", label: "Sipariş", icon: Package },
     { href: "/takip", label: "Takip", icon: Bike },
+    { href: "/destek", label: "Destek", icon: MessageCircle },
   ],
   kurye: [{ href: "/", label: "İşler", icon: Bike }],
   yonetici: [{ href: "/", label: "Yönetim", icon: LayoutDashboard }],
@@ -46,8 +47,12 @@ export function BrandShell({
   const app = PWA_APPS[panel];
 
   const mobileNav = [
-    ...nav.slice(0, 2),
-    { href: user ? "/" : loginHref, label: user ? "Hesap" : "Giriş", icon: UserRound },
+    ...nav,
+    {
+      href: user ? (panel === "musteri" ? "/hesap" : "/") : loginHref,
+      label: user ? "Hesap" : "Giriş",
+      icon: UserRound,
+    },
   ];
 
   return (
@@ -68,6 +73,15 @@ export function BrandShell({
                 {item.label}
               </Link>
             ))}
+            {panel === "musteri" && user ? (
+              <Link
+                href="/hesap"
+                aria-current={location === "/hesap" ? "page" : undefined}
+                className={location === "/hesap" ? "text-[#D4AF37]" : "text-[#b4a882]"}
+              >
+                Hesap
+              </Link>
+            ) : null}
           </nav>
           <div className="flex items-center gap-2">
             {user ? (
@@ -107,18 +121,14 @@ export function BrandShell({
         aria-label="Mobil menü"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-[#3a3014] bg-black/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur md:hidden"
       >
-        <div className={`mx-auto grid max-w-lg gap-1 ${mobileNav.length > 2 ? "grid-cols-3" : "grid-cols-2"}`}>
+        <div className={`mx-auto grid max-w-lg gap-1 ${mobileNav.length >= 4 ? "grid-cols-4" : mobileNav.length > 2 ? "grid-cols-3" : "grid-cols-2"}`}>
           {mobileNav.map(item => (
             <Link
               key={`${item.href}-${item.label}`}
               href={item.href}
-              aria-current={
-                item.label !== "Hesap" && item.label !== "Giriş" && location === item.href ? "page" : undefined
-              }
+              aria-current={location === item.href ? "page" : undefined}
               className={`flex min-h-12 flex-col items-center justify-center rounded-xl text-[11px] font-bold ${
-                item.label !== "Hesap" && item.label !== "Giriş" && location === item.href
-                  ? "bg-[#1a1508] text-[#D4AF37]"
-                  : "text-[#8a7c52]"
+                location === item.href ? "bg-[#1a1508] text-[#D4AF37]" : "text-[#8a7c52]"
               }`}
             >
               <item.icon className="mb-0.5 size-4" aria-hidden />

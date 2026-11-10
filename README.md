@@ -54,13 +54,7 @@ pnpm build:static      # Turhost: dist/public + .htaccess
 pnpm dev:spa           # http://localhost:4173
 ```
 
-Demo girişleri (yalnızca ilgili uygulamada):
-
-- Hızlıgel Müşteri: `musteri@kuryeler.tr` / `KuryelerMusteri1!`
-- Hızlıgel Kurye: `kurye@kuryeler.tr` / `KuryelerKurye1!`
-- Hızlıgel Yönetici: `yonetici@kuryeler.tr` / `KuryelerYonetici1!`
-
-Yanlış rol ile giriş reddedilir (ör. kurye hesabı Müşteri uygulamasına giremez).
+Yerel demoda hazır şifre yoktur; e-posta ve şifre ile kayıt olun. Yanlış rol ile giriş reddedilir (ör. kurye hesabı Müşteri uygulamasına giremez). Kurye hesabı canlıda yalnızca yönetici tarafından atanır.
 
 ## iPhone 13 Safari — ana ekrana üç ayrı ikon
 

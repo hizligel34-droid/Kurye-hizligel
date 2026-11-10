@@ -20,7 +20,6 @@ import {
   courierStatusActionLabel,
   formatKm,
   formatTl,
-  formatUsd,
   nextCourierStatus,
   type DeliveryOrder,
   type OrderStatus,
@@ -138,7 +137,7 @@ function CourierHome() {
             <section className="grid grid-cols-3 gap-2 sm:gap-3">
               {[
                 ["Bugün teslim", String(stats.deliveredCount)],
-                ["Bugün kazanç", formatUsd(stats.earningUsd)],
+                ["Bugün kazanç", formatTl(stats.earningTl)],
                 ["Aktif iş", String(stats.activeCount)],
               ].map(([label, value]) => (
                 <div key={label} className={`${cardClass} min-w-0 p-3 sm:p-4`}>
@@ -162,10 +161,11 @@ function CourierHome() {
                       order={order}
                       showMap
                       extra={
-                        <p className="mt-2 text-xs text-[#8a7c52]">
-                          Sürüş {formatKm(order.distanceKm)} · {formatUsd(order.priceUsd)}
-                          {order.courierEarningTl > 0 ? ` · kurye payı ${formatTl(order.courierEarningTl)}` : ""}
-                        </p>
+                          <p className="mt-2 text-xs text-[#8a7c52]">
+                            Sürüş {formatKm(order.distanceKm)}
+                            {order.totalPriceTl > 0 ? ` · ${formatTl(order.totalPriceTl)}` : ""}
+                            {order.courierEarningTl > 0 ? ` · kurye payı ${formatTl(order.courierEarningTl)}` : ""}
+                          </p>
                       }
                       actions={
                         <Button
@@ -197,7 +197,9 @@ function CourierHome() {
                         showMap
                         extra={
                           <p className="mt-2 text-xs text-[#8a7c52]">
-                            Sürüş {formatKm(order.distanceKm)} · Tel: {order.contactPhone}
+                            Sürüş {formatKm(order.distanceKm)}
+                            {order.recipientPhone ? ` · Alıcı: ${order.recipientPhone}` : ""}
+                            {order.contactPhone ? ` · Gönderen: ${order.contactPhone}` : ""}
                           </p>
                         }
                         actions={

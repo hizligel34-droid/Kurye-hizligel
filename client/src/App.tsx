@@ -28,17 +28,17 @@ function Router() {
         <Route path="/takip/:code" component={TrackPage} />
         <Route path="/kvkk">{() => <LegalPage kind="kvkk" />}</Route>
         <Route path="/kosullar">{() => <LegalPage kind="kosullar" />}</Route>
-        <Route path="/eski" component={Home} />
-        <Route path="/eski/order" component={Home} />
-        <Route path="/eski/track" component={Home} />
-        <Route path="/order" component={Home} />
-        <Route path="/track" component={Home} />
+        <Route path="/eski">{() => { window.location.replace("/"); return null; }}</Route>
+        <Route path="/eski/order">{() => { window.location.replace("/musteri/"); return null; }}</Route>
+        <Route path="/eski/track">{() => { window.location.replace("/takip"); return null; }}</Route>
+        <Route path="/order">{() => { window.location.replace("/musteri/"); return null; }}</Route>
+        <Route path="/track">{() => { window.location.replace("/takip"); return null; }}</Route>
         <Route path="/demo" component={Demo} />
         <Route path="/ads-report" component={AdsReport} />
         <Route path="/courier-profile" component={CourierProfile} />
         <Route path="/membership" component={Membership} />
         <Route path="/admin-control" component={AdminControl} />
-        <Route path="/chat" component={Home} />
+        <Route path="/chat">{() => { window.location.replace("/musteri/destek"); return null; }}</Route>
         <Route path="/panel" component={Home} />
         <Route path="/account" component={Home} />
         <Route path="/404">{() => <NotFound />}</Route>

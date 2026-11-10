@@ -41,14 +41,14 @@ describe("kuryeler.tr sipariş durumları", () => {
     expect(nextCourierStatus("pending")).toBeNull();
   });
 
-  it("müşteriye beş Türkçe durum gösterir", () => {
+  it("müşteriye atamayı ayrı Türkçe etiketle gösterir", () => {
     expect(STATUS_LABELS.pending).toBe("Bekliyor");
-    expect(STATUS_LABELS.assigned).toBe("Bekliyor");
+    expect(STATUS_LABELS.assigned).toBe("Kurye atandı, alıma gidiyor");
     expect(STATUS_LABELS.picked_up).toBe("Alındı");
     expect(STATUS_LABELS.en_route).toBe("Yolda");
     expect(STATUS_LABELS.delivered).toBe("Teslim edildi");
     expect(STATUS_LABELS.cancelled).toBe("İptal");
-    expect(displayStatus("assigned")).toBe("pending");
+    expect(displayStatus("assigned")).toBe("assigned");
   });
 });
 

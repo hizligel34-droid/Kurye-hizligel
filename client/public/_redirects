@@ -1,4 +1,9 @@
 /musteri/*  /musteri/index.html  200
 /kurye/*    /kurye/index.html    200
 /yonetici/* /yonetici/index.html 200
+/order      /musteri/            301
+/track      /takip               301
+/chat       /musteri/destek      301
+/eski       /                    301
+/eski/*     /                    301
 /*          /index.html          200

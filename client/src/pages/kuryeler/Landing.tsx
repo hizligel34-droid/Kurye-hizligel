@@ -9,7 +9,7 @@ import { contactEmail, contactPhoneDisplay } from "@/lib/contact";
 import { cardClass, goldBtn, ghostBtn } from "@/lib/kuryelerTheme";
 import { BRAND_NAME, BRAND_PRODUCT, BRAND_URL, calculateDeliveryPrice, formatKm, formatTl, formatUsd } from "@shared/kuryeler";
 import { PWA_APPS } from "@shared/kuryelerPwa";
-import { Clock3, LayoutDashboard, Package, Phone, ShieldCheck, Smartphone, Sparkles, UserRound } from "lucide-react";
+import { LayoutDashboard, Package, Phone, ShieldCheck, Smartphone, Sparkles, UserRound } from "lucide-react";
 import { Link } from "wouter";
 
 const steps = [
@@ -100,10 +100,10 @@ export default function Landing() {
                   <Link href="/takip">Siparişimi takip et</Link>
                 </Button>
               </div>
+              <p className="mt-5 text-sm text-[#8a7c52]">
+                Sipariş vermek için e-posta ve şifre ile üye olmanız gerekir. Takip koduyla giriş yapmadan bakabilirsiniz.
+              </p>
               <div className="mt-8 flex flex-wrap gap-4 text-sm font-semibold text-[#b4a882]">
-                <span className="inline-flex items-center gap-2">
-                  <Clock3 className="size-4 text-[#D4AF37]" /> Aynı gün teslim
-                </span>
                 <span className="inline-flex items-center gap-2">
                   <Smartphone className="size-4 text-[#D4AF37]" /> iPhone ana ekrana ekle
                 </span>

@@ -29,6 +29,8 @@ export const ORDER_STATUSES = [
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const PUBLIC_STATUSES = ["pending", "picked_up", "en_route", "delivered", "cancelled"] as const;
+export const TRACK_STEPS = ["pending", "assigned", "picked_up", "en_route", "delivered"] as const;
+export type TrackStep = (typeof TRACK_STEPS)[number];
 
 export const PAYMENT_METHODS = ["nakit", "havale", "kart_kapida"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
@@ -50,23 +52,57 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "Bekliyor",
-  assigned: "Bekliyor",
+  assigned: "Kurye atandı, alıma gidiyor",
   picked_up: "Alındı",
   en_route: "Yolda",
   delivered: "Teslim edildi",
   cancelled: "İptal",
 };
 
+/** Canlıda kurye kendi kaydı kapalı; yalnız yönetici kurye atar. Şerif açarsa true yapılır. */
+export const ALLOW_COURIER_SELF_SIGNUP = false;
+
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   nakit: "Nakit",
   havale: "Havale / EFT",
-  kart_kapida: "Kapıda kart",
+  kart_kapida: "Kapıda kart (POS henüz yok)",
 };
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   bekliyor: "Ödeme bekliyor",
   odendi: "Ödendi",
 };
+
+export const HAVALE_HINT = "Havale bilgisi onayda iletilir.";
+
+export const BANNED_GOODS_HINT =
+  "Tehlikeli madde, canlı hayvan ve yasadışı ürün kabul edilmez.";
+
+export const ETA_DISCLAIMER = "tahmini, trafiğe göre değişebilir";
+
+export function paymentStatusLabel(method: PaymentMethod, status: PaymentStatus): string {
+  if (status === "odendi") return PAYMENT_STATUS_LABELS.odendi;
+  if (method === "nakit") return "Kapıda ödenecek";
+  if (method === "havale") return "Havale bekleniyor";
+  return "Kapıda tahsil edilecek";
+}
+
+export function formatEtaMinutes(durationMin: number | null | undefined): string | null {
+  if (!durationMin || !(durationMin > 0) || !Number.isFinite(durationMin)) return null;
+  return `Yaklaşık ${Math.round(durationMin)} dk (${ETA_DISCLAIMER})`;
+}
+
+export function trackStepReached(current: OrderStatus, step: TrackStep): boolean {
+  if (current === "cancelled") return false;
+  const currentIndex = TRACK_STEPS.indexOf(current as TrackStep);
+  const stepIndex = TRACK_STEPS.indexOf(step);
+  if (currentIndex < 0 || stepIndex < 0) return false;
+  return currentIndex >= stepIndex;
+}
+
+export function publicTrackingPath(code: string) {
+  return `/takip/${encodeURIComponent(code.trim().toUpperCase())}`;
+}
 
 export const ROUTING_PROVIDER_LABELS: Record<RoutingProvider, string> = {
   osrm: "OSRM (router.project-osrm.org)",
@@ -124,8 +160,7 @@ export function courierStatusActionLabel(current: OrderStatus) {
   return null;
 }
 
-export function displayStatus(status: OrderStatus): Exclude<OrderStatus, "assigned"> {
-  if (status === "assigned") return "pending";
+export function displayStatus(status: OrderStatus): OrderStatus {
   return status;
 }
 
@@ -210,8 +245,10 @@ export function isActiveOrder(status: OrderStatus) {
 }
 
 export function statusTone(status: OrderStatus) {
-  switch (displayStatus(status)) {
+  switch (status) {
     case "pending":
+      return "bg-[#2a2410] text-[#D4AF37]";
+    case "assigned":
       return "bg-[#2a2410] text-[#D4AF37]";
     case "picked_up":
       return "bg-[#241a30] text-[#e6d9a8]";
@@ -249,6 +286,7 @@ export type DeliveryOrder = {
   dropoffAddress: string;
   bolge: string;
   recipientName: string;
+  recipientPhone: string;
   scheduledAt: string | null;
   notes: string;
   contactPhone: string;
@@ -259,6 +297,7 @@ export type DeliveryOrder = {
   signatureData: string | null;
   weightKg: number;
   distanceKm: number;
+  durationMin: number;
   priceUsd: number;
   totalPriceTl: number;
   courierEarningTl: number;
@@ -274,6 +313,8 @@ export type DeliveryOrder = {
   pickedUpAt: string | null;
   deliveredAt: string | null;
   cancelledAt: string | null;
+  cancelReason: string;
+  cancelledBy: string | null;
 };
 
 export type Profile = {

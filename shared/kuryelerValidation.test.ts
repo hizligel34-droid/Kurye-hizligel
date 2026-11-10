@@ -16,6 +16,7 @@ const validOrder = {
   pickupAddress: "Moda Cad. No 12, Kadıköy",
   dropoffAddress: "Büyükdere Cad. No 120, Levent",
   recipientName: "Ayşe Demir",
+  recipientPhone: "05421110004",
   scheduledAt: "2026-11-10T14:00",
   contactPhone: "05421110003",
   paymentMethod: "nakit",
@@ -123,5 +124,14 @@ describe("kuryeler.tr form doğrulama", () => {
 
   it("boş takip kodunu çevirir", () => {
     expect(validateTrackingCode("")).toMatch(/Takip kodu/);
+  });
+
+  it("alıcı telefonunu zorunlu tutar", () => {
+    const errors = validateDeliveryOrder({ ...validOrder, recipientPhone: "" });
+    expect(errors.recipientPhone).toMatch(/Alıcı telefonu/);
+  });
+
+  it("hemen seçilince saat istemez", () => {
+    expect(validateDeliveryOrder({ ...validOrder, scheduledAt: "", asap: true })).toEqual({});
   });
 });

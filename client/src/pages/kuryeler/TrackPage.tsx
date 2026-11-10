@@ -4,8 +4,17 @@ import { EmptyState, ErrorState, SkipLink } from "@/components/kuryeler/UiStates
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trackPublic, type PublicTrack } from "@/lib/kuryelerApi";
-import { cardClass, fieldClass, goldBtn } from "@/lib/kuryelerTheme";
-import { PUBLIC_STATUSES, STATUS_LABELS, displayStatus, formatKm, statusTone } from "@shared/kuryeler";
+import { copyTrackingLink, shareTrackingLink } from "@/lib/kuryelerShare";
+import { cardClass, fieldClass, goldBtn, ghostBtn } from "@/lib/kuryelerTheme";
+import { safeMediaUrl } from "@shared/kuryelerSecurity";
+import {
+  TRACK_STEPS,
+  STATUS_LABELS,
+  formatEtaMinutes,
+  formatKm,
+  statusTone,
+  trackStepReached,
+} from "@shared/kuryeler";
 import { validateTrackingCode } from "@shared/kuryelerValidation";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "wouter";
@@ -55,6 +64,9 @@ export default function TrackPage() {
     </Button>
   );
 
+  const photo = safeMediaUrl(result?.deliveryPhoto);
+  const eta = formatEtaMinutes(result?.durationMin);
+
   return (
     <div className="min-h-dvh bg-[#0a0a0a] text-[#f5edd6]">
       <SkipLink />
@@ -67,8 +79,9 @@ export default function TrackPage() {
       </header>
       <main id="icerik" className="mx-auto max-w-lg px-4 py-8">
         <div className={cardClass + " p-5"}>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4AF37]">Canlı takip</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4AF37]">Sipariş durumu</p>
           <h1 className="mt-2 text-2xl font-black">Siparişiniz nerede?</h1>
+          <p className="mt-2 text-xs text-[#8a7c52]">Canlı kurye konumu yok; durum basamakları gösterilir.</p>
           <form
             className="mt-4 flex flex-col gap-2 sm:flex-row"
             onSubmit={event => {
@@ -107,26 +120,47 @@ export default function TrackPage() {
           <div className={`${cardClass} mt-4 p-5`}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="font-mono font-bold text-[#D4AF37]">{result.trackingCode}</p>
-              <StatusBadge
-                label={STATUS_LABELS[displayStatus(result.status)]}
-                className={statusTone(result.status)}
-              />
+              <StatusBadge label={STATUS_LABELS[result.status]} className={statusTone(result.status)} />
             </div>
             <p className="mt-3 text-sm text-[#b4a882]">
-              {result.product}
-              {result.distanceKm > 0 ? ` · ${formatKm(result.distanceKm)}` : result.bolge ? ` · ${result.bolge}` : ""}
+              {result.distanceKm > 0 ? formatKm(result.distanceKm) : result.bolge}
             </p>
+            {eta ? <p className="mt-1 text-xs text-[#8a7c52]">{eta}</p> : null}
             <p className="mt-2 text-xs leading-5 text-[#8a7c52]">
               Alım: {result.pickupAddress}
               <br />
               Gidecek yer: {result.dropoffAddress}
             </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className={ghostBtn}
+                onClick={() =>
+                  void copyTrackingLink(result.trackingCode).then(() => toast.success("Takip linki kopyalandı"))
+                }
+              >
+                Linki kopyala
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className={ghostBtn}
+                onClick={() =>
+                  void shareTrackingLink(result.trackingCode).then(mode =>
+                    toast.success(mode === "shared" ? "Paylaşıldı" : "Takip linki kopyalandı"),
+                  )
+                }
+              >
+                Paylaş
+              </Button>
+            </div>
+            {result.status === "cancelled" ? (
+              <p className="mt-4 text-sm font-semibold text-[#8a7c52]">Bu sipariş iptal edildi.</p>
+            ) : null}
             <ol className="mt-5 space-y-2">
-              {PUBLIC_STATUSES.filter(status => status !== "cancelled").map(status => {
-                const current = displayStatus(result.status);
-                const reached =
-                  PUBLIC_STATUSES.indexOf(current) >= PUBLIC_STATUSES.indexOf(status) &&
-                  result.status !== "cancelled";
+              {TRACK_STEPS.map(status => {
+                const reached = trackStepReached(result.status, status);
                 return (
                   <li
                     key={status}
@@ -139,6 +173,12 @@ export default function TrackPage() {
                 );
               })}
             </ol>
+            {photo ? (
+              <figure className="mt-4">
+                <img src={photo} alt="Teslim fotoğrafı" className="h-40 w-full rounded-2xl object-cover" />
+                <figcaption className="mt-1 text-[11px] text-[#8a7c52]">Teslim fotoğrafı</figcaption>
+              </figure>
+            ) : null}
           </div>
         ) : null}
       </main>

@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useKuryelerAuth } from "@/contexts/KuryelerAuth";
-import { DEMO_ACCOUNTS } from "@/lib/kuryelerApi";
+import { requestPasswordReset } from "@/lib/kuryelerApi";
 import { cardClass, fieldClass, goldBtn } from "@/lib/kuryelerTheme";
 import { FieldError, SkipLink } from "@/components/kuryeler/UiStates";
 import { firstError, validateAuthForm, type FieldErrors } from "@shared/kuryelerValidation";
 import { normalizeTurkishMobilePhone } from "@shared/orderValidation";
-import { ROLE_LABELS, type UserRole } from "@shared/kuryeler";
+import { ALLOW_COURIER_SELF_SIGNUP, ROLE_LABELS, type UserRole } from "@shared/kuryeler";
 import { PANEL_ROLE, PWA_APPS, type PwaPanel } from "@shared/kuryelerPwa";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
@@ -31,19 +31,8 @@ export default function AuthPage({
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-
-  useEffect(() => {
-    if (dataMode !== "demo") return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("demo") !== "1") return;
-    const account = DEMO_ACCOUNTS.find(item => item.role === expectedRole);
-    if (!account?.password) return;
-    setEmail(account.email);
-    setPassword(account.password);
-    void signIn(account.email, account.password)
-      .then(() => navigate("/"))
-      .catch(error => toast.error(error instanceof Error ? error.message : "Demo giriş başarısız"));
-  }, [expectedRole, dataMode]);
+  const [resetOpen, setResetOpen] = useState(false);
+  const courierSignupClosed = mode === "kayit" && panel === "kurye" && !ALLOW_COURIER_SELF_SIGNUP;
 
   useEffect(() => {
     if (user) navigate("/");
@@ -65,6 +54,10 @@ export default function AuthPage({
     const message = firstError(nextErrors);
     if (message) {
       toast.error(message);
+      return;
+    }
+    if (courierSignupClosed) {
+      toast.error("Kurye hesabı bu uygulamadan açılmaz.");
       return;
     }
     setBusy(true);
@@ -91,8 +84,6 @@ export default function AuthPage({
     }
   };
 
-  const demoForPanel = DEMO_ACCOUNTS.filter(account => account.role === expectedRole);
-
   return (
     <div className="min-h-dvh bg-[#0a0a0a] text-[#f5edd6]">
       <SkipLink />
@@ -114,6 +105,11 @@ export default function AuthPage({
             <InstallHint panel={panel} />
           </CardHeader>
           <CardContent>
+            {courierSignupClosed ? (
+              <p className="mb-4 rounded-2xl border border-[#3a3014] bg-black p-4 text-sm text-[#b4a882]">
+                Kurye hesabı bu uygulamadan açılmaz. Yönetici sizi kurye olarak atar.
+              </p>
+            ) : null}
             <form className="space-y-3" onSubmit={submit} noValidate>
               {mode === "kayit" && panel !== "yonetici" && (
                 <>
@@ -186,10 +182,35 @@ export default function AuthPage({
                 />
                 <FieldError id="password-err" message={fieldErrors.password} />
               </div>
-              <Button className={`h-11 w-full ${goldBtn}`} disabled={busy}>
+              <Button className={`h-11 w-full ${goldBtn}`} disabled={busy || courierSignupClosed}>
                 {busy ? "Lütfen bekleyin…" : mode === "giris" ? "Giriş yap" : "Hesap oluştur"}
               </Button>
             </form>
+            {mode === "giris" ? (
+              <div className="mt-3 text-center">
+                {resetOpen ? (
+                  <button
+                    type="button"
+                    className="text-sm font-bold text-[#D4AF37]"
+                    onClick={() => {
+                      if (!email.trim()) {
+                        toast.error("Önce e-posta yazın.");
+                        return;
+                      }
+                      void requestPasswordReset(email)
+                        .then(() => toast.success("Sıfırlama bağlantısı e-postanıza gönderilir."))
+                        .catch(err => toast.error(err instanceof Error ? err.message : "Gönderilemedi"));
+                    }}
+                  >
+                    Sıfırlama e-postası gönder
+                  </button>
+                ) : (
+                  <button type="button" className="text-sm font-bold text-[#D4AF37]" onClick={() => setResetOpen(true)}>
+                    Şifremi unuttum
+                  </button>
+                )}
+              </div>
+            ) : null}
             <p className="mt-4 text-center text-sm text-[#8a7c52]">
               {mode === "giris" && panel !== "yonetici" ? (
                 <>
@@ -212,25 +233,11 @@ export default function AuthPage({
             <p className="mt-3 text-center text-xs text-[#8a7c52]">
               Bu uygulama yalnızca {ROLE_LABELS[expectedRole].toLocaleLowerCase("tr-TR")} hesapları içindir.
             </p>
-            {dataMode === "demo" && (
-              <div className="mt-6 space-y-2 rounded-2xl border border-[#3a3014] bg-black p-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#8a7c52]">Demo hesap</p>
-                {demoForPanel.map(account => (
-                  <button
-                    key={account.email}
-                    type="button"
-                    className="flex w-full items-center justify-between rounded-xl border border-[#3a3014] bg-[#141414] px-3 py-2 text-left text-sm"
-                    onClick={() => {
-                      setEmail(account.email);
-                      setPassword(account.password);
-                    }}
-                  >
-                    <span className="font-semibold text-[#D4AF37]">{ROLE_LABELS[account.role]}</span>
-                    <span className="text-xs text-[#8a7c52]">{account.email}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            {dataMode === "demo" ? (
+              <p className="mt-4 text-center text-xs text-[#8a7c52]">
+                Yerel demo: hazır şifre yoktur. E-posta ve şifre ile kayıt olun.
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       </main>

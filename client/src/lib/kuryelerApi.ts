@@ -19,45 +19,20 @@ import {
   type RoutingProvider,
   type UserRole,
 } from "@shared/kuryeler";
+import {
+  canCustomerCancel,
+  orderStatusNotification,
+  ticketSubject,
+  type AppNotification,
+  type SupportMessage,
+  type SupportSender,
+  type SupportTicket,
+  type SupportTicketKind,
+} from "@shared/kuryelerSupport";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
-const DEMO_KEY = "kuryeler.tr.demo.v3";
-
-const LIVE_BACKEND = Boolean(import.meta.env.VITE_SUPABASE_URL?.trim());
-
-const DEMO_ACCOUNT_PUBLIC = [
-  {
-    email: "musteri@kuryeler.tr",
-    role: "customer" as const,
-    fullName: "Ayşe Müşteri",
-    phone: "05421110003",
-    id: "demo-customer",
-  },
-  {
-    email: "kurye@kuryeler.tr",
-    role: "courier" as const,
-    fullName: "Mehmet Kurye",
-    phone: "05421110002",
-    id: "demo-courier",
-  },
-  {
-    email: "yonetici@kuryeler.tr",
-    role: "admin" as const,
-    fullName: "Şerif Yönetici",
-    phone: "05421110001",
-    id: "demo-admin",
-  },
-] as const;
-
-/** Canlı Supabase derlemesinde şifreler paket dışına çıkar; yerel demo için kalır. */
-export const DEMO_ACCOUNTS = LIVE_BACKEND
-  ? DEMO_ACCOUNT_PUBLIC.map(account => ({ ...account, password: "" }))
-  : [
-      { ...DEMO_ACCOUNT_PUBLIC[0], password: "KuryelerMusteri1!" },
-      { ...DEMO_ACCOUNT_PUBLIC[1], password: "KuryelerKurye1!" },
-      { ...DEMO_ACCOUNT_PUBLIC[2], password: "KuryelerYonetici1!" },
-    ];
+const DEMO_KEY = "kuryeler.tr.demo.v4";
 
 export type SessionUser = Profile;
 
@@ -67,12 +42,14 @@ export type CreateOrderInput = {
   dropoffAddress: string;
   bolge?: string;
   recipientName: string;
+  recipientPhone: string;
   scheduledAt: string;
   notes: string;
   contactPhone: string;
   paymentMethod: PaymentMethod;
   weightKg: number;
   distanceKm: number;
+  durationMin?: number;
   pickupLat: number;
   pickupLng: number;
   dropoffLat: number;
@@ -86,10 +63,12 @@ export type PublicTrack = {
   bolge: string;
   pickupAddress: string;
   dropoffAddress: string;
-  product: string;
   distanceKm: number;
+  durationMin: number;
   createdAt: string;
   updatedAt: string;
+  deliveredAt: string | null;
+  deliveryPhoto: string | null;
 };
 
 export type StatusProof = {
@@ -113,6 +92,9 @@ type DemoState = {
   orders: DeliveryOrder[];
   pricing: PricingSettings;
   districtPrices: DistrictPrice[];
+  tickets: SupportTicket[];
+  messages: SupportMessage[];
+  notifications: AppNotification[];
 };
 
 function nowIso() {
@@ -154,20 +136,17 @@ function withQuote(
   };
 }
 
+function emptyOrderExtras(): Pick<
+  DeliveryOrder,
+  "recipientPhone" | "durationMin" | "cancelReason" | "cancelledBy"
+> {
+  return { recipientPhone: "", durationMin: 0, cancelReason: "", cancelledBy: null };
+}
+
 function seedDemo(): DemoState {
   const createdAt = nowIso();
   const pricing = mergePricing();
   const districtPrices = DISTRICT_PRICES.map(row => ({ ...row }));
-  const users = DEMO_ACCOUNTS.map(account => ({
-    id: account.id,
-    email: account.email,
-    password: account.password,
-    role: account.role,
-    fullName: account.fullName,
-    phone: account.phone,
-    isOnline: account.role === "courier",
-    createdAt,
-  }));
   const orders: DeliveryOrder[] = [
     withQuote(
       {
@@ -181,6 +160,7 @@ function seedDemo(): DemoState {
         dropoffAddress: "Levent, Büyükdere Cad. No 120, Beşiktaş, İstanbul",
         bolge: "Beşiktaş",
         recipientName: "Ayşe Demir",
+        recipientPhone: "05421110004",
         scheduledAt: laterIso(2),
         notes: "Resepsiyona teslim",
         contactPhone: "05421110003",
@@ -191,6 +171,7 @@ function seedDemo(): DemoState {
         signatureData: null,
         weightKg: 1.5,
         distanceKm: 7.4,
+        durationMin: 22,
         pickupLat: 40.9879,
         pickupLng: 29.0256,
         dropoffLat: 41.0814,
@@ -206,6 +187,8 @@ function seedDemo(): DemoState {
         pickedUpAt: null,
         deliveredAt: null,
         cancelledAt: null,
+        cancelReason: "",
+        cancelledBy: null,
       },
       pricing,
     ),
@@ -214,13 +197,14 @@ function seedDemo(): DemoState {
         id: "demo-order-2",
         trackingCode: "KY-DEMO0002",
         customerId: "demo-customer",
-        courierId: "demo-courier",
+        courierId: null,
         status: "en_route",
         product: "Hediyelik kutu",
         pickupAddress: "Osmanağa, Bahariye Cad. No 45, Kadıköy, İstanbul",
         dropoffAddress: "Ataşehir Bulvarı Daire 8, Ataşehir, İstanbul",
         bolge: "Ataşehir",
         recipientName: "Can Yılmaz",
+        recipientPhone: "05421110005",
         scheduledAt: laterIso(1),
         notes: "Daire 8",
         contactPhone: "05421110003",
@@ -231,6 +215,7 @@ function seedDemo(): DemoState {
         signatureData: null,
         weightKg: 4,
         distanceKm: 11.2,
+        durationMin: 34,
         pickupLat: 40.9902,
         pickupLng: 29.0281,
         dropoffLat: 40.9925,
@@ -246,11 +231,22 @@ function seedDemo(): DemoState {
         pickedUpAt: createdAt,
         deliveredAt: null,
         cancelledAt: null,
+        cancelReason: "",
+        cancelledBy: null,
       },
       pricing,
     ),
   ];
-  return { sessionId: null, users, orders, pricing, districtPrices };
+  return {
+    sessionId: null,
+    users: [],
+    orders,
+    pricing,
+    districtPrices,
+    tickets: [],
+    messages: [],
+    notifications: [],
+  };
 }
 
 function loadDemo(): DemoState {
@@ -264,6 +260,17 @@ function loadDemo(): DemoState {
     const parsed = JSON.parse(raw) as DemoState;
     if (!parsed.districtPrices?.length) parsed.districtPrices = DISTRICT_PRICES.map(row => ({ ...row }));
     parsed.pricing = mergePricing(parsed.pricing);
+    parsed.tickets = parsed.tickets ?? [];
+    parsed.messages = parsed.messages ?? [];
+    parsed.notifications = parsed.notifications ?? [];
+    parsed.orders = (parsed.orders ?? []).map(order => ({
+      ...emptyOrderExtras(),
+      ...order,
+      recipientPhone: order.recipientPhone ?? "",
+      durationMin: order.durationMin ?? 0,
+      cancelReason: order.cancelReason ?? "",
+      cancelledBy: order.cancelledBy ?? null,
+    }));
     return parsed;
   } catch {
     return seedDemo();
@@ -305,6 +312,7 @@ function mapOrder(row: Record<string, unknown>): DeliveryOrder {
     dropoffAddress: String(row.dropoff_address ?? row.dropoffAddress ?? ""),
     bolge,
     recipientName: String(row.recipient_name ?? row.recipientName ?? ""),
+    recipientPhone: String(row.recipient_phone ?? row.recipientPhone ?? ""),
     scheduledAt: row.scheduled_at || row.scheduledAt ? String(row.scheduled_at ?? row.scheduledAt) : null,
     notes: String(row.notes ?? ""),
     contactPhone: String(row.contact_phone ?? row.contactPhone ?? ""),
@@ -315,6 +323,7 @@ function mapOrder(row: Record<string, unknown>): DeliveryOrder {
     signatureData: row.signature_data || row.signatureData ? String(row.signature_data ?? row.signatureData) : null,
     weightKg: Number(row.weight_kg ?? row.weightKg ?? 1),
     distanceKm: Number(row.distance_km ?? row.distanceKm ?? 0),
+    durationMin: Number(row.duration_min ?? row.durationMin ?? 0),
     priceUsd: Number(row.price_usd ?? row.priceUsd ?? 0),
     totalPriceTl: Number(row.total_price_tl ?? row.totalPriceTl ?? 0),
     courierEarningTl: Number(row.courier_earning_tl ?? row.courierEarningTl ?? 0),
@@ -330,6 +339,82 @@ function mapOrder(row: Record<string, unknown>): DeliveryOrder {
     pickedUpAt: row.picked_up_at || row.pickedUpAt ? String(row.picked_up_at ?? row.pickedUpAt) : null,
     deliveredAt: row.delivered_at || row.deliveredAt ? String(row.delivered_at ?? row.deliveredAt) : null,
     cancelledAt: row.cancelled_at || row.cancelledAt ? String(row.cancelled_at ?? row.cancelledAt) : null,
+    cancelReason: String(row.cancel_reason ?? row.cancelReason ?? ""),
+    cancelledBy: row.cancelled_by || row.cancelledBy ? String(row.cancelled_by ?? row.cancelledBy) : null,
+  };
+}
+
+function toPublicTrack(row: Record<string, unknown> | PublicTrack): PublicTrack {
+  const r = row as Record<string, unknown>;
+  return {
+    trackingCode: String(r.trackingCode ?? r.tracking_code ?? ""),
+    status: (r.status as OrderStatus) ?? "pending",
+    bolge: String(r.bolge ?? r.dropoff_district ?? ""),
+    pickupAddress: String(r.pickupAddress ?? r.pickup_address ?? r.pickup_district ?? ""),
+    dropoffAddress: String(r.dropoffAddress ?? r.dropoff_address ?? r.dropoff_district ?? ""),
+    distanceKm: Number(r.distanceKm ?? r.distance_km ?? 0),
+    durationMin: Number(r.durationMin ?? r.duration_min ?? 0),
+    createdAt: String(r.createdAt ?? r.created_at ?? ""),
+    updatedAt: String(r.updatedAt ?? r.updated_at ?? ""),
+    deliveredAt: r.deliveredAt || r.delivered_at ? String(r.deliveredAt ?? r.delivered_at) : null,
+    deliveryPhoto: r.deliveryPhoto || r.delivery_photo ? String(r.deliveryPhoto ?? r.delivery_photo) : null,
+  };
+}
+
+function pushDemoNotification(
+  state: DemoState,
+  userId: string,
+  orderId: string,
+  status: OrderStatus,
+  durationMin?: number,
+) {
+  const note = orderStatusNotification(status, durationMin);
+  state.notifications.unshift({
+    id: crypto.randomUUID(),
+    userId,
+    title: note.title,
+    body: note.body,
+    orderId,
+    readAt: null,
+    createdAt: nowIso(),
+  });
+}
+
+function mapTicket(row: Record<string, unknown>): SupportTicket {
+  return {
+    id: String(row.id),
+    customerId: String(row.customer_id ?? row.customerId),
+    orderId: row.order_id || row.orderId ? String(row.order_id ?? row.orderId) : null,
+    trackingCode: String(row.tracking_code ?? row.trackingCode ?? ""),
+    kind: (row.kind as SupportTicketKind) ?? "destek",
+    status: (row.status as SupportTicket["status"]) ?? "acik",
+    subject: String(row.subject ?? "Destek"),
+    createdAt: String(row.created_at ?? row.createdAt),
+    updatedAt: String(row.updated_at ?? row.updatedAt),
+  };
+}
+
+function mapMessage(row: Record<string, unknown>): SupportMessage {
+  return {
+    id: String(row.id),
+    ticketId: String(row.ticket_id ?? row.ticketId),
+    sender: (row.sender as SupportSender) ?? "customer",
+    senderId: row.sender_id || row.senderId ? String(row.sender_id ?? row.senderId) : null,
+    body: String(row.body ?? ""),
+    photoUrl: row.photo_url || row.photoUrl ? String(row.photo_url ?? row.photoUrl) : null,
+    createdAt: String(row.created_at ?? row.createdAt),
+  };
+}
+
+function mapNotification(row: Record<string, unknown>): AppNotification {
+  return {
+    id: String(row.id),
+    userId: String(row.user_id ?? row.userId),
+    title: String(row.title ?? ""),
+    body: String(row.body ?? ""),
+    orderId: row.order_id || row.orderId ? String(row.order_id ?? row.orderId) : null,
+    readAt: row.read_at || row.readAt ? String(row.read_at ?? row.readAt) : null,
+    createdAt: String(row.created_at ?? row.createdAt),
   };
 }
 
@@ -427,6 +512,11 @@ export async function signUp(input: {
       isOnline: false,
       createdAt: nowIso(),
     };
+    if (input.role === "customer") {
+      for (const order of state.orders) {
+        if (order.customerId === "demo-customer") order.customerId = user.id;
+      }
+    }
     state.users.push(user);
     state.sessionId = user.id;
     saveDemo(state);
@@ -568,6 +658,7 @@ export async function createOrder(customerId: string, input: CreateOrderInput): 
         dropoffAddress: input.dropoffAddress.trim(),
         bolge: input.bolge?.trim() || "",
         recipientName: input.recipientName.trim(),
+        recipientPhone: input.recipientPhone.trim(),
         scheduledAt: input.scheduledAt,
         notes: input.notes.trim(),
         contactPhone: input.contactPhone,
@@ -578,6 +669,7 @@ export async function createOrder(customerId: string, input: CreateOrderInput): 
         signatureData: null,
         weightKg: input.weightKg,
         distanceKm: input.distanceKm,
+        durationMin: input.durationMin ?? 0,
         pickupLat: input.pickupLat,
         pickupLng: input.pickupLng,
         dropoffLat: input.dropoffLat,
@@ -589,6 +681,8 @@ export async function createOrder(customerId: string, input: CreateOrderInput): 
         pickedUpAt: null,
         deliveredAt: null,
         cancelledAt: null,
+        cancelReason: "",
+        cancelledBy: null,
       },
       pricing,
     );
@@ -611,6 +705,7 @@ export async function createOrder(customerId: string, input: CreateOrderInput): 
       dropoff_district: district,
       bolge: district,
       recipient_name: input.recipientName.trim(),
+      recipient_phone: input.recipientPhone.trim(),
       scheduled_at: input.scheduledAt,
       notes: input.notes.trim(),
       contact_phone: input.contactPhone,
@@ -618,6 +713,7 @@ export async function createOrder(customerId: string, input: CreateOrderInput): 
       payment_status: "bekliyor",
       weight_kg: input.weightKg,
       distance_km: input.distanceKm,
+      duration_min: input.durationMin ?? 0,
       pickup_lat: input.pickupLat,
       pickup_lng: input.pickupLng,
       dropoff_lat: input.dropoffLat,
@@ -636,6 +732,11 @@ export async function createOrder(customerId: string, input: CreateOrderInput): 
     mapped.priceUsd = quote.priceUsd;
     mapped.totalPriceTl = quote.totalTl;
   }
+  try {
+    await getSupabase()!.rpc("queue_order_confirmation", { p_order_id: mapped.id });
+  } catch {
+    /* kuyruk isteğe bağlı; sipariş oluştu */
+  }
   return mapped;
 }
 
@@ -650,7 +751,25 @@ export async function listOrdersFor(user: SessionUser): Promise<DeliveryOrder[]>
     }
     return orders.filter(o => o.customerId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
-  const { data, error } = await getSupabase()!.from("orders").select("*").order("created_at", { ascending: false });
+  const supabase = getSupabase()!;
+  if (user.role === "courier") {
+    const [open, mine] = await Promise.all([
+      supabase.rpc("list_courier_open_jobs"),
+      supabase.from("orders").select("*").eq("courier_id", user.id).order("created_at", { ascending: false }),
+    ]);
+    if (open.error && mine.error) throw new Error(open.error.message || mine.error.message);
+    const rows = [...((open.data as Record<string, unknown>[] | null) ?? []), ...((mine.data as Record<string, unknown>[] | null) ?? [])];
+    const seen = new Set<string>();
+    return rows
+      .map(row => mapOrder(row))
+      .filter(order => {
+        if (seen.has(order.id)) return false;
+        seen.add(order.id);
+        return true;
+      })
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+  const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map(row => mapOrder(row as Record<string, unknown>));
 }
@@ -664,6 +783,7 @@ export async function acceptOrder(orderId: string): Promise<DeliveryOrder> {
     order.status = "assigned";
     order.assignedAt = nowIso();
     order.updatedAt = order.assignedAt;
+    pushDemoNotification(state, order.customerId, order.id, order.status, order.durationMin);
     saveDemo(state);
     notifyDemo();
     return order;
@@ -696,6 +816,7 @@ export async function advanceStatus(
     if (status === "picked_up") order.pickedUpAt = stamp;
     if (status === "delivered") order.deliveredAt = stamp;
     if (status === "cancelled") order.cancelledAt = stamp;
+    pushDemoNotification(state, order.customerId, order.id, order.status, order.durationMin);
     saveDemo(state);
     notifyDemo();
     return order;
@@ -724,6 +845,9 @@ export async function assignCourier(orderId: string, courierId: string): Promise
     if (order.status === "pending") order.status = "assigned";
     order.assignedAt = nowIso();
     order.updatedAt = order.assignedAt;
+    if (order.status === "assigned") {
+      pushDemoNotification(state, order.customerId, order.id, order.status, order.durationMin);
+    }
     saveDemo(state);
     notifyDemo();
     return order;
@@ -795,7 +919,7 @@ export async function updateUserRole(userId: string, role: UserRole): Promise<vo
     notifyDemo();
     return;
   }
-  const { error } = await getSupabase()!.from("profiles").update({ role }).eq("id", userId);
+  const { error } = await getSupabase()!.rpc("set_user_role", { p_user_id: userId, p_role: role });
   if (error) throw new Error(error.message);
 }
 
@@ -815,33 +939,25 @@ export async function trackPublic(code: string): Promise<PublicTrack | null> {
   if (kuryelerMode === "demo") {
     const order = loadDemo().orders.find(o => o.trackingCode.toUpperCase() === trimmed);
     if (!order) return null;
-    return {
-      trackingCode: order.trackingCode,
+    return toPublicTrack({
+      tracking_code: order.trackingCode,
       status: order.status,
       bolge: order.bolge,
-      pickupAddress: order.pickupAddress,
-      dropoffAddress: order.dropoffAddress,
-      product: order.product,
-      distanceKm: order.distanceKm,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-    };
+      pickup_address: order.pickupAddress,
+      dropoff_address: order.dropoffAddress,
+      distance_km: order.distanceKm,
+      duration_min: order.durationMin,
+      created_at: order.createdAt,
+      updated_at: order.updatedAt,
+      delivered_at: order.deliveredAt,
+      delivery_photo: order.deliveryPhoto,
+    });
   }
   const { data, error } = await getSupabase()!.rpc("track_order_public", { p_code: trimmed });
   if (error) throw new Error(error.message);
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return null;
-  return {
-    trackingCode: row.tracking_code,
-    status: row.status,
-    bolge: row.bolge || row.dropoff_district,
-    pickupAddress: row.pickup_address ?? row.pickup_district ?? "",
-    dropoffAddress: row.dropoff_address ?? row.dropoff_district ?? "",
-    product: row.product ?? "",
-    distanceKm: Number(row.distance_km ?? 0),
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
+  return toPublicTrack(row as Record<string, unknown>);
 }
 
 export function subscribeToOrders(onChange: () => void) {
@@ -856,6 +972,9 @@ export function subscribeToOrders(onChange: () => void) {
     .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => onChange())
     .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => onChange())
     .on("postgres_changes", { event: "*", schema: "public", table: "pricing_settings" }, () => onChange())
+    .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, () => onChange())
+    .on("postgres_changes", { event: "*", schema: "public", table: "support_messages" }, () => onChange())
+    .on("postgres_changes", { event: "*", schema: "public", table: "in_app_notifications" }, () => onChange())
     .subscribe();
   return () => {
     void getSupabase()!.removeChannel(channel);
@@ -875,6 +994,239 @@ export function dailyEarnings(orders: DeliveryOrder[], courierId: string) {
     }, 0),
     activeCount: mine.filter(o => isActiveOrder(o.status)).length,
   };
+}
+
+export async function cancelOwnOrder(orderId: string, reason: string): Promise<DeliveryOrder> {
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    const order = state.orders.find(o => o.id === orderId);
+    const me = state.sessionId;
+    if (!order || !me) throw new Error("Sipariş bulunamadı");
+    if (order.customerId !== me) throw new Error("Yalnızca kendi siparişinizi iptal edebilirsiniz");
+    if (!canCustomerCancel(order.status)) throw new Error("Bu sipariş artık iptal edilemez");
+    if (!canTransitionStatus(order.status, "cancelled")) throw new Error("Bu durum geçişi geçersiz");
+    const stamp = nowIso();
+    order.status = "cancelled";
+    order.cancelledAt = stamp;
+    order.cancelReason = reason.trim();
+    order.cancelledBy = me;
+    order.updatedAt = stamp;
+    const ticket: SupportTicket = {
+      id: crypto.randomUUID(),
+      customerId: me,
+      orderId: order.id,
+      trackingCode: order.trackingCode,
+      kind: "iptal",
+      status: "acik",
+      subject: ticketSubject("iptal", order.trackingCode),
+      createdAt: stamp,
+      updatedAt: stamp,
+    };
+    state.tickets.unshift(ticket);
+    state.messages.push({
+      id: crypto.randomUUID(),
+      ticketId: ticket.id,
+      sender: "customer",
+      senderId: me,
+      body: reason.trim() || "Müşteri iptal talebi.",
+      photoUrl: null,
+      createdAt: stamp,
+    });
+    pushDemoNotification(state, me, order.id, "cancelled");
+    saveDemo(state);
+    notifyDemo();
+    return order;
+  }
+  const { data, error } = await getSupabase()!.rpc("cancel_own_order", {
+    p_order_id: orderId,
+    p_reason: reason,
+  });
+  if (error) throw new Error(error.message);
+  return mapOrder(data as Record<string, unknown>);
+}
+
+export async function listSupportTickets(user: SessionUser): Promise<SupportTicket[]> {
+  if (kuryelerMode === "demo") {
+    const { tickets } = loadDemo();
+    const list = user.role === "admin" ? tickets : tickets.filter(t => t.customerId === user.id);
+    return [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+  const { data, error } = await getSupabase()!
+    .from("support_tickets")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(row => mapTicket(row as Record<string, unknown>));
+}
+
+export async function listSupportMessages(ticketId: string): Promise<SupportMessage[]> {
+  if (kuryelerMode === "demo") {
+    return loadDemo()
+      .messages.filter(m => m.ticketId === ticketId)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }
+  const { data, error } = await getSupabase()!
+    .from("support_messages")
+    .select("*")
+    .eq("ticket_id", ticketId)
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(row => mapMessage(row as Record<string, unknown>));
+}
+
+export async function openSupportTicket(input: {
+  kind: SupportTicketKind;
+  body: string;
+  orderId?: string | null;
+  trackingCode?: string;
+  photoUrl?: string | null;
+}): Promise<SupportTicket> {
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    const me = state.sessionId;
+    if (!me) throw new Error("Giriş yapmalısınız");
+    let order = input.orderId ? state.orders.find(o => o.id === input.orderId) : undefined;
+    if (!order && input.trackingCode) {
+      order = state.orders.find(
+        o => o.trackingCode.toUpperCase() === input.trackingCode!.trim().toUpperCase() && o.customerId === me,
+      );
+    }
+    if (input.orderId && order && order.customerId !== me) throw new Error("Bu sipariş size ait değil");
+    const stamp = nowIso();
+    const kind = input.kind;
+    const ticket: SupportTicket = {
+      id: crypto.randomUUID(),
+      customerId: me,
+      orderId: order?.id ?? null,
+      trackingCode: order?.trackingCode ?? input.trackingCode?.trim().toUpperCase() ?? "",
+      kind,
+      status: "cevap_bekliyor",
+      subject: ticketSubject(kind, order?.trackingCode ?? input.trackingCode),
+      createdAt: stamp,
+      updatedAt: stamp,
+    };
+    state.tickets.unshift(ticket);
+    state.messages.push({
+      id: crypto.randomUUID(),
+      ticketId: ticket.id,
+      sender: "customer",
+      senderId: me,
+      body: input.body.trim(),
+      photoUrl: input.photoUrl ?? null,
+      createdAt: stamp,
+    });
+    saveDemo(state);
+    notifyDemo();
+    return ticket;
+  }
+  const { data, error } = await getSupabase()!.rpc("open_support_ticket", {
+    p_kind: input.kind,
+    p_body: input.body,
+    p_order_id: input.orderId ?? null,
+    p_tracking_code: input.trackingCode ?? "",
+    p_photo: input.photoUrl ?? null,
+  });
+  if (error) throw new Error(error.message);
+  return mapTicket(data as Record<string, unknown>);
+}
+
+export async function postSupportMessage(input: {
+  ticketId: string;
+  body: string;
+  photoUrl?: string | null;
+  asBot?: boolean;
+}): Promise<SupportMessage> {
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    const me = state.users.find(u => u.id === state.sessionId);
+    const ticket = state.tickets.find(t => t.id === input.ticketId);
+    if (!me || !ticket) throw new Error("Kayıt bulunamadı");
+    if (ticket.status === "kapali") throw new Error("Bu yazışma kapalı");
+    const sender: SupportSender = input.asBot && me.role === "admin" ? "bot" : me.role === "admin" ? "admin" : "customer";
+    if (sender === "customer" && ticket.customerId !== me.id) throw new Error("Yetkisiz");
+    const stamp = nowIso();
+    const message: SupportMessage = {
+      id: crypto.randomUUID(),
+      ticketId: ticket.id,
+      sender,
+      senderId: me.id,
+      body: input.body.trim(),
+      photoUrl: input.photoUrl ?? null,
+      createdAt: stamp,
+    };
+    state.messages.push(message);
+    ticket.updatedAt = stamp;
+    ticket.status = sender === "customer" ? "cevap_bekliyor" : "yanitlandi";
+    saveDemo(state);
+    notifyDemo();
+    return message;
+  }
+  const session = await getSession();
+  const row = {
+    ticket_id: input.ticketId,
+    sender: session?.role === "admin" ? (input.asBot ? "bot" : "admin") : "customer",
+    sender_id: session?.id ?? null,
+    body: input.body.trim(),
+    photo_url: input.photoUrl ?? null,
+  };
+  const { data, error } = await getSupabase()!.from("support_messages").insert(row).select("*").single();
+  if (error) throw new Error(error.message);
+  return mapMessage(data as Record<string, unknown>);
+}
+
+export async function listNotifications(userId: string): Promise<AppNotification[]> {
+  if (kuryelerMode === "demo") {
+    return loadDemo()
+      .notifications.filter(n => n.userId === userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+  const { data, error } = await getSupabase()!
+    .from("in_app_notifications")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(row => mapNotification(row as Record<string, unknown>));
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    const note = state.notifications.find(n => n.id === id);
+    if (note && !note.readAt) note.readAt = nowIso();
+    saveDemo(state);
+    notifyDemo();
+    return;
+  }
+  const { error } = await getSupabase()!.from("in_app_notifications").update({ read_at: nowIso() }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function updateOwnProfile(input: { fullName: string; phone: string }): Promise<void> {
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    const user = state.users.find(u => u.id === state.sessionId);
+    if (!user) throw new Error("Giriş yapmalısınız");
+    user.fullName = input.fullName.trim();
+    user.phone = input.phone.trim();
+    saveDemo(state);
+    notifyDemo();
+    return;
+  }
+  const { error } = await getSupabase()!
+    .from("profiles")
+    .update({ full_name: input.fullName.trim(), phone: input.phone.trim() })
+    .eq("id", (await getSession())?.id ?? "");
+  if (error) throw new Error(error.message);
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  if (kuryelerMode === "demo") {
+    throw new Error("Demo modunda e-posta gönderilmez. Yeni kayıt ile giriş yapın.");
+  }
+  const redirectTo = `${window.location.origin}/musteri/giris`;
+  const { error } = await getSupabase()!.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+  if (error) throw new Error(error.message);
 }
 
 export { nextCourierStatus };
