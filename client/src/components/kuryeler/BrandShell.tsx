@@ -1,67 +1,63 @@
-import { SiteFooter } from "@/components/kuryeler/SiteFooter";
+import { InstallPrompt } from "@/components/kuryeler/InstallPrompt";
 import { SkipLink } from "@/components/kuryeler/UiStates";
 import { useKuryelerAuth } from "@/contexts/KuryelerAuth";
 import { Button } from "@/components/ui/button";
 import { goldBtn } from "@/lib/kuryelerTheme";
-import { BRAND_NAME } from "@shared/kuryeler";
 import { PWA_APPS, type PwaPanel } from "@shared/kuryelerPwa";
 import { Bike, LayoutDashboard, LogOut, Package, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 
-export function BrandMark({ compact = false }: { compact?: boolean }) {
+export function BrandMark({ compact = false, href = "/" }: { compact?: boolean; href?: string }) {
   return (
-    <Link href="/" className="flex min-h-11 min-w-0 items-center gap-2 font-black tracking-tight text-[#f5edd6]">
+    <Link href={href} className="flex min-h-11 min-w-0 items-center gap-2 font-black tracking-tight text-[#f5edd6]">
       <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#D4AF37] bg-black text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.25)]">
         <Bike size={20} />
       </span>
-      <span className={`lowercase truncate ${compact ? "text-lg" : "text-base sm:text-xl"}`}>
-        kuryeler<span className="text-[#D4AF37]">.tr</span>
+      <span className={`truncate ${compact ? "text-base" : "text-base sm:text-xl"}`}>
+        Hızlıgel<span className="text-[#D4AF37]"></span>
       </span>
     </Link>
   );
 }
 
 const PANEL_NAV: Record<PwaPanel, { href: string; label: string; icon: typeof Bike }[]> = {
-  site: [
-    { href: "/", label: "Ana sayfa", icon: Bike },
-    { href: "/musteri", label: "Müşteri", icon: Package },
-    { href: "/kurye", label: "Kurye", icon: UserRound },
-    { href: "/yonetici", label: "Yönetici", icon: LayoutDashboard },
-  ],
   musteri: [
-    { href: "/musteri", label: "Sipariş", icon: Package },
+    { href: "/", label: "Sipariş", icon: Package },
     { href: "/takip", label: "Takip", icon: Bike },
   ],
-  kurye: [{ href: "/kurye", label: "İşler", icon: Bike }],
-  yonetici: [{ href: "/yonetici", label: "Özet", icon: LayoutDashboard }],
+  kurye: [{ href: "/", label: "İşler", icon: Bike }],
+  yonetici: [{ href: "/", label: "Yönetim", icon: LayoutDashboard }],
 };
 
 export function BrandShell({
   children,
   title,
-  panel = "site",
+  panel,
 }: {
   children: ReactNode;
   title?: string;
-  panel?: PwaPanel;
+  panel: PwaPanel;
 }) {
   const { user, signOut } = useKuryelerAuth();
   const [location] = useLocation();
   const nav = PANEL_NAV[panel];
-  const loginHref =
-    panel === "kurye" ? "/kurye/giris" : panel === "yonetici" ? "/yonetici/giris" : "/musteri/giris";
+  const loginHref = "/giris";
+  const app = PWA_APPS[panel];
 
-  const mobileNav = [...nav.slice(0, 2), { href: user ? PWA_APPS[panel].startUrl : loginHref, label: user ? "Hesap" : "Giriş", icon: UserRound }];
+  const mobileNav = [
+    ...nav.slice(0, 2),
+    { href: user ? "/" : loginHref, label: user ? "Hesap" : "Giriş", icon: UserRound },
+  ];
 
   return (
-    <div className="flex min-h-dvh flex-col overflow-x-hidden bg-[#0a0a0a] pb-24 text-[#f5edd6] md:pb-0">
+    <div className="flex min-h-dvh flex-col overflow-x-hidden bg-[#0a0a0a] pb-[calc(6rem+env(safe-area-inset-bottom))] text-[#f5edd6] md:pb-0">
       <SkipLink />
       <DemoBanner />
-      <header className="sticky top-0 z-30 border-b border-[#3a3014] bg-black/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-[#3a3014] bg-black/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4">
-          <BrandMark />
-          <nav aria-label="Panel" className="hidden items-center gap-5 text-sm font-semibold md:flex">
+          <BrandMark href="/" />
+          <nav aria-label={app.name} className="hidden items-center gap-5 text-sm font-semibold md:flex">
             {nav.map(item => (
               <Link
                 key={item.href}
@@ -77,7 +73,7 @@ export function BrandShell({
             {user ? (
               <>
                 <span className="hidden text-sm font-semibold text-[#b4a882] sm:inline">
-                  {user.fullName.split(" ")[0] || BRAND_NAME}
+                  {user.fullName.split(" ")[0] || app.shortName}
                 </span>
                 <Button
                   variant="ghost"
@@ -100,19 +96,17 @@ export function BrandShell({
       </header>
       {title ? (
         <div className="mx-auto max-w-6xl px-4 pt-6 text-left">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4AF37]">
-            {PWA_APPS[panel].shortName}
-          </p>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4AF37]">{app.name}</p>
           <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{title}</h1>
         </div>
       ) : null}
       <main id="icerik" className="flex-1">
         {children}
       </main>
-      <div className="mt-auto hidden md:block">
-        <SiteFooter />
-      </div>
-      <nav aria-label="Mobil menü" className="fixed inset-x-0 bottom-0 z-30 border-t border-[#3a3014] bg-black/95 px-2 py-2 backdrop-blur md:hidden">
+      <nav
+        aria-label="Mobil menü"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-[#3a3014] bg-black/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur md:hidden"
+      >
         <div className={`mx-auto grid max-w-lg gap-1 ${mobileNav.length > 2 ? "grid-cols-3" : "grid-cols-2"}`}>
           {mobileNav.map(item => (
             <Link
@@ -155,11 +149,6 @@ export function DemoBanner() {
   );
 }
 
-export function InstallHint({ panel }: { panel: Exclude<PwaPanel, "site"> }) {
-  const app = PWA_APPS[panel];
-  return (
-    <p className="mt-2 text-xs leading-5 text-[#8a7c52]">
-      Mac PWA: Safari’de <span className="text-[#D4AF37]">Paylaş → Dock’a Ekle</span>. Adı: {app.name}.
-    </p>
-  );
+export function InstallHint({ panel }: { panel: PwaPanel }) {
+  return <InstallPrompt panel={panel} />;
 }

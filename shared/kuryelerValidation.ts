@@ -1,3 +1,10 @@
+import {
+  MAX_WEIGHT_KG,
+  PAYMENT_METHODS,
+  WEIGHT_LIMIT_MESSAGE,
+  type PaymentMethod,
+  type RoutingProvider,
+} from "./kuryeler";
 import { isValidTurkishMobilePhone } from "./orderValidation";
 
 export type FieldErrors = Record<string, string>;
@@ -35,53 +42,106 @@ export function validateAuthForm(input: {
   return errors;
 }
 
+export function validateWeightKg(weightKg: number): string | null {
+  if (!Number.isFinite(weightKg) || weightKg <= 0) {
+    return "Paket ağırlığını kg olarak yazın.";
+  }
+  if (weightKg > MAX_WEIGHT_KG) return WEIGHT_LIMIT_MESSAGE;
+  return null;
+}
+
 export function validateDeliveryOrder(input: {
-  pickupDistrict: string;
-  pickupNeighborhood: string;
-  pickupStreet: string;
-  dropoffDistrict: string;
-  dropoffNeighborhood: string;
-  dropoffStreet: string;
+  product: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  recipientName: string;
+  scheduledAt: string;
   contactPhone: string;
+  paymentMethod: string;
+  weightKg: number;
+  distanceKm: number;
+  pickupLat?: number | null;
+  pickupLng?: number | null;
+  dropoffLat?: number | null;
+  dropoffLng?: number | null;
 }): FieldErrors {
   const errors: FieldErrors = {};
-  if (!input.pickupDistrict) errors.pickupDistrict = "Alış ilçesini seçin.";
-  if (!input.pickupNeighborhood.trim()) errors.pickupNeighborhood = "Alış mahallesini yazın.";
-  if (!input.pickupStreet.trim()) errors.pickupStreet = "Alış sokak veya caddeyi yazın.";
-  if (!input.dropoffDistrict) errors.dropoffDistrict = "Teslim ilçesini seçin.";
-  if (!input.dropoffNeighborhood.trim()) errors.dropoffNeighborhood = "Teslim mahallesini yazın.";
-  if (!input.dropoffStreet.trim()) errors.dropoffStreet = "Teslim sokak veya caddeyi yazın.";
-  const pickupKey = [input.pickupDistrict, input.pickupNeighborhood, input.pickupStreet]
-    .join("|")
-    .toLocaleLowerCase("tr-TR");
-  const dropoffKey = [input.dropoffDistrict, input.dropoffNeighborhood, input.dropoffStreet]
-    .join("|")
-    .toLocaleLowerCase("tr-TR");
-  if (input.pickupDistrict && pickupKey === dropoffKey) {
-    errors.dropoffStreet = "Alış ve teslim adresi aynı olamaz.";
+  if (!input.product.trim() || input.product.trim().length < 2) {
+    errors.product = "Ürün veya gönderi adını yazın.";
   }
+  if (!input.pickupAddress.trim() || input.pickupAddress.trim().length < 4) {
+    errors.pickupAddress = "Alım yerini haritadan veya aramadan seçin.";
+  }
+  if (!input.dropoffAddress.trim() || input.dropoffAddress.trim().length < 4) {
+    errors.dropoffAddress = "Gidecek yeri haritadan veya aramadan seçin.";
+  }
+  const sameAddress =
+    input.pickupAddress.trim().toLocaleLowerCase("tr-TR") ===
+    input.dropoffAddress.trim().toLocaleLowerCase("tr-TR");
+  const samePoint =
+    input.pickupLat != null &&
+    input.dropoffLat != null &&
+    input.pickupLng != null &&
+    input.dropoffLng != null &&
+    input.pickupLat === input.dropoffLat &&
+    input.pickupLng === input.dropoffLng;
+  if (sameAddress || samePoint) {
+    errors.dropoffAddress = "Alım yeri ve gidecek yer aynı olamaz.";
+  }
+  if (!input.recipientName.trim() || input.recipientName.trim().length < 2) {
+    errors.recipientName = "Teslim alan kişinin adını yazın.";
+  }
+  if (!input.scheduledAt) errors.scheduledAt = "Gün ve saati seçin.";
   if (!input.contactPhone.trim()) errors.contactPhone = "İletişim telefonu zorunludur.";
   else if (!isValidTurkishMobilePhone(input.contactPhone)) {
     errors.contactPhone = "Geçerli bir Türkiye cep numarası girin (05xx xxx xx xx).";
   }
+  if (!PAYMENT_METHODS.includes(input.paymentMethod as PaymentMethod)) {
+    errors.paymentMethod = "Ödeme yöntemini seçin.";
+  }
+  const weightError = validateWeightKg(input.weightKg);
+  if (weightError) errors.weightKg = weightError;
+  if (!(input.distanceKm > 0) || !input.pickupLat || !input.dropoffLat) {
+    errors.route = "Haritada alım ve teslim noktalarını seçip sürüş rotasını hesaplatın.";
+  }
   return errors;
 }
 
+export function validateDistrictPrice(fiyatTl: number): string | null {
+  if (!Number.isFinite(fiyatTl) || fiyatTl < 0) return "Fiyat 0 veya daha büyük olmalıdır.";
+  if (fiyatTl > 20000) return "Fiyat 20.000 TL’yi aşamaz.";
+  return null;
+}
+
+export function validateCommissionRate(rate: number): string | null {
+  if (!(rate >= 0 && rate <= 1)) {
+    return "Komisyon 0 ile 1 arasında olmalıdır (ör. %20 için 0,20).";
+  }
+  return null;
+}
+
 export function validatePricingForm(input: {
-  baseFeeTl: number;
-  perKmTl: number;
+  baseTry: number;
+  perKmTry: number;
+  roundingDecimals: number;
+  vatRate: number;
+  routingProvider: string;
   commissionRate: number;
-  crossSideSurchargeTl: number;
 }): FieldErrors {
   const errors: FieldErrors = {};
-  if (!(input.baseFeeTl >= 0)) errors.baseFeeTl = "Açılış ücreti 0 veya daha büyük olmalıdır.";
-  if (!(input.perKmTl >= 0)) errors.perKmTl = "Km bedeli 0 veya daha büyük olmalıdır.";
-  if (!(input.crossSideSurchargeTl >= 0)) {
-    errors.crossSideSurchargeTl = "Bölge ek ücreti 0 veya daha büyük olmalıdır.";
+  if (!(input.baseTry >= 0)) errors.baseTry = "Açılış ücreti 0 veya daha büyük olmalıdır.";
+  if (!(input.perKmTry >= 0)) errors.perKmTry = "Km bedeli 0 veya daha büyük olmalıdır.";
+  if (!(input.roundingDecimals >= 0 && input.roundingDecimals <= 6)) {
+    errors.roundingDecimals = "Yuvarlama 0–6 basamak olmalıdır.";
   }
-  if (!(input.commissionRate >= 0 && input.commissionRate <= 1)) {
-    errors.commissionRate = "Komisyon 0 ile 1 arasında olmalıdır (ör. %20 için 0,20).";
+  if (!(input.vatRate >= 0 && input.vatRate <= 1)) {
+    errors.vatRate = "KDV oranı 0 ile 1 arasında olmalıdır (ör. %20 için 0,20).";
   }
+  if (!["osrm", "ors", "custom"].includes(input.routingProvider as RoutingProvider)) {
+    errors.routingProvider = "Rota sağlayıcısını seçin.";
+  }
+  const commission = validateCommissionRate(input.commissionRate);
+  if (commission) errors.commissionRate = commission;
   return errors;
 }
 

@@ -60,16 +60,10 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+if (typeof window !== "undefined" && "serviceWorker" in navigator && import.meta.env.DEV) {
   window.addEventListener("load", async () => {
-    if (import.meta.env.DEV) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map(registration => registration.unregister()));
-      const cacheKeys = await caches.keys();
-      await Promise.all(cacheKeys.map(cacheKey => caches.delete(cacheKey)));
-      return;
-    }
-    await navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map(registration => registration.unregister()));
   });
 }
 

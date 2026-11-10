@@ -1,13 +1,35 @@
-/** kuryeler.tr domain: roles, statuses, Istanbul coverage and pricing. */
+/** kuryeler.tr — roller, durumlar, sürüş mesafesi fiyatı ve sipariş modeli. */
+
+export { DISTRICT_NAMES, DISTRICT_PRICES, findDistrictPrice, type DistrictPrice } from "./fiyatListesi";
 
 export const BRAND_NAME = "kuryeler.tr";
+export const BRAND_PRODUCT = "Hızlıgel";
 export const BRAND_CITY = "İstanbul";
 export const CURRENCY_SUFFIX = "TL";
+export const VAT_EXCL_LABEL = "KDV hariç";
+export const VAT_INCL_LABEL = "KDV dahil";
+export const DEFAULT_VAT_RATE = 0.2;
 export const BRAND_URL = "https://kuryeler.tr";
 export const CONTACT_EMAIL = "iletisim@kuryeler.tr";
 export const CONTACT_PHONE_DISPLAY = "0532 474 67 45";
-/** WhatsApp uluslararası format (başında + yok). VITE_WHATSAPP_NUMBER ile override. */
 export const CONTACT_WHATSAPP_E164 = "905324746745";
+
+/** Köşeli parantezli alanlar işletme kimliği doldurulunca değişir. */
+export const BUSINESS = {
+  legalName: "[AD SOYAD]",
+  taxOffice: "[VERGİ DAİRESİ]",
+  taxId: "[VKN]",
+  address: "[AÇIK ADRES], İstanbul",
+  kep: "[KEP ADRESİ]",
+  chamber: "[ODA ADI – varsa]",
+  trademarkNote: "Marka: kuryeler.tr (başvuru no 2026/088618 – tescil süreci devam ediyor)",
+  kvkkEffective: "[TARİH]",
+  retentionOrdersYears: "[X]",
+  retentionPhotoMonths: "[X]",
+} as const;
+
+export const MAX_WEIGHT_KG = 30;
+export const WEIGHT_LIMIT_MESSAGE = "Maksimum taşıma sınırı 30 kg";
 
 export const USER_ROLES = ["customer", "courier", "admin"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
@@ -22,8 +44,19 @@ export const ORDER_STATUSES = [
 ] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-export const PACKAGE_TYPES = ["evrak", "kucuk", "orta", "buyuk", "gida"] as const;
-export type PackageType = (typeof PACKAGE_TYPES)[number];
+export const PUBLIC_STATUSES = ["pending", "picked_up", "en_route", "delivered", "cancelled"] as const;
+
+export const PAYMENT_METHODS = ["nakit", "havale", "kart_kapida"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const PAYMENT_STATUSES = ["bekliyor", "odendi"] as const;
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+export const ROUTING_PROVIDERS = ["osrm", "ors", "custom"] as const;
+export type RoutingProvider = (typeof ROUTING_PROVIDERS)[number];
+
+export const GEOCODERS = ["nominatim", "photon"] as const;
+export type Geocoder = (typeof GEOCODERS)[number];
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   customer: "Müşteri",
@@ -32,107 +65,71 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: "Beklemede",
-  assigned: "Kuryeye atandı",
+  pending: "Bekliyor",
+  assigned: "Bekliyor",
   picked_up: "Alındı",
   en_route: "Yolda",
   delivered: "Teslim edildi",
   cancelled: "İptal",
 };
 
-export const PACKAGE_LABELS: Record<PackageType, string> = {
-  evrak: "Evrak",
-  kucuk: "Küçük paket",
-  orta: "Orta paket",
-  buyuk: "Büyük paket",
-  gida: "Gıda",
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  nakit: "Nakit",
+  havale: "Havale / EFT",
+  kart_kapida: "Kapıda kart",
 };
 
-export const PACKAGE_DESCRIPTIONS: Record<PackageType, string> = {
-  evrak: "Zarf, belge, küçük dosya",
-  kucuk: "Ayakkabı kutusu veya küçük poşet",
-  orta: "Standart koli, birkaç ürün",
-  buyuk: "Büyük koli veya hacimli gönderi",
-  gida: "Sıcak/soğuk gıda, market poşeti",
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  bekliyor: "Ödeme bekliyor",
+  odendi: "Ödendi",
 };
 
-export type ContinentSide = "avrupa" | "anadolu";
-
-export type IstanbulDistrict = {
-  name: string;
-  side: ContinentSide;
-  lat: number;
-  lng: number;
+export const ROUTING_PROVIDER_LABELS: Record<RoutingProvider, string> = {
+  osrm: "OSRM (router.project-osrm.org)",
+  ors: "OpenRouteService",
+  custom: "Özel OSRM uyumlu sunucu",
 };
-
-/** İstanbul ilçe merkezleri (yaklaşık); km tahmini için haversine. */
-export const ISTANBUL_DISTRICTS: IstanbulDistrict[] = [
-  { name: "Adalar", side: "anadolu", lat: 40.876, lng: 29.095 },
-  { name: "Arnavutköy", side: "avrupa", lat: 41.185, lng: 28.74 },
-  { name: "Ataşehir", side: "anadolu", lat: 40.983, lng: 29.127 },
-  { name: "Avcılar", side: "avrupa", lat: 40.979, lng: 28.721 },
-  { name: "Bağcılar", side: "avrupa", lat: 41.039, lng: 28.856 },
-  { name: "Bahçelievler", side: "avrupa", lat: 41.002, lng: 28.86 },
-  { name: "Bakırköy", side: "avrupa", lat: 40.981, lng: 28.877 },
-  { name: "Başakşehir", side: "avrupa", lat: 41.093, lng: 28.802 },
-  { name: "Bayrampaşa", side: "avrupa", lat: 41.048, lng: 28.9 },
-  { name: "Beşiktaş", side: "avrupa", lat: 41.043, lng: 29.008 },
-  { name: "Beykoz", side: "anadolu", lat: 41.125, lng: 29.108 },
-  { name: "Beylikdüzü", side: "avrupa", lat: 41.001, lng: 28.642 },
-  { name: "Beyoğlu", side: "avrupa", lat: 41.038, lng: 28.985 },
-  { name: "Büyükçekmece", side: "avrupa", lat: 41.021, lng: 28.585 },
-  { name: "Çatalca", side: "avrupa", lat: 41.143, lng: 28.461 },
-  { name: "Çekmeköy", side: "anadolu", lat: 41.037, lng: 29.2 },
-  { name: "Esenler", side: "avrupa", lat: 41.043, lng: 28.876 },
-  { name: "Esenyurt", side: "avrupa", lat: 41.033, lng: 28.675 },
-  { name: "Eyüpsultan", side: "avrupa", lat: 41.056, lng: 28.922 },
-  { name: "Fatih", side: "avrupa", lat: 41.018, lng: 28.95 },
-  { name: "Gaziosmanpaşa", side: "avrupa", lat: 41.076, lng: 28.911 },
-  { name: "Güngören", side: "avrupa", lat: 41.021, lng: 28.873 },
-  { name: "Kadıköy", side: "anadolu", lat: 40.983, lng: 29.037 },
-  { name: "Kağıthane", side: "avrupa", lat: 41.08, lng: 28.973 },
-  { name: "Kartal", side: "anadolu", lat: 40.911, lng: 29.194 },
-  { name: "Küçükçekmece", side: "avrupa", lat: 41.003, lng: 28.78 },
-  { name: "Maltepe", side: "anadolu", lat: 40.935, lng: 29.151 },
-  { name: "Pendik", side: "anadolu", lat: 40.877, lng: 29.233 },
-  { name: "Sancaktepe", side: "anadolu", lat: 41.002, lng: 29.237 },
-  { name: "Sarıyer", side: "avrupa", lat: 41.166, lng: 29.057 },
-  { name: "Silivri", side: "avrupa", lat: 41.073, lng: 28.246 },
-  { name: "Sultanbeyli", side: "anadolu", lat: 40.968, lng: 29.267 },
-  { name: "Sultangazi", side: "avrupa", lat: 41.107, lng: 28.868 },
-  { name: "Şile", side: "anadolu", lat: 41.175, lng: 29.613 },
-  { name: "Şişli", side: "avrupa", lat: 41.06, lng: 28.987 },
-  { name: "Tuzla", side: "anadolu", lat: 40.816, lng: 29.305 },
-  { name: "Ümraniye", side: "anadolu", lat: 41.016, lng: 29.124 },
-  { name: "Üsküdar", side: "anadolu", lat: 41.023, lng: 29.016 },
-  { name: "Zeytinburnu", side: "avrupa", lat: 41.003, lng: 28.91 },
-];
-
-export const DISTRICT_NAMES = ISTANBUL_DISTRICTS.map(d => d.name);
 
 export type PricingSettings = {
-  baseFeeTl: number;
-  perKmTl: number;
+  baseTry: number;
+  perKmTry: number;
+  roundingDecimals: number;
+  vatRate: number;
+  routingProvider: RoutingProvider;
+  routingUrl: string;
+  geocoder: Geocoder;
   commissionRate: number;
-  useZones: boolean;
-  crossSideSurchargeTl: number;
-  packageFees: Record<PackageType, number>;
+  showcaseMode: boolean;
 };
 
 export const DEFAULT_PRICING: PricingSettings = {
-  baseFeeTl: 150,
-  perKmTl: 25,
+  baseTry: 600,
+  perKmTry: 50,
+  roundingDecimals: 2,
+  vatRate: DEFAULT_VAT_RATE,
+  routingProvider: "osrm",
+  routingUrl: "https://router.project-osrm.org",
+  geocoder: "nominatim",
   commissionRate: 0.2,
-  useZones: true,
-  crossSideSurchargeTl: 40,
-  packageFees: {
-    evrak: 0,
-    kucuk: 0,
-    orta: 25,
-    buyuk: 50,
-    gida: 20,
-  },
+  showcaseMode: false,
 };
+
+function readViteFlag(name: string): string {
+  try {
+    const env = (import.meta as { env?: Record<string, string | undefined> }).env;
+    return String(env?.[name] ?? "");
+  } catch {
+    return "";
+  }
+}
+
+export function envShowcaseMode() {
+  return readViteFlag("VITE_VITRIN_MODU") === "true";
+}
+
+export function isShowcaseMode(pricing?: PricingSettings | null) {
+  return Boolean(pricing?.showcaseMode) || envShowcaseMode();
+}
 
 const STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
   pending: ["assigned", "cancelled"],
@@ -162,79 +159,55 @@ export function courierStatusActionLabel(current: OrderStatus) {
   return null;
 }
 
-export function findDistrict(name: string) {
-  const key = name.trim().toLocaleLowerCase("tr-TR");
-  return ISTANBUL_DISTRICTS.find(d => d.name.toLocaleLowerCase("tr-TR") === key) ?? null;
+export function displayStatus(status: OrderStatus): Exclude<OrderStatus, "assigned"> {
+  if (status === "assigned") return "pending";
+  return status;
 }
 
-export function haversineKm(
-  a: { lat: number; lng: number },
-  b: { lat: number; lng: number },
-) {
-  const radians = (value: number) => (value * Math.PI) / 180;
-  const earthRadiusKm = 6371;
-  const dLat = radians(b.lat - a.lat);
-  const dLng = radians(b.lng - a.lng);
-  const sinLat = Math.sin(dLat / 2);
-  const sinLng = Math.sin(dLng / 2);
-  const arc =
-    sinLat * sinLat +
-    Math.cos(radians(a.lat)) * Math.cos(radians(b.lat)) * sinLng * sinLng;
-  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(arc), Math.sqrt(1 - arc));
-}
-
-/** District-center distance with a 1.35 road-factor (not bird-flight). */
-export function estimateDistanceKm(pickupDistrict: string, dropoffDistrict: string) {
-  const pickup = findDistrict(pickupDistrict);
-  const dropoff = findDistrict(dropoffDistrict);
-  if (!pickup || !dropoff) return 0;
-  if (pickup.name === dropoff.name) return 3;
-  return Number((haversineKm(pickup, dropoff) * 1.35).toFixed(2));
+export function roundMoney(value: number, decimals: number) {
+  const digits = Math.max(0, Math.min(6, Math.floor(Number.isFinite(decimals) ? decimals : 2)));
+  const factor = 10 ** digits;
+  return Math.round((Number(value) + Number.EPSILON) * factor) / factor;
 }
 
 export type PriceBreakdown = {
   distanceKm: number;
-  baseFeeTl: number;
-  distanceFeeTl: number;
-  packageFeeTl: number;
-  zoneSurchargeTl: number;
+  baseTry: number;
+  distanceFeeTry: number;
+  vatRate: number;
+  netTl: number;
+  vatTl: number;
+  grossTl: number;
   totalTl: number;
   commissionTl: number;
   courierEarningTl: number;
   companyRevenueTl: number;
 };
 
+/** Sürüş km’si — kuş uçuşu değil. net = açılış_tl + km_tl × km (KDV hariç); üstüne KDV eklenir. */
 export function calculateDeliveryPrice(input: {
-  pickupDistrict: string;
-  dropoffDistrict: string;
-  packageType: PackageType;
-  distanceKm?: number;
+  distanceKm: number;
   pricing?: PricingSettings;
 }): PriceBreakdown {
   const pricing = input.pricing ?? DEFAULT_PRICING;
-  const distanceKm =
-    input.distanceKm != null && Number.isFinite(input.distanceKm)
-      ? Math.max(0, Number(input.distanceKm))
-      : estimateDistanceKm(input.pickupDistrict, input.dropoffDistrict);
-  const packageFeeTl = pricing.packageFees[input.packageType] ?? 0;
-  const pickup = findDistrict(input.pickupDistrict);
-  const dropoff = findDistrict(input.dropoffDistrict);
-  const crossSide =
-    Boolean(pricing.useZones && pickup && dropoff && pickup.side !== dropoff.side);
-  const zoneSurchargeTl = crossSide ? pricing.crossSideSurchargeTl : 0;
-  const distanceFeeTl = Number((distanceKm * pricing.perKmTl).toFixed(2));
-  const rawTotal = pricing.baseFeeTl + distanceFeeTl + packageFeeTl + zoneSurchargeTl;
-  const totalTl = Number(Math.max(pricing.baseFeeTl, rawTotal).toFixed(2));
-  const commissionTl = Number((totalTl * pricing.commissionRate).toFixed(2));
+  const distanceKm = Math.max(0, Number(input.distanceKm) || 0);
+  const vatRate = Number.isFinite(pricing.vatRate) ? Math.max(0, pricing.vatRate) : DEFAULT_VAT_RATE;
+  const distanceFeeTry = pricing.perKmTry * distanceKm;
+  const netTl = roundMoney(pricing.baseTry + distanceFeeTry, pricing.roundingDecimals);
+  const vatTl = roundMoney(netTl * vatRate, pricing.roundingDecimals);
+  const grossTl = roundMoney(netTl + vatTl, pricing.roundingDecimals);
+  const commissionTl = roundMoney(netTl * pricing.commissionRate, pricing.roundingDecimals);
   return {
-    distanceKm: Number(distanceKm.toFixed(2)),
-    baseFeeTl: pricing.baseFeeTl,
-    distanceFeeTl,
-    packageFeeTl,
-    zoneSurchargeTl,
-    totalTl,
+    distanceKm: roundMoney(distanceKm, Math.max(2, pricing.roundingDecimals)),
+    baseTry: pricing.baseTry,
+    distanceFeeTry: roundMoney(distanceFeeTry, pricing.roundingDecimals),
+    vatRate,
+    netTl,
+    vatTl,
+    grossTl,
+    totalTl: grossTl,
     commissionTl,
-    courierEarningTl: Number((totalTl - commissionTl).toFixed(2)),
+    courierEarningTl: roundMoney(netTl - commissionTl, pricing.roundingDecimals),
     companyRevenueTl: commissionTl,
   };
 }
@@ -246,16 +219,97 @@ export function formatTl(value: number | string) {
   })} ${CURRENCY_SUFFIX}`;
 }
 
-export function generateTrackingCode(now = new Date()) {
-  const stamp = now
-    .toISOString()
-    .replace(/[-:TZ.]/g, "")
-    .slice(2, 12);
-  const rand = Math.floor(Math.random() * 36 ** 3)
-    .toString(36)
-    .toUpperCase()
-    .padStart(3, "0");
-  return `KY-${stamp}${rand}`.slice(0, 16);
+export function formatVatPercent(rate: number) {
+  const pct = roundMoney((Number(rate) || 0) * 100, 2);
+  return `%${pct.toLocaleString("tr-TR", { maximumFractionDigits: 2 })}`;
+}
+
+export function formatTariff(pricing: PricingSettings = DEFAULT_PRICING) {
+  return `Açılış ${formatTl(pricing.baseTry)} + km başı ${formatTl(pricing.perKmTry)} (${VAT_EXCL_LABEL})`;
+}
+
+export function formatTariffInclusive(pricing: PricingSettings = DEFAULT_PRICING) {
+  const vatRate = Number.isFinite(pricing.vatRate) ? Math.max(0, pricing.vatRate) : DEFAULT_VAT_RATE;
+  const baseGross = roundMoney(pricing.baseTry * (1 + vatRate), pricing.roundingDecimals);
+  const kmGross = roundMoney(pricing.perKmTry * (1 + vatRate), pricing.roundingDecimals);
+  return `Açılış ${formatTl(baseGross)} + km başı ${formatTl(kmGross)} (${VAT_INCL_LABEL})`;
+}
+
+export function formatPriceInclusive(price: Pick<PriceBreakdown, "grossTl">) {
+  return `${formatTl(price.grossTl)} (${VAT_INCL_LABEL})`;
+}
+
+export function formatPriceHint(price: Pick<PriceBreakdown, "netTl" | "vatTl">) {
+  return `${formatTl(price.netTl)} + ${formatTl(price.vatTl)} KDV`;
+}
+
+export function formatPriceBreakdown(price: Pick<PriceBreakdown, "netTl" | "vatTl" | "grossTl" | "vatRate">) {
+  return [
+    `${formatTl(price.netTl)} ${VAT_EXCL_LABEL}`,
+    `KDV (${formatVatPercent(price.vatRate)}): ${formatTl(price.vatTl)}`,
+    `${formatTl(price.grossTl)} ${VAT_INCL_LABEL}`,
+  ].join(" · ");
+}
+
+export function breakdownFromOrder(
+  order: Pick<DeliveryOrder, "distanceKm" | "netPriceTl" | "vatTl" | "totalPriceTl" | "courierEarningTl" | "companyRevenueTl">,
+  pricing: PricingSettings = DEFAULT_PRICING,
+): PriceBreakdown {
+  const computed = calculateDeliveryPrice({ distanceKm: order.distanceKm, pricing });
+  const netTl = order.netPriceTl > 0 ? order.netPriceTl : computed.netTl;
+  const vatTl = order.vatTl > 0 || order.netPriceTl > 0 ? order.vatTl : computed.vatTl;
+  const grossTl = order.totalPriceTl > 0 ? order.totalPriceTl : roundMoney(netTl + vatTl, pricing.roundingDecimals);
+  return {
+    ...computed,
+    netTl,
+    vatTl,
+    grossTl,
+    totalTl: grossTl,
+    courierEarningTl: order.courierEarningTl || computed.courierEarningTl,
+    companyRevenueTl: order.companyRevenueTl || computed.companyRevenueTl,
+  };
+}
+
+export function formatKm(value: number) {
+  return `${Number(value).toLocaleString("tr-TR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 2,
+  })} km`;
+}
+
+export function generateTrackingCode() {
+  const bytes = new Uint8Array(16);
+  const cryptoObj = globalThis.crypto;
+  if (!cryptoObj?.getRandomValues) {
+    throw new Error("Güvenli rastgele üretici yok");
+  }
+  cryptoObj.getRandomValues(bytes);
+  const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
+  return `KY-${hex}`;
+}
+
+export function redactPendingForCourier(order: DeliveryOrder): DeliveryOrder {
+  const district = order.bolge?.trim() || "İlçe";
+  return {
+    ...order,
+    boardOnly: true,
+    product: "Gönderi",
+    pickupAddress: district,
+    dropoffAddress: district,
+    recipientName: "",
+    contactPhone: "",
+    notes: "",
+    pickupLat: null,
+    pickupLng: null,
+    dropoffLat: null,
+    dropoffLng: null,
+    routeGeojson: null,
+    pickupPhoto: null,
+    deliveryPhoto: null,
+    signatureData: null,
+  };
 }
 
 export function isActiveOrder(status: OrderStatus) {
@@ -263,11 +317,9 @@ export function isActiveOrder(status: OrderStatus) {
 }
 
 export function statusTone(status: OrderStatus) {
-  switch (status) {
+  switch (displayStatus(status)) {
     case "pending":
       return "bg-[#2a2410] text-[#D4AF37]";
-    case "assigned":
-      return "bg-[#1a2330] text-[#d4c48a]";
     case "picked_up":
       return "bg-[#241a30] text-[#e6d9a8]";
     case "en_route":
@@ -279,29 +331,52 @@ export function statusTone(status: OrderStatus) {
   }
 }
 
+export function formatDateTimeTr(value: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("tr-TR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export type LatLng = { lat: number; lng: number };
+
 export type DeliveryOrder = {
   id: string;
   trackingCode: string;
   customerId: string;
   courierId: string | null;
   status: OrderStatus;
+  product: string;
   pickupAddress: string;
-  pickupDistrict: string;
-  pickupNeighborhood: string;
-  pickupStreet: string;
-  pickupNote: string;
   dropoffAddress: string;
-  dropoffDistrict: string;
-  dropoffNeighborhood: string;
-  dropoffStreet: string;
-  dropoffNote: string;
-  packageType: PackageType;
+  bolge: string;
+  recipientName: string;
+  scheduledAt: string | null;
   notes: string;
   contactPhone: string;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  pickupPhoto: string | null;
+  deliveryPhoto: string | null;
+  signatureData: string | null;
+  weightKg: number;
   distanceKm: number;
+  netPriceTl: number;
+  vatTl: number;
   totalPriceTl: number;
   courierEarningTl: number;
   companyRevenueTl: number;
+  boardOnly?: boolean;
+  pickupLat: number | null;
+  pickupLng: number | null;
+  dropoffLat: number | null;
+  dropoffLng: number | null;
+  routeGeojson: string | null;
   createdAt: string;
   updatedAt: string;
   assignedAt: string | null;

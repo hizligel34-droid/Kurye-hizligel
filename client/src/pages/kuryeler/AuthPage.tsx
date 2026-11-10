@@ -2,43 +2,42 @@ import { BrandMark, DemoBanner, InstallHint } from "@/components/kuryeler/BrandS
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useKuryelerAuth, panelPathForRole } from "@/contexts/KuryelerAuth";
-import { DEMO_ACCOUNTS } from "@/lib/kuryelerApi";
+import { useKuryelerAuth } from "@/contexts/KuryelerAuth";
+import { DEMO_ACCOUNTS, getPricing } from "@/lib/kuryelerApi";
 import { cardClass, fieldClass, goldBtn } from "@/lib/kuryelerTheme";
 import { FieldError, SkipLink } from "@/components/kuryeler/UiStates";
 import { firstError, validateAuthForm, type FieldErrors } from "@shared/kuryelerValidation";
 import { normalizeTurkishMobilePhone } from "@shared/orderValidation";
-import { ROLE_LABELS, type UserRole } from "@shared/kuryeler";
-import type { PwaPanel } from "@shared/kuryelerPwa";
+import { CONTACT_PHONE_DISPLAY, isShowcaseMode, ROLE_LABELS, type UserRole } from "@shared/kuryeler";
+import { PANEL_ROLE, PWA_APPS, type PwaPanel } from "@shared/kuryelerPwa";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
-
-const PANEL_ROLE: Record<Exclude<PwaPanel, "site">, UserRole> = {
-  musteri: "customer",
-  kurye: "courier",
-  yonetici: "admin",
-};
 
 export default function AuthPage({
   mode,
   panel,
 }: {
   mode: "giris" | "kayit";
-  panel: Exclude<PwaPanel, "site">;
+  panel: PwaPanel;
 }) {
   const { signIn, signUp, user, mode: dataMode } = useKuryelerAuth();
   const [, navigate] = useLocation();
-  const expectedRole = PANEL_ROLE[panel];
+  const expectedRole: UserRole = PANEL_ROLE[panel];
+  const app = PWA_APPS[panel];
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState<"customer" | "courier">(
-    panel === "kurye" ? "courier" : "customer",
-  );
   const [busy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [showcase, setShowcase] = useState(isShowcaseMode());
+
+  useEffect(() => {
+    void getPricing()
+      .then(pricing => setShowcase(isShowcaseMode(pricing)))
+      .catch(() => setShowcase(isShowcaseMode()));
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -48,19 +47,13 @@ export default function AuthPage({
     setEmail(account.email);
     setPassword(account.password);
     void signIn(account.email, account.password)
-      .then(next => navigate(panelPathForRole(next.role)))
+      .then(() => navigate("/"))
       .catch(error => toast.error(error instanceof Error ? error.message : "Demo giriş başarısız"));
-    // Demo otomatik giriş yalnızca ilk yüklemede.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expectedRole]);
 
   useEffect(() => {
-    if (!user) return;
-    if (user.role !== expectedRole) {
-      toast.message(`${ROLE_LABELS[user.role]} hesabı kendi paneline alındı`);
-    }
-    navigate(panelPathForRole(user.role));
-  }, [user, expectedRole, navigate]);
+    if (user) navigate("/");
+  }, [user, navigate]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -72,7 +65,10 @@ export default function AuthPage({
       phone,
     });
     if (mode === "kayit" && panel === "yonetici") {
-      nextErrors.email = "Yönetici hesabı kayıt formundan açılamaz; mevcut yönetici atar.";
+      nextErrors.email = "Yönetici hesabı bu uygulamadan açılamaz.";
+    }
+    if (mode === "kayit" && showcase) {
+      nextErrors.email = "Vitrin modunda kayıt alınmaz.";
     }
     setFieldErrors(nextErrors);
     const message = firstError(nextErrors);
@@ -83,24 +79,20 @@ export default function AuthPage({
     setBusy(true);
     try {
       if (mode === "giris") {
-        const next = await signIn(email, password);
-        if (next.role !== expectedRole) {
-          toast.message(`Bu hesap ${ROLE_LABELS[next.role]} paneline aittir`);
-        } else {
-          toast.success("Giriş başarılı");
-        }
-        navigate(panelPathForRole(next.role));
+        await signIn(email, password);
+        toast.success("Giriş başarılı");
+        navigate("/");
         return;
       }
-      const next = await signUp({
+      await signUp({
         email,
         password,
         fullName,
         phone: normalizeTurkishMobilePhone(phone),
-        role,
+        role: expectedRole === "courier" ? "courier" : "customer",
       });
       toast.success("Hesabınız oluşturuldu");
-      navigate(panelPathForRole(next.role));
+      navigate("/");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "İşlem başarısız");
     } finally {
@@ -114,19 +106,19 @@ export default function AuthPage({
     <div className="min-h-dvh bg-[#0a0a0a] text-[#f5edd6]">
       <SkipLink />
       <DemoBanner />
-      <header className="border-b border-[#3a3014] bg-black">
+      <header className="border-b border-[#3a3014] bg-black pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-16 max-w-lg items-center px-4">
-          <BrandMark compact />
+          <BrandMark compact href="/" />
         </div>
       </header>
       <main id="icerik" className="mx-auto max-w-lg px-4 py-8">
         <Card className={cardClass}>
           <CardHeader>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
-              {ROLE_LABELS[expectedRole]} · {mode === "giris" ? "Giriş" : "Kayıt"}
+              {app.name} · {mode === "giris" ? "Giriş" : "Kayıt"}
             </p>
             <CardTitle className="text-2xl font-black text-[#f5edd6]">
-              {mode === "giris" ? "Panele girin" : "kuryeler.tr’ye katılın"}
+              {mode === "giris" ? "Hesabınıza girin" : `${app.name} kaydı`}
             </CardTitle>
             <InstallHint panel={panel} />
           </CardHeader>
@@ -167,24 +159,6 @@ export default function AuthPage({
                     />
                     <FieldError id="signup-phone-err" message={fieldErrors.phone} />
                   </div>
-                  {panel === "musteri" && (
-                    <div className="grid grid-cols-2 gap-2">
-                      {(["customer", "courier"] as const).map(option => (
-                        <button
-                          type="button"
-                          key={option}
-                          onClick={() => setRole(option)}
-                          className={`rounded-2xl border px-3 py-3 text-sm font-bold ${
-                            role === option
-                              ? "border-[#D4AF37] bg-[#1a1508] text-[#D4AF37]"
-                              : "border-[#3a3014] bg-black text-[#b4a882]"
-                          }`}
-                        >
-                          {ROLE_LABELS[option]}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </>
               )}
               <div>
@@ -221,22 +195,42 @@ export default function AuthPage({
                 />
                 <FieldError id="password-err" message={fieldErrors.password} />
               </div>
-              <Button className={`h-11 w-full ${goldBtn}`} disabled={busy}>
-                {busy ? "Lütfen bekleyin…" : mode === "giris" ? "Giriş yap" : "Hesap oluştur"}
-              </Button>
+              {mode === "kayit" ? (
+                <p className="text-xs leading-5 text-[#8a7c52]">
+                  Hesap oluşturarak{" "}
+                  <a href="/kosullar" className="font-bold text-[#D4AF37]">
+                    Kullanım Koşulları
+                  </a>
+                  ’nı kabul etmiş olursunuz. Kişisel verilerinizin nasıl işlendiğini{" "}
+                  <a href="/kvkk" className="font-bold text-[#D4AF37]">
+                    KVKK Aydınlatma Metni
+                  </a>
+                  {panel === "kurye" ? " (kurye adayları için aynı metin, kurye bölümü)" : ""}
+                  ’nde okuyabilirsiniz.
+                </p>
+              ) : null}
+              {mode === "kayit" && showcase ? (
+                <p className="rounded-xl border border-[#3a3014] bg-[#1a1508] p-3 text-xs text-[#D4AF37]">
+                  Vitrin modu: yeni kayıt kapalıdır. {CONTACT_PHONE_DISPLAY}
+                </p>
+              ) : (
+                <Button className={`h-11 w-full ${goldBtn}`} disabled={busy || (mode === "kayit" && showcase)}>
+                  {busy ? "Lütfen bekleyin…" : mode === "giris" ? "Giriş yap" : "Hesap oluştur"}
+                </Button>
+              )}
             </form>
             <p className="mt-4 text-center text-sm text-[#8a7c52]">
-              {mode === "giris" && panel !== "yonetici" ? (
+              {mode === "giris" && panel !== "yonetici" && !showcase ? (
                 <>
                   Hesabınız yok mu?{" "}
-                  <Link href={`/${panel}/kayit`} className="font-bold text-[#D4AF37]">
+                  <Link href="/kayit" className="font-bold text-[#D4AF37]">
                     Kayıt olun
                   </Link>
                 </>
               ) : mode === "kayit" ? (
                 <>
                   Zaten üye misiniz?{" "}
-                  <Link href={`/${panel}/giris`} className="font-bold text-[#D4AF37]">
+                  <Link href="/giris" className="font-bold text-[#D4AF37]">
                     Giriş yapın
                   </Link>
                 </>
@@ -244,11 +238,12 @@ export default function AuthPage({
                 "Yönetici hesabı kayıtla açılmaz."
               )}
             </p>
+            <p className="mt-3 text-center text-xs text-[#8a7c52]">
+              Bu uygulama yalnızca {ROLE_LABELS[expectedRole].toLocaleLowerCase("tr-TR")} hesapları içindir.
+            </p>
             {dataMode === "demo" && (
               <div className="mt-6 space-y-2 rounded-2xl border border-[#3a3014] bg-black p-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#8a7c52]">
-                  Demo hesap
-                </p>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#8a7c52]">Demo hesap</p>
                 {demoForPanel.map(account => (
                   <button
                     key={account.email}

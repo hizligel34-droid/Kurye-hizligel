@@ -1,0 +1,35 @@
+{
+  "id": "https://kuryeler.tr/musteri/",
+  "name": "Hızlıgel Müşteri",
+  "short_name": "Hızlıgel Müşteri",
+  "description": "Sipariş oluşturun, haritada sürüş ücretini görün, teslimatı takip edin.",
+  "start_url": "/musteri/",
+  "scope": "/musteri/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0A0A0A",
+  "lang": "tr",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/pwa/icons/musteri-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/icons/musteri-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa/icons/musteri-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

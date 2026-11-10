@@ -3,9 +3,19 @@ import { SiteFooter } from "@/components/kuryeler/SiteFooter";
 import { EmptyState, ErrorState, SkipLink } from "@/components/kuryeler/UiStates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { trackPublic, type PublicTrack } from "@/lib/kuryelerApi";
+import { PriceLines } from "@/components/kuryeler/PriceLines";
+import { getPricing, trackPublic, type PublicTrack } from "@/lib/kuryelerApi";
 import { cardClass, fieldClass, goldBtn } from "@/lib/kuryelerTheme";
-import { ORDER_STATUSES, PACKAGE_LABELS, STATUS_LABELS, statusTone } from "@shared/kuryeler";
+import {
+  PUBLIC_STATUSES,
+  STATUS_LABELS,
+  calculateDeliveryPrice,
+  DEFAULT_PRICING,
+  displayStatus,
+  formatKm,
+  statusTone,
+  type PricingSettings,
+} from "@shared/kuryeler";
 import { validateTrackingCode } from "@shared/kuryelerValidation";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "wouter";
@@ -18,6 +28,14 @@ export default function TrackPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [pricing, setPricing] = useState<PricingSettings>(DEFAULT_PRICING);
+  const inMusteriApp = typeof window !== "undefined" && window.location.pathname.startsWith("/musteri");
+
+  useEffect(() => {
+    void getPricing()
+      .then(setPricing)
+      .catch(() => setPricing(DEFAULT_PRICING));
+  }, []);
 
   const search = async (value: string) => {
     const invalid = validateTrackingCode(value);
@@ -44,16 +62,24 @@ export default function TrackPage() {
     if (params.code) void search(params.code);
   }, [params.code]);
 
+  const orderCta = inMusteriApp ? (
+    <Button variant="ghost" className="text-[#D4AF37]" asChild>
+      <Link href="/">Sipariş ver</Link>
+    </Button>
+  ) : (
+    <Button variant="ghost" className="text-[#D4AF37]" asChild>
+      <a href="/musteri/">Hızlıgel Müşteri</a>
+    </Button>
+  );
+
   return (
     <div className="min-h-dvh bg-[#0a0a0a] text-[#f5edd6]">
       <SkipLink />
       <DemoBanner />
-      <header className="border-b border-[#3a3014] bg-black">
+      <header className="border-b border-[#3a3014] bg-black pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-16 max-w-lg items-center justify-between px-4">
-          <BrandMark compact />
-          <Button variant="ghost" className="text-[#D4AF37]" asChild>
-            <Link href="/musteri">Sipariş ver</Link>
-          </Button>
+          <BrandMark compact href={inMusteriApp ? "/" : "/"} />
+          {orderCta}
         </div>
       </header>
       <main id="icerik" className="mx-auto max-w-lg px-4 py-8">
@@ -98,16 +124,32 @@ export default function TrackPage() {
           <div className={`${cardClass} mt-4 p-5`}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="font-mono font-bold text-[#D4AF37]">{result.trackingCode}</p>
-              <StatusBadge label={STATUS_LABELS[result.status]} className={statusTone(result.status)} />
+              <StatusBadge
+                label={STATUS_LABELS[displayStatus(result.status)]}
+                className={statusTone(result.status)}
+              />
             </div>
             <p className="mt-3 text-sm text-[#b4a882]">
-              {result.pickupDistrict} → {result.dropoffDistrict}
+              {result.distanceKm > 0 ? formatKm(result.distanceKm) : result.bolge || "İstanbul"}
             </p>
-            <p className="text-xs text-[#8a7c52]">{PACKAGE_LABELS[result.packageType]}</p>
+            {result.distanceKm > 0 ? (
+              <div className="mt-3">
+                <PriceLines
+                  price={calculateDeliveryPrice({ distanceKm: result.distanceKm, pricing })}
+                  audience="consumer"
+                />
+              </div>
+            ) : null}
+            <p className="mt-2 text-xs leading-5 text-[#8a7c52]">
+              Alım: {result.pickupAddress}
+              <br />
+              Gidecek yer: {result.dropoffAddress}
+            </p>
             <ol className="mt-5 space-y-2">
-              {ORDER_STATUSES.filter(status => status !== "cancelled").map(status => {
+              {PUBLIC_STATUSES.filter(status => status !== "cancelled").map(status => {
+                const current = displayStatus(result.status);
                 const reached =
-                  ORDER_STATUSES.indexOf(result.status) >= ORDER_STATUSES.indexOf(status) &&
+                  PUBLIC_STATUSES.indexOf(current) >= PUBLIC_STATUSES.indexOf(status) &&
                   result.status !== "cancelled";
                 return (
                   <li
@@ -124,7 +166,7 @@ export default function TrackPage() {
           </div>
         ) : null}
       </main>
-      <SiteFooter />
+      {inMusteriApp ? null : <SiteFooter />}
     </div>
   );
 }

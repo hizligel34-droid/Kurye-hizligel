@@ -2,21 +2,29 @@ import {
   calculateDeliveryPrice,
   canTransitionStatus,
   DEFAULT_PRICING,
+  DISTRICT_PRICES,
   generateTrackingCode,
   isActiveOrder,
   nextCourierStatus,
+  redactPendingForCourier,
+  WEIGHT_LIMIT_MESSAGE,
   type DashboardStats,
   type DeliveryOrder,
+  type DistrictPrice,
+  type Geocoder,
   type OrderStatus,
-  type PackageType,
+  type PaymentMethod,
+  type PaymentStatus,
   type PricingSettings,
   type Profile,
+  type RoutingProvider,
   type UserRole,
 } from "@shared/kuryeler";
+import { buildOrderConfirmationMail, type OutboundMail } from "@shared/orderConfirmation";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
-const DEMO_KEY = "kuryeler.tr.demo.v1";
+const DEMO_KEY = "kuryeler.tr.demo.v6";
 
 export const DEMO_ACCOUNTS = [
   {
@@ -48,27 +56,39 @@ export const DEMO_ACCOUNTS = [
 export type SessionUser = Profile;
 
 export type CreateOrderInput = {
-  pickupDistrict: string;
-  pickupNeighborhood: string;
-  pickupStreet: string;
-  pickupNote: string;
-  dropoffDistrict: string;
-  dropoffNeighborhood: string;
-  dropoffStreet: string;
-  dropoffNote: string;
-  packageType: PackageType;
+  product: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  bolge?: string;
+  recipientName: string;
+  scheduledAt: string;
   notes: string;
   contactPhone: string;
+  paymentMethod: PaymentMethod;
+  weightKg: number;
+  distanceKm: number;
+  pickupLat: number;
+  pickupLng: number;
+  dropoffLat: number;
+  dropoffLng: number;
+  routeGeojson?: string | null;
 };
 
 export type PublicTrack = {
   trackingCode: string;
   status: OrderStatus;
-  pickupDistrict: string;
-  dropoffDistrict: string;
-  packageType: PackageType;
+  bolge: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  distanceKm: number;
   createdAt: string;
   updatedAt: string;
+};
+
+export type StatusProof = {
+  pickupPhoto?: string | null;
+  deliveryPhoto?: string | null;
+  signatureData?: string | null;
 };
 
 type DemoState = {
@@ -85,18 +105,51 @@ type DemoState = {
   }>;
   orders: DeliveryOrder[];
   pricing: PricingSettings;
+  districtPrices: DistrictPrice[];
+  outboundMail: OutboundMail[];
 };
 
 function nowIso() {
   return new Date().toISOString();
 }
 
-function composeAddress(district: string, neighborhood: string, street: string) {
-  return [neighborhood, street, district, "İstanbul"].filter(Boolean).join(", ");
+function laterIso(hours = 2) {
+  return new Date(Date.now() + hours * 3600 * 1000).toISOString();
+}
+
+export function mergePricing(raw?: Partial<PricingSettings> | null): PricingSettings {
+  return {
+    ...DEFAULT_PRICING,
+    ...raw,
+    routingProvider: (raw?.routingProvider ?? DEFAULT_PRICING.routingProvider) as RoutingProvider,
+    geocoder: (raw?.geocoder ?? DEFAULT_PRICING.geocoder) as Geocoder,
+  };
+}
+
+function quoteFor(distanceKm: number, pricing: PricingSettings) {
+  return calculateDeliveryPrice({ distanceKm, pricing });
+}
+
+function withQuote(
+  order: Omit<DeliveryOrder, "netPriceTl" | "vatTl" | "totalPriceTl" | "courierEarningTl" | "companyRevenueTl"> &
+    Partial<Pick<DeliveryOrder, "netPriceTl" | "vatTl" | "totalPriceTl" | "courierEarningTl" | "companyRevenueTl">>,
+  pricing: PricingSettings,
+): DeliveryOrder {
+  const quote = quoteFor(order.distanceKm, pricing);
+  return {
+    ...order,
+    netPriceTl: quote.netTl,
+    vatTl: quote.vatTl,
+    totalPriceTl: quote.grossTl,
+    courierEarningTl: quote.courierEarningTl,
+    companyRevenueTl: quote.companyRevenueTl,
+  };
 }
 
 function seedDemo(): DemoState {
   const createdAt = nowIso();
+  const pricing = mergePricing();
+  const districtPrices = DISTRICT_PRICES.map(row => ({ ...row }));
   const users = DEMO_ACCOUNTS.map(account => ({
     id: account.id,
     email: account.email,
@@ -107,83 +160,89 @@ function seedDemo(): DemoState {
     isOnline: account.role === "courier",
     createdAt,
   }));
-  const customerId = "demo-customer";
-  const courierId = "demo-courier";
-  const pending = calculateDeliveryPrice({
-    pickupDistrict: "Kadıköy",
-    dropoffDistrict: "Beşiktaş",
-    packageType: "evrak",
-    distanceKm: 9.5,
-  });
-  const enRoute = calculateDeliveryPrice({
-    pickupDistrict: "Kadıköy",
-    dropoffDistrict: "Ataşehir",
-    packageType: "orta",
-    distanceKm: 7.2,
-  });
   const orders: DeliveryOrder[] = [
-    {
-      id: "demo-order-1",
-      trackingCode: "KY-DEMO0001",
-      customerId,
-      courierId: null,
-      status: "pending",
-      pickupAddress: "Caferağa, Moda Cad. No 12, Kadıköy, İstanbul",
-      pickupDistrict: "Kadıköy",
-      pickupNeighborhood: "Caferağa",
-      pickupStreet: "Moda Caddesi",
-      pickupNote: "Kapıcıya bırakılabilir",
-      dropoffAddress: "Levent, Büyükdere Cad. No 120, Beşiktaş, İstanbul",
-      dropoffDistrict: "Beşiktaş",
-      dropoffNeighborhood: "Levent",
-      dropoffStreet: "Büyükdere Caddesi",
-      dropoffNote: "Resepsiyon",
-      packageType: "evrak",
-      notes: "Sözleşme evrakı",
-      contactPhone: "05421110003",
-      distanceKm: pending.distanceKm,
-      totalPriceTl: pending.totalTl,
-      courierEarningTl: pending.courierEarningTl,
-      companyRevenueTl: pending.companyRevenueTl,
-      createdAt,
-      updatedAt: createdAt,
-      assignedAt: null,
-      pickedUpAt: null,
-      deliveredAt: null,
-      cancelledAt: null,
-    },
-    {
-      id: "demo-order-2",
-      trackingCode: "KY-DEMO0002",
-      customerId,
-      courierId,
-      status: "en_route",
-      pickupAddress: "Osmanağa, Bahariye Cad. No 45, Kadıköy, İstanbul",
-      pickupDistrict: "Kadıköy",
-      pickupNeighborhood: "Osmanağa",
-      pickupStreet: "Bahariye Caddesi",
-      pickupNote: "",
-      dropoffAddress: "Atatürk, Ataşehir Bulvarı, Ataşehir, İstanbul",
-      dropoffDistrict: "Ataşehir",
-      dropoffNeighborhood: "Atatürk",
-      dropoffStreet: "Ataşehir Bulvarı",
-      dropoffNote: "Daire 8",
-      packageType: "orta",
-      notes: "Hediyelik kutu",
-      contactPhone: "05421110003",
-      distanceKm: enRoute.distanceKm,
-      totalPriceTl: enRoute.totalTl,
-      courierEarningTl: enRoute.courierEarningTl,
-      companyRevenueTl: enRoute.companyRevenueTl,
-      createdAt,
-      updatedAt: createdAt,
-      assignedAt: createdAt,
-      pickedUpAt: createdAt,
-      deliveredAt: null,
-      cancelledAt: null,
-    },
+    withQuote(
+      {
+        id: "demo-order-1",
+        trackingCode: "KY-DEMO0001",
+        customerId: "demo-customer",
+        courierId: null,
+        status: "pending",
+        product: "Sözleşme evrakı",
+        pickupAddress: "Caferağa, Moda Cad. No 12, Kadıköy, İstanbul",
+        dropoffAddress: "Levent, Büyükdere Cad. No 120, Beşiktaş, İstanbul",
+        bolge: "Beşiktaş",
+        recipientName: "Ayşe Demir",
+        scheduledAt: laterIso(2),
+        notes: "Resepsiyona teslim",
+        contactPhone: "05421110003",
+        paymentMethod: "nakit",
+        paymentStatus: "bekliyor",
+        pickupPhoto: null,
+        deliveryPhoto: null,
+        signatureData: null,
+        weightKg: 1.5,
+        distanceKm: 7.4,
+        pickupLat: 40.9879,
+        pickupLng: 29.0256,
+        dropoffLat: 41.0814,
+        dropoffLng: 29.0119,
+        routeGeojson: JSON.stringify([
+          [40.9879, 29.0256],
+          [41.016, 29.03],
+          [41.0814, 29.0119],
+        ]),
+        createdAt,
+        updatedAt: createdAt,
+        assignedAt: null,
+        pickedUpAt: null,
+        deliveredAt: null,
+        cancelledAt: null,
+      },
+      pricing,
+    ),
+    withQuote(
+      {
+        id: "demo-order-2",
+        trackingCode: "KY-DEMO0002",
+        customerId: "demo-customer",
+        courierId: "demo-courier",
+        status: "en_route",
+        product: "Hediyelik kutu",
+        pickupAddress: "Osmanağa, Bahariye Cad. No 45, Kadıköy, İstanbul",
+        dropoffAddress: "Ataşehir Bulvarı Daire 8, Ataşehir, İstanbul",
+        bolge: "Ataşehir",
+        recipientName: "Can Yılmaz",
+        scheduledAt: laterIso(1),
+        notes: "Daire 8",
+        contactPhone: "05421110003",
+        paymentMethod: "havale",
+        paymentStatus: "bekliyor",
+        pickupPhoto: null,
+        deliveryPhoto: null,
+        signatureData: null,
+        weightKg: 4,
+        distanceKm: 11.2,
+        pickupLat: 40.9902,
+        pickupLng: 29.0281,
+        dropoffLat: 40.9925,
+        dropoffLng: 29.1236,
+        routeGeojson: JSON.stringify([
+          [40.9902, 29.0281],
+          [40.991, 29.07],
+          [40.9925, 29.1236],
+        ]),
+        createdAt,
+        updatedAt: createdAt,
+        assignedAt: createdAt,
+        pickedUpAt: createdAt,
+        deliveredAt: null,
+        cancelledAt: null,
+      },
+      pricing,
+    ),
   ];
-  return { sessionId: null, users, orders, pricing: { ...DEFAULT_PRICING } };
+  return { sessionId: null, users, orders, pricing, districtPrices, outboundMail: [] };
 }
 
 function loadDemo(): DemoState {
@@ -194,7 +253,11 @@ function loadDemo(): DemoState {
       localStorage.setItem(DEMO_KEY, JSON.stringify(seeded));
       return seeded;
     }
-    return JSON.parse(raw) as DemoState;
+    const parsed = JSON.parse(raw) as DemoState;
+    if (!parsed.districtPrices?.length) parsed.districtPrices = DISTRICT_PRICES.map(row => ({ ...row }));
+    parsed.pricing = mergePricing(parsed.pricing);
+    parsed.outboundMail = parsed.outboundMail ?? [];
+    return parsed;
   } catch {
     return seedDemo();
   }
@@ -216,53 +279,51 @@ function toProfile(user: DemoState["users"][number]): Profile {
   };
 }
 
-function mapOrder(row: Record<string, unknown>): DeliveryOrder {
-  return {
-    id: String(row.id),
-    trackingCode: String(row.tracking_code),
-    customerId: String(row.customer_id),
-    courierId: row.courier_id ? String(row.courier_id) : null,
-    status: row.status as OrderStatus,
-    pickupAddress: String(row.pickup_address),
-    pickupDistrict: String(row.pickup_district),
-    pickupNeighborhood: String(row.pickup_neighborhood ?? ""),
-    pickupStreet: String(row.pickup_street ?? ""),
-    pickupNote: String(row.pickup_note ?? ""),
-    dropoffAddress: String(row.dropoff_address),
-    dropoffDistrict: String(row.dropoff_district),
-    dropoffNeighborhood: String(row.dropoff_neighborhood ?? ""),
-    dropoffStreet: String(row.dropoff_street ?? ""),
-    dropoffNote: String(row.dropoff_note ?? ""),
-    packageType: row.package_type as PackageType,
-    notes: String(row.notes ?? ""),
-    contactPhone: String(row.contact_phone),
-    distanceKm: Number(row.distance_km),
-    totalPriceTl: Number(row.total_price_tl),
-    courierEarningTl: Number(row.courier_earning_tl),
-    companyRevenueTl: Number(row.company_revenue_tl),
-    createdAt: String(row.created_at),
-    updatedAt: String(row.updated_at),
-    assignedAt: row.assigned_at ? String(row.assigned_at) : null,
-    pickedUpAt: row.picked_up_at ? String(row.picked_up_at) : null,
-    deliveredAt: row.delivered_at ? String(row.delivered_at) : null,
-    cancelledAt: row.cancelled_at ? String(row.cancelled_at) : null,
-  };
+function numOrNull(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }
 
-function mapPricing(row: Record<string, unknown>): PricingSettings {
+function mapOrder(row: Record<string, unknown>): DeliveryOrder {
+  const bolge = String(row.bolge || row.dropoff_district || "");
   return {
-    baseFeeTl: Number(row.base_fee_tl),
-    perKmTl: Number(row.per_km_tl),
-    commissionRate: Number(row.commission_rate),
-    useZones: Boolean(row.use_zones),
-    crossSideSurchargeTl: Number(row.cross_side_surcharge_tl),
-    packageFees: {
-      evrak: Number(row.package_evrak_tl),
-      kucuk: Number(row.package_kucuk_tl),
-      orta: Number(row.package_orta_tl),
-      buyuk: Number(row.package_buyuk_tl),
-      gida: Number(row.package_gida_tl),
-    },
+    id: String(row.id),
+    trackingCode: String(row.tracking_code ?? row.trackingCode),
+    customerId: String(row.customer_id ?? row.customerId),
+    courierId: row.courier_id || row.courierId ? String(row.courier_id ?? row.courierId) : null,
+    status: row.status as OrderStatus,
+    product: String(row.product ?? row.notes ?? ""),
+    pickupAddress: String(row.pickup_address ?? row.pickupAddress ?? ""),
+    dropoffAddress: String(row.dropoff_address ?? row.dropoffAddress ?? ""),
+    bolge,
+    recipientName: String(row.recipient_name ?? row.recipientName ?? ""),
+    scheduledAt: row.scheduled_at || row.scheduledAt ? String(row.scheduled_at ?? row.scheduledAt) : null,
+    notes: String(row.notes ?? ""),
+    contactPhone: String(row.contact_phone ?? row.contactPhone ?? ""),
+    paymentMethod: (row.payment_method ?? row.paymentMethod ?? "nakit") as PaymentMethod,
+    paymentStatus: (row.payment_status ?? row.paymentStatus ?? "bekliyor") as PaymentStatus,
+    pickupPhoto: row.pickup_photo || row.pickupPhoto ? String(row.pickup_photo ?? row.pickupPhoto) : null,
+    deliveryPhoto: row.delivery_photo || row.deliveryPhoto ? String(row.delivery_photo ?? row.deliveryPhoto) : null,
+    signatureData: row.signature_data || row.signatureData ? String(row.signature_data ?? row.signatureData) : null,
+    weightKg: Number(row.weight_kg ?? row.weightKg ?? 1),
+    distanceKm: Number(row.distance_km ?? row.distanceKm ?? 0),
+    netPriceTl: Number(row.net_price_tl ?? row.netPriceTl ?? 0),
+    vatTl: Number(row.vat_tl ?? row.vatTl ?? 0),
+    totalPriceTl: Number(row.total_price_tl ?? row.totalPriceTl ?? 0),
+    courierEarningTl: Number(row.courier_earning_tl ?? row.courierEarningTl ?? 0),
+    companyRevenueTl: Number(row.company_revenue_tl ?? row.companyRevenueTl ?? 0),
+    pickupLat: numOrNull(row.pickup_lat ?? row.pickupLat),
+    pickupLng: numOrNull(row.pickup_lng ?? row.pickupLng),
+    dropoffLat: numOrNull(row.dropoff_lat ?? row.dropoffLat),
+    dropoffLng: numOrNull(row.dropoff_lng ?? row.dropoffLng),
+    routeGeojson: row.route_geojson || row.routeGeojson ? String(row.route_geojson ?? row.routeGeojson) : null,
+    createdAt: String(row.created_at ?? row.createdAt),
+    updatedAt: String(row.updated_at ?? row.updatedAt),
+    assignedAt: row.assigned_at || row.assignedAt ? String(row.assigned_at ?? row.assignedAt) : null,
+    pickedUpAt: row.picked_up_at || row.pickedUpAt ? String(row.picked_up_at ?? row.pickedUpAt) : null,
+    deliveredAt: row.delivered_at || row.deliveredAt ? String(row.delivered_at ?? row.deliveredAt) : null,
+    cancelledAt: row.cancelled_at || row.cancelledAt ? String(row.cancelled_at ?? row.cancelledAt) : null,
   };
 }
 
@@ -277,9 +338,9 @@ function dashboardFrom(orders: DeliveryOrder[], couriersOnline: number): Dashboa
   const today = orders.filter(o => o.createdAt >= start && o.status !== "cancelled");
   return {
     todayOrders: today.length,
-    todayRevenueTl: today.reduce((sum, o) => sum + o.companyRevenueTl, 0),
+    todayRevenueTl: today.reduce((sum, o) => sum + o.totalPriceTl, 0),
     activeCouriers: couriersOnline,
-    pendingOrders: orders.filter(o => o.status === "pending").length,
+    pendingOrders: orders.filter(o => o.status === "pending" || o.status === "assigned").length,
     enRouteOrders: orders.filter(o => o.status === "en_route" || o.status === "picked_up").length,
   };
 }
@@ -391,119 +452,212 @@ export async function signOut() {
   await getSupabase()!.auth.signOut();
 }
 
+function mapPricingRow(row: Record<string, unknown>): PricingSettings {
+  return mergePricing({
+    baseTry: Number(row.base_try ?? row.baseTry ?? DEFAULT_PRICING.baseTry),
+    perKmTry: Number(row.per_km_try ?? row.perKmTry ?? DEFAULT_PRICING.perKmTry),
+    roundingDecimals: Number(row.rounding_decimals ?? row.roundingDecimals ?? DEFAULT_PRICING.roundingDecimals),
+    vatRate: Number(row.vat_rate ?? row.vatRate ?? DEFAULT_PRICING.vatRate),
+    routingProvider: (row.routing_provider ?? row.routingProvider ?? DEFAULT_PRICING.routingProvider) as RoutingProvider,
+    routingUrl: String(row.routing_url ?? row.routingUrl ?? DEFAULT_PRICING.routingUrl),
+    geocoder: (row.geocoder ?? DEFAULT_PRICING.geocoder) as Geocoder,
+    commissionRate: Number(row.commission_rate ?? row.commissionRate ?? DEFAULT_PRICING.commissionRate),
+    showcaseMode: Boolean(row.showcase_mode ?? row.showcaseMode ?? DEFAULT_PRICING.showcaseMode),
+  });
+}
+
 export async function getPricing(): Promise<PricingSettings> {
-  if (kuryelerMode === "demo") return loadDemo().pricing;
+  if (kuryelerMode === "demo") return mergePricing(loadDemo().pricing);
   const { data, error } = await getSupabase()!.from("pricing_settings").select("*").eq("id", 1).single();
   if (error) throw new Error(error.message);
-  return mapPricing(data as Record<string, unknown>);
+  return mapPricingRow(data as Record<string, unknown>);
+}
+
+export async function listDistrictPrices(): Promise<DistrictPrice[]> {
+  if (kuryelerMode === "demo") return loadDemo().districtPrices.map(row => ({ ...row }));
+  const { data, error } = await getSupabase()!.from("district_prices").select("*").order("bolge");
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(row => ({
+    bolge: row.bolge as string,
+    fiyatTl: Number(row.fiyat_tl),
+    lat: Number(row.lat ?? 41.01),
+    lng: Number(row.lng ?? 28.98),
+  }));
+}
+
+export async function updateDistrictPrice(bolge: string, fiyatTl: number): Promise<DistrictPrice[]> {
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    const row = state.districtPrices.find(item => item.bolge === bolge);
+    if (!row) throw new Error("Bölge bulunamadı");
+    row.fiyatTl = fiyatTl;
+    saveDemo(state);
+    notifyDemo();
+    return state.districtPrices.map(item => ({ ...item }));
+  }
+  const { error } = await getSupabase()!.from("district_prices").update({ fiyat_tl: fiyatTl }).eq("bolge", bolge);
+  if (error) throw new Error(error.message);
+  return listDistrictPrices();
 }
 
 export async function updatePricing(pricing: PricingSettings): Promise<PricingSettings> {
+  const next = mergePricing(pricing);
   if (kuryelerMode === "demo") {
     const state = loadDemo();
-    state.pricing = pricing;
+    state.pricing = next;
     saveDemo(state);
     notifyDemo();
-    return pricing;
+    return next;
   }
   const { data, error } = await getSupabase()!
     .from("pricing_settings")
     .update({
-      base_fee_tl: pricing.baseFeeTl,
-      per_km_tl: pricing.perKmTl,
-      commission_rate: pricing.commissionRate,
-      use_zones: pricing.useZones,
-      cross_side_surcharge_tl: pricing.crossSideSurchargeTl,
-      package_evrak_tl: pricing.packageFees.evrak,
-      package_kucuk_tl: pricing.packageFees.kucuk,
-      package_orta_tl: pricing.packageFees.orta,
-      package_buyuk_tl: pricing.packageFees.buyuk,
-      package_gida_tl: pricing.packageFees.gida,
+      base_try: next.baseTry,
+      per_km_try: next.perKmTry,
+      rounding_decimals: next.roundingDecimals,
+      vat_rate: next.vatRate,
+      routing_provider: next.routingProvider,
+      routing_url: next.routingUrl,
+      geocoder: next.geocoder,
+      commission_rate: next.commissionRate,
+      showcase_mode: next.showcaseMode,
     })
     .eq("id", 1)
     .select("*")
     .single();
   if (error) throw new Error(error.message);
-  return mapPricing(data as Record<string, unknown>);
+  return mapPricingRow(data as Record<string, unknown>);
 }
 
-export function estimateOrder(input: CreateOrderInput, pricing: PricingSettings) {
+export function estimateOrder(input: Pick<CreateOrderInput, "distanceKm">, pricing: PricingSettings) {
   return calculateDeliveryPrice({
-    pickupDistrict: input.pickupDistrict,
-    dropoffDistrict: input.dropoffDistrict,
-    packageType: input.packageType,
+    distanceKm: input.distanceKm,
     pricing,
   });
 }
 
 export async function createOrder(customerId: string, input: CreateOrderInput): Promise<DeliveryOrder> {
+  if (input.weightKg > 30) {
+    throw new Error(WEIGHT_LIMIT_MESSAGE);
+  }
+  if (!(input.weightKg > 0)) {
+    throw new Error("Paket ağırlığını kg olarak yazın.");
+  }
+  if (!(input.distanceKm > 0) || input.pickupLat == null || input.dropoffLat == null) {
+    throw new Error("Haritada alım ve teslim noktalarını seçip sürüş rotasını hesaplatın.");
+  }
   const pricing = await getPricing();
   const quote = estimateOrder(input, pricing);
-  const pickupAddress = composeAddress(input.pickupDistrict, input.pickupNeighborhood, input.pickupStreet);
-  const dropoffAddress = composeAddress(input.dropoffDistrict, input.dropoffNeighborhood, input.dropoffStreet);
   if (kuryelerMode === "demo") {
     const state = loadDemo();
     const createdAt = nowIso();
-    const order: DeliveryOrder = {
-      id: crypto.randomUUID(),
-      trackingCode: generateTrackingCode(),
-      customerId,
-      courierId: null,
-      status: "pending",
-      pickupAddress,
-      pickupDistrict: input.pickupDistrict,
-      pickupNeighborhood: input.pickupNeighborhood,
-      pickupStreet: input.pickupStreet,
-      pickupNote: input.pickupNote,
-      dropoffAddress,
-      dropoffDistrict: input.dropoffDistrict,
-      dropoffNeighborhood: input.dropoffNeighborhood,
-      dropoffStreet: input.dropoffStreet,
-      dropoffNote: input.dropoffNote,
-      packageType: input.packageType,
-      notes: input.notes,
-      contactPhone: input.contactPhone,
-      distanceKm: quote.distanceKm,
-      totalPriceTl: quote.totalTl,
-      courierEarningTl: quote.courierEarningTl,
-      companyRevenueTl: quote.companyRevenueTl,
-      createdAt,
-      updatedAt: createdAt,
-      assignedAt: null,
-      pickedUpAt: null,
-      deliveredAt: null,
-      cancelledAt: null,
-    };
+    const order = withQuote(
+      {
+        id: crypto.randomUUID(),
+        trackingCode: generateTrackingCode(),
+        customerId,
+        courierId: null,
+        status: "pending",
+        product: input.product.trim(),
+        pickupAddress: input.pickupAddress.trim(),
+        dropoffAddress: input.dropoffAddress.trim(),
+        bolge: input.bolge?.trim() || "",
+        recipientName: input.recipientName.trim(),
+        scheduledAt: input.scheduledAt,
+        notes: input.notes.trim(),
+        contactPhone: input.contactPhone,
+        paymentMethod: input.paymentMethod,
+        paymentStatus: "bekliyor",
+        pickupPhoto: null,
+        deliveryPhoto: null,
+        signatureData: null,
+        weightKg: input.weightKg,
+        distanceKm: input.distanceKm,
+        pickupLat: input.pickupLat,
+        pickupLng: input.pickupLng,
+        dropoffLat: input.dropoffLat,
+        dropoffLng: input.dropoffLng,
+        routeGeojson: input.routeGeojson ?? null,
+        createdAt,
+        updatedAt: createdAt,
+        assignedAt: null,
+        pickedUpAt: null,
+        deliveredAt: null,
+        cancelledAt: null,
+      },
+      pricing,
+    );
     state.orders.unshift(order);
     saveDemo(state);
     notifyDemo();
     return order;
   }
+  const district = input.bolge?.trim() || "İstanbul";
   const { data, error } = await getSupabase()!
     .from("orders")
     .insert({
       tracking_code: generateTrackingCode(),
       customer_id: customerId,
       status: "pending",
-      pickup_address: pickupAddress,
-      pickup_district: input.pickupDistrict,
-      pickup_neighborhood: input.pickupNeighborhood,
-      pickup_street: input.pickupStreet,
-      pickup_note: input.pickupNote,
-      dropoff_address: dropoffAddress,
-      dropoff_district: input.dropoffDistrict,
-      dropoff_neighborhood: input.dropoffNeighborhood,
-      dropoff_street: input.dropoffStreet,
-      dropoff_note: input.dropoffNote,
-      package_type: input.packageType,
-      notes: input.notes,
+      product: input.product.trim(),
+      pickup_address: input.pickupAddress.trim(),
+      pickup_district: district,
+      dropoff_address: input.dropoffAddress.trim(),
+      dropoff_district: district,
+      bolge: district,
+      recipient_name: input.recipientName.trim(),
+      scheduled_at: input.scheduledAt,
+      notes: input.notes.trim(),
       contact_phone: input.contactPhone,
-      distance_km: quote.distanceKm,
+      payment_method: input.paymentMethod,
+      payment_status: "bekliyor",
+      weight_kg: input.weightKg,
+      distance_km: input.distanceKm,
+      pickup_lat: input.pickupLat,
+      pickup_lng: input.pickupLng,
+      dropoff_lat: input.dropoffLat,
+      dropoff_lng: input.dropoffLng,
+      route_geojson: input.routeGeojson ?? null,
     })
     .select("*")
     .single();
+  if (error) {
+    const message = error.message || "Sipariş oluşturulamadı";
+    if (/30 kg/i.test(message) || /weight/i.test(message)) throw new Error(WEIGHT_LIMIT_MESSAGE);
+    throw new Error(message);
+  }
+  const mapped = mapOrder(data as Record<string, unknown>);
+  if (!mapped.totalPriceTl) {
+    mapped.netPriceTl = quote.netTl;
+    mapped.vatTl = quote.vatTl;
+    mapped.totalPriceTl = quote.grossTl;
+    mapped.courierEarningTl = quote.courierEarningTl;
+    mapped.companyRevenueTl = quote.companyRevenueTl;
+  }
+  return mapped;
+}
+
+export async function queueOrderConfirmation(order: DeliveryOrder, toEmail: string) {
+  const mail = buildOrderConfirmationMail(order, toEmail);
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    state.outboundMail = state.outboundMail ?? [];
+    state.outboundMail.unshift({
+      id: crypto.randomUUID(),
+      createdAt: nowIso(),
+      ...mail,
+    });
+    saveDemo(state);
+    notifyDemo();
+    return;
+  }
+  const { error } = await getSupabase()!.rpc("queue_order_confirmation", {
+    p_to_email: mail.toEmail,
+    p_subject: mail.subject,
+    p_body: mail.body,
+    p_payload: { trackingCode: order.trackingCode, orderId: order.id },
+  });
   if (error) throw new Error(error.message);
-  return mapOrder(data as Record<string, unknown>);
 }
 
 export async function listOrdersFor(user: SessionUser): Promise<DeliveryOrder[]> {
@@ -511,24 +665,41 @@ export async function listOrdersFor(user: SessionUser): Promise<DeliveryOrder[]>
     const { orders } = loadDemo();
     if (user.role === "admin") return [...orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     if (user.role === "courier") {
-      return orders
-        .filter(o => o.courierId === user.id || o.status === "pending")
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      const mine = orders.filter(o => o.courierId === user.id);
+      const open = orders
+        .filter(o => o.status === "pending" && !o.courierId)
+        .map(redactPendingForCourier);
+      return [...open, ...mine].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     }
     return orders.filter(o => o.customerId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
-  const query = getSupabase()!.from("orders").select("*").order("created_at", { ascending: false });
-  const { data, error } = await query;
+  const { data, error } = await getSupabase()!.from("orders").select("*").order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data ?? []).map(row => mapOrder(row as Record<string, unknown>));
+  const mine = (data ?? []).map(row => mapOrder(row as Record<string, unknown>));
+  if (user.role !== "courier") return mine;
+  const { data: openRows, error: openError } = await getSupabase()!.rpc("list_courier_open_jobs");
+  if (openError) throw new Error(openError.message);
+  const open = (openRows ?? []).map((row: Record<string, unknown>) =>
+    redactPendingForCourier(
+      mapOrder({
+        ...row,
+        tracking_code: row.tracking_code ?? String(row.id),
+        customer_id: "",
+        product: "Gönderi",
+        pickup_address: row.pickup_district ?? row.bolge ?? "İlçe",
+        dropoff_address: row.dropoff_district ?? row.bolge ?? "İlçe",
+      }),
+    ),
+  );
+  return [...open, ...mine].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export async function acceptOrder(orderId: string, courierId: string): Promise<DeliveryOrder> {
+export async function acceptOrder(orderId: string): Promise<DeliveryOrder> {
   if (kuryelerMode === "demo") {
     const state = loadDemo();
     const order = state.orders.find(o => o.id === orderId);
-    if (!order || order.status !== "pending") throw new Error("İş artık müsait değil");
-    order.courierId = courierId;
+    if (!order || order.status !== "pending" || order.courierId) throw new Error("İş artık müsait değil");
+    order.courierId = state.sessionId;
     order.status = "assigned";
     order.assignedAt = nowIso();
     order.updatedAt = order.assignedAt;
@@ -541,15 +712,26 @@ export async function acceptOrder(orderId: string, courierId: string): Promise<D
   return mapOrder(data as Record<string, unknown>);
 }
 
-export async function advanceStatus(orderId: string, status: OrderStatus): Promise<DeliveryOrder> {
+export async function advanceStatus(
+  orderId: string,
+  status: OrderStatus,
+  proof: StatusProof = {},
+): Promise<DeliveryOrder> {
   if (kuryelerMode === "demo") {
     const state = loadDemo();
     const order = state.orders.find(o => o.id === orderId);
     if (!order) throw new Error("Sipariş bulunamadı");
     if (!canTransitionStatus(order.status, status)) throw new Error("Bu durum geçişi geçersiz");
+    if (status === "picked_up" && !proof.pickupPhoto) throw new Error("Alım için fotoğraf gereklidir");
+    if (status === "delivered" && (!proof.deliveryPhoto || !proof.signatureData)) {
+      throw new Error("Teslim için fotoğraf ve imza gereklidir");
+    }
     const stamp = nowIso();
     order.status = status;
     order.updatedAt = stamp;
+    if (proof.pickupPhoto) order.pickupPhoto = proof.pickupPhoto;
+    if (proof.deliveryPhoto) order.deliveryPhoto = proof.deliveryPhoto;
+    if (proof.signatureData) order.signatureData = proof.signatureData;
     if (status === "picked_up") order.pickedUpAt = stamp;
     if (status === "delivered") order.deliveredAt = stamp;
     if (status === "cancelled") order.cancelledAt = stamp;
@@ -560,6 +742,9 @@ export async function advanceStatus(orderId: string, status: OrderStatus): Promi
   const { data, error } = await getSupabase()!.rpc("advance_order_status", {
     p_order_id: orderId,
     p_status: status,
+    p_pickup_photo: proof.pickupPhoto ?? null,
+    p_delivery_photo: proof.deliveryPhoto ?? null,
+    p_signature: proof.signatureData ?? null,
   });
   if (error) throw new Error(error.message);
   return mapOrder(data as Record<string, unknown>);
@@ -585,6 +770,25 @@ export async function assignCourier(orderId: string, courierId: string): Promise
   const { data, error } = await getSupabase()!.rpc("assign_order", {
     p_order_id: orderId,
     p_courier_id: courierId,
+  });
+  if (error) throw new Error(error.message);
+  return mapOrder(data as Record<string, unknown>);
+}
+
+export async function setPaymentStatus(orderId: string, paymentStatus: PaymentStatus): Promise<DeliveryOrder> {
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    const order = state.orders.find(o => o.id === orderId);
+    if (!order) throw new Error("Sipariş bulunamadı");
+    order.paymentStatus = paymentStatus;
+    order.updatedAt = nowIso();
+    saveDemo(state);
+    notifyDemo();
+    return order;
+  }
+  const { data, error } = await getSupabase()!.rpc("set_payment_status", {
+    p_order_id: orderId,
+    p_status: paymentStatus,
   });
   if (error) throw new Error(error.message);
   return mapOrder(data as Record<string, unknown>);
@@ -653,9 +857,10 @@ export async function trackPublic(code: string): Promise<PublicTrack | null> {
     return {
       trackingCode: order.trackingCode,
       status: order.status,
-      pickupDistrict: order.pickupDistrict,
-      dropoffDistrict: order.dropoffDistrict,
-      packageType: order.packageType,
+      bolge: order.bolge,
+      pickupAddress: order.bolge || "İlçe",
+      dropoffAddress: order.bolge || "İlçe",
+      distanceKm: order.distanceKm,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
     };
@@ -667,9 +872,10 @@ export async function trackPublic(code: string): Promise<PublicTrack | null> {
   return {
     trackingCode: row.tracking_code,
     status: row.status,
-    pickupDistrict: row.pickup_district,
-    dropoffDistrict: row.dropoff_district,
-    packageType: row.package_type,
+    bolge: row.bolge || row.dropoff_district,
+    pickupAddress: row.pickup_district ?? row.bolge ?? "",
+    dropoffAddress: row.dropoff_district ?? row.bolge ?? "",
+    distanceKm: Number(row.distance_km ?? 0),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -686,6 +892,7 @@ export function subscribeToOrders(onChange: () => void) {
     .channel("kuryeler-orders")
     .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => onChange())
     .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => onChange())
+    .on("postgres_changes", { event: "*", schema: "public", table: "pricing_settings" }, () => onChange())
     .subscribe();
   return () => {
     void getSupabase()!.removeChannel(channel);
@@ -694,11 +901,11 @@ export function subscribeToOrders(onChange: () => void) {
 
 export function dailyEarnings(orders: DeliveryOrder[], courierId: string) {
   const start = todayStartIso();
-  const mine = orders.filter(o => o.courierId === courierId && o.createdAt >= start);
-  const delivered = mine.filter(o => o.status === "delivered");
+  const mine = orders.filter(o => o.courierId === courierId);
+  const deliveredToday = mine.filter(o => o.status === "delivered" && (o.deliveredAt ?? o.createdAt) >= start);
   return {
-    deliveredCount: delivered.length,
-    earningTl: delivered.reduce((sum, o) => sum + o.courierEarningTl, 0),
+    deliveredCount: deliveredToday.length,
+    earningTl: deliveredToday.reduce((sum, o) => sum + o.courierEarningTl, 0),
     activeCount: mine.filter(o => isActiveOrder(o.status)).length,
   };
 }

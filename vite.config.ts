@@ -7,7 +7,7 @@ import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
 // =============================================================================
-// Manus Debug Collector - Vite Plugin
+// Tarayıcı günlük toplayıcı — Vite eklentisi
 // Writes browser logs directly to files, trimmed when exceeding size limit
 // =============================================================================
 
@@ -74,7 +74,7 @@ function writeToLogFile(source: LogSource, entries: unknown[]) {
  * - Files: browserConsole.log, networkRequests.log, sessionReplay.log
  * - Auto-trimmed when exceeding 1MB (keeps newest entries)
  */
-function vitePluginManusDebugCollector(): Plugin {
+function vitePluginBrowserLogCollector(): Plugin {
   return {
     name: "manus-debug-collector",
 
@@ -150,7 +150,63 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+function hizligelAppFallback(): Plugin {
+  const apps = ["/musteri", "/kurye", "/yonetici"];
+  const rewrite = (req: { url?: string }) => {
+    const raw = req.url ?? "";
+    const [pathname, search = ""] = raw.split("?");
+    const qs = search ? `?${search}` : "";
+    if (pathname.startsWith("/src") || pathname.startsWith("/@") || pathname.startsWith("/node_modules")) {
+      return;
+    }
+    for (const app of apps) {
+      if (pathname === app) {
+        req.url = `${app}/index.html${qs}`;
+        return;
+      }
+      if (pathname.startsWith(`${app}/`) && !pathname.split("/").pop()?.includes(".")) {
+        req.url = `${app}/index.html${qs}`;
+        return;
+      }
+    }
+  };
+  return {
+    name: "hizligel-app-fallback",
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        rewrite(req);
+        next();
+      });
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        rewrite(req);
+        next();
+      });
+    },
+  };
+}
+
+const clientRoot = path.resolve(import.meta.dirname, "client");
+function stripManusFromDist(): Plugin {
+  return {
+    name: "strip-manus-debug",
+    closeBundle() {
+      const dir = path.resolve(import.meta.dirname, "dist/public/__manus__");
+      fs.rmSync(dir, { recursive: true, force: true });
+    },
+  };
+}
+
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+  vitePluginBrowserLogCollector(),
+  hizligelAppFallback(),
+  stripManusFromDist(),
+];
 
 export default defineConfig({
   plugins,
@@ -162,11 +218,20 @@ export default defineConfig({
     },
   },
   envDir: path.resolve(import.meta.dirname),
-  root: path.resolve(import.meta.dirname, "client"),
+  root: clientRoot,
   publicDir: path.resolve(import.meta.dirname, "client", "public"),
+  appType: "mpa",
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: path.resolve(clientRoot, "index.html"),
+        musteri: path.resolve(clientRoot, "musteri/index.html"),
+        kurye: path.resolve(clientRoot, "kurye/index.html"),
+        yonetici: path.resolve(clientRoot, "yonetici/index.html"),
+      },
+    },
   },
   server: {
     host: true,
