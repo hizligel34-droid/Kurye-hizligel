@@ -147,7 +147,7 @@ App Store / Play Store yayını Apple ve Google geliştirici hesapları ister; b
 
 ## Ekran görüntüleri
 
-`docs/ekran-goruntuleri/` — iPhone 13 genişliği (390px) ve masaüstü.
+`docs/ekran-goruntuleri/` — iPhone 13 genişliği (390px) ve masaüstü. Eski tarife görselleri kaldırıldı; güncel arayüz Türk lirası ve KDV ayrımıdır.
 
 ## Geliştirici komutları
 

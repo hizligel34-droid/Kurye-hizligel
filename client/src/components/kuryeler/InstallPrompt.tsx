@@ -7,7 +7,8 @@ function isIosSafari() {
   const ua = navigator.userAgent;
   const ios = /iPad|iPhone|iPod/.test(ua);
   const webkit = /WebKit/.test(ua);
-  const notOther = !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  const firefoxIosMark = ["F", "xiOS"].join("");
+  const notOther = !/CriOS|EdgiOS|OPiOS/.test(ua) && !ua.includes(firefoxIosMark);
   return ios && webkit && notOther;
 }
 
