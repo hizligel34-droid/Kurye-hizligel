@@ -6,15 +6,16 @@
 insert into public.pricing_settings (
   id, base_fee_tl, per_km_tl, commission_rate, use_zones, cross_side_surcharge_tl,
   package_evrak_tl, package_kucuk_tl, package_orta_tl, package_buyuk_tl, package_gida_tl,
-  base_try, per_km_try, rounding_decimals, routing_provider, routing_url, geocoder, showcase_mode
+  base_try, per_km_try, vat_rate, rounding_decimals, routing_provider, routing_url, geocoder, showcase_mode
 ) values (
   1, 600, 50, 0.2000, false, 0, 0, 0, 0, 0, 0,
-  600, 50, 2, 'osrm', 'https://router.project-osrm.org', 'nominatim', false
+  600, 50, 0.2000, 2, 'osrm', 'https://router.project-osrm.org', 'nominatim', false
 )
 on conflict (id) do update set
   commission_rate = excluded.commission_rate,
   base_try = excluded.base_try,
   per_km_try = excluded.per_km_try,
+  vat_rate = excluded.vat_rate,
   rounding_decimals = excluded.rounding_decimals,
   routing_provider = excluded.routing_provider,
   routing_url = excluded.routing_url,

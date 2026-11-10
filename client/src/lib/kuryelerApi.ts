@@ -24,7 +24,7 @@ import { buildOrderConfirmationMail, type OutboundMail } from "@shared/orderConf
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
-const DEMO_KEY = "kuryeler.tr.demo.v4";
+const DEMO_KEY = "kuryeler.tr.demo.v6";
 
 export const DEMO_ACCOUNTS = [
   {
@@ -131,14 +131,16 @@ function quoteFor(distanceKm: number, pricing: PricingSettings) {
 }
 
 function withQuote(
-  order: Omit<DeliveryOrder, "totalPriceTl" | "courierEarningTl" | "companyRevenueTl"> &
-    Partial<Pick<DeliveryOrder, "totalPriceTl" | "courierEarningTl" | "companyRevenueTl">>,
+  order: Omit<DeliveryOrder, "netPriceTl" | "vatTl" | "totalPriceTl" | "courierEarningTl" | "companyRevenueTl"> &
+    Partial<Pick<DeliveryOrder, "netPriceTl" | "vatTl" | "totalPriceTl" | "courierEarningTl" | "companyRevenueTl">>,
   pricing: PricingSettings,
 ): DeliveryOrder {
   const quote = quoteFor(order.distanceKm, pricing);
   return {
     ...order,
-    totalPriceTl: quote.totalTl,
+    netPriceTl: quote.netTl,
+    vatTl: quote.vatTl,
+    totalPriceTl: quote.grossTl,
     courierEarningTl: quote.courierEarningTl,
     companyRevenueTl: quote.companyRevenueTl,
   };
@@ -306,6 +308,8 @@ function mapOrder(row: Record<string, unknown>): DeliveryOrder {
     signatureData: row.signature_data || row.signatureData ? String(row.signature_data ?? row.signatureData) : null,
     weightKg: Number(row.weight_kg ?? row.weightKg ?? 1),
     distanceKm: Number(row.distance_km ?? row.distanceKm ?? 0),
+    netPriceTl: Number(row.net_price_tl ?? row.netPriceTl ?? 0),
+    vatTl: Number(row.vat_tl ?? row.vatTl ?? 0),
     totalPriceTl: Number(row.total_price_tl ?? row.totalPriceTl ?? 0),
     courierEarningTl: Number(row.courier_earning_tl ?? row.courierEarningTl ?? 0),
     companyRevenueTl: Number(row.company_revenue_tl ?? row.companyRevenueTl ?? 0),
@@ -453,6 +457,7 @@ function mapPricingRow(row: Record<string, unknown>): PricingSettings {
     baseTry: Number(row.base_try ?? row.baseTry ?? DEFAULT_PRICING.baseTry),
     perKmTry: Number(row.per_km_try ?? row.perKmTry ?? DEFAULT_PRICING.perKmTry),
     roundingDecimals: Number(row.rounding_decimals ?? row.roundingDecimals ?? DEFAULT_PRICING.roundingDecimals),
+    vatRate: Number(row.vat_rate ?? row.vatRate ?? DEFAULT_PRICING.vatRate),
     routingProvider: (row.routing_provider ?? row.routingProvider ?? DEFAULT_PRICING.routingProvider) as RoutingProvider,
     routingUrl: String(row.routing_url ?? row.routingUrl ?? DEFAULT_PRICING.routingUrl),
     geocoder: (row.geocoder ?? DEFAULT_PRICING.geocoder) as Geocoder,
@@ -510,6 +515,7 @@ export async function updatePricing(pricing: PricingSettings): Promise<PricingSe
       base_try: next.baseTry,
       per_km_try: next.perKmTry,
       rounding_decimals: next.roundingDecimals,
+      vat_rate: next.vatRate,
       routing_provider: next.routingProvider,
       routing_url: next.routingUrl,
       geocoder: next.geocoder,
@@ -622,7 +628,9 @@ export async function createOrder(customerId: string, input: CreateOrderInput): 
   }
   const mapped = mapOrder(data as Record<string, unknown>);
   if (!mapped.totalPriceTl) {
-    mapped.totalPriceTl = quote.totalTl;
+    mapped.netPriceTl = quote.netTl;
+    mapped.vatTl = quote.vatTl;
+    mapped.totalPriceTl = quote.grossTl;
     mapped.courierEarningTl = quote.courierEarningTl;
     mapped.companyRevenueTl = quote.companyRevenueTl;
   }

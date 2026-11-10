@@ -124,6 +124,7 @@ export function validatePricingForm(input: {
   baseTry: number;
   perKmTry: number;
   roundingDecimals: number;
+  vatRate: number;
   routingProvider: string;
   commissionRate: number;
 }): FieldErrors {
@@ -132,6 +133,9 @@ export function validatePricingForm(input: {
   if (!(input.perKmTry >= 0)) errors.perKmTry = "Km bedeli 0 veya daha büyük olmalıdır.";
   if (!(input.roundingDecimals >= 0 && input.roundingDecimals <= 6)) {
     errors.roundingDecimals = "Yuvarlama 0–6 basamak olmalıdır.";
+  }
+  if (!(input.vatRate >= 0 && input.vatRate <= 1)) {
+    errors.vatRate = "KDV oranı 0 ile 1 arasında olmalıdır (ör. %20 için 0,20).";
   }
   if (!["osrm", "ors", "custom"].includes(input.routingProvider as RoutingProvider)) {
     errors.routingProvider = "Rota sağlayıcısını seçin.";

@@ -16,6 +16,7 @@ import {
   subscribeToOrders,
   type CreateOrderInput,
 } from "@/lib/kuryelerApi";
+import { PriceLines } from "@/components/kuryeler/PriceLines";
 import { areaClass, cardClass, fieldClass, goldBtn } from "@/lib/kuryelerTheme";
 import {
   BUSINESS,
@@ -23,11 +24,13 @@ import {
   CONTACT_PHONE_DISPLAY,
   DEFAULT_PRICING,
   MAX_WEIGHT_KG,
-  VAT_STATUS_NOTE,
+  VAT_EXCL_LABEL,
+  VAT_INCL_LABEL,
+  calculateDeliveryPrice,
   formatDateTimeTr,
   formatKm,
   formatTariff,
-  formatTlWithVat,
+  formatTl,
   isActiveOrder,
   isShowcaseMode,
   PAYMENT_METHOD_LABELS,
@@ -203,6 +206,9 @@ function CustomerHome() {
           <div className="mt-5 rounded-2xl border border-[#3a3014] bg-[#1a1508] p-4 text-sm leading-6 text-[#D4AF37]">
             Vitrin modu açık: sipariş formu kapalıdır. Tarifeyi görün ve {CONTACT_PHONE_DISPLAY} veya WhatsApp ile ulaşın.
             <p className="mt-2 text-[#b4a882]">{formatTariff(pricing)}</p>
+            <div className="mt-3">
+              <PriceLines price={calculateDeliveryPrice({ distanceKm: 10, pricing })} />
+            </div>
           </div>
         ) : null}
 
@@ -347,15 +353,17 @@ function CustomerHome() {
             </div>
             <aside className={`${cardClass} h-fit min-w-0 p-4 sm:p-5 lg:sticky lg:top-24`}>
               <p className="text-sm font-bold text-[#D4AF37]">Sipariş özeti</p>
-              {quote && quote.totalTl > 0 ? (
+              {quote && quote.netTl > 0 ? (
                 <>
-                  <p className="mt-4 text-3xl font-black text-[#D4AF37]">{formatTlWithVat(quote.totalTl)}</p>
+                  <div className="mt-4">
+                    <PriceLines price={quote} size="large" />
+                  </div>
                   <p className="mt-2 text-xs text-[#8a7c52]">
                     Hizmet: İstanbul içi kurye ile {product || "gönderi"} taşıma · {formatKm(quote.distanceKm)} sürüş · en fazla {MAX_WEIGHT_KG} kg
                   </p>
                   <p className="mt-1 text-xs text-[#8a7c52]">Tarih/saat: {formatDateTimeTr(scheduledAt)}</p>
                   <p className="mt-1 text-xs text-[#8a7c52]">
-                    Toplam: {formatTlWithVat(quote.totalTl)} · Ödeme: {PAYMENT_METHOD_LABELS[paymentMethod]}
+                    {VAT_EXCL_LABEL}: {formatTl(quote.netTl)} · {VAT_INCL_LABEL}: {formatTl(quote.grossTl)} · Ödeme: {PAYMENT_METHOD_LABELS[paymentMethod]}
                   </p>
                   <p className="mt-1 text-xs text-[#8a7c52]">
                     Sürüş {formatKm(quote.distanceKm)} · {formatTariff(pricing)}
@@ -376,8 +384,8 @@ function CustomerHome() {
                 Şikâyet: {CONTACT_EMAIL} · Tüketici hakem heyeti / arabuluculuk.
               </p>
               <p className="mt-2 text-xs text-[#8a7c52]">
-                Fiyat yol (sürüş) mesafesine göredir, kuş uçuşu değildir. Gerçek kart tahsilatı yok; yöntem ve durum kayıt
-                edilir. {MAX_WEIGHT_KG} kg üzeri kabul edilmez. KDV durumu henüz netleşmediği için {VAT_STATUS_NOTE} notu gösterilir.
+                Fiyat yol (sürüş) mesafesine göredir, kuş uçuşu değildir. Tarife {VAT_EXCL_LABEL}tır; görünen toplama KDV eklenir.
+                Gerçek kart tahsilatı yok; yöntem ve durum kayıt edilir. {MAX_WEIGHT_KG} kg üzeri kabul edilmez.
               </p>
               <label className="mt-4 flex items-start gap-2 text-xs leading-5 text-[#b4a882]">
                 <input className="mt-0.5" type="checkbox" checked={preInfoOk} onChange={e => setPreInfoOk(e.target.checked)} />

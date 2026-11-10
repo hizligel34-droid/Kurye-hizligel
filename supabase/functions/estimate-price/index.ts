@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     );
     const { data: settings, error } = await supabase
       .from("pricing_settings")
-      .select("base_try, per_km_try, rounding_decimals, commission_rate")
+      .select("base_try, per_km_try, vat_rate, rounding_decimals, commission_rate")
       .eq("id", 1)
       .single();
     if (error) {
@@ -45,18 +45,25 @@ Deno.serve(async (req) => {
     }
     const distanceKm = Math.max(0, Number(body.distanceKm ?? 0));
     const decimals = Number(settings?.rounding_decimals ?? 2);
-    const totalTl = roundMoney(
+    const netTl = roundMoney(
       Number(settings?.base_try ?? 600) + Number(settings?.per_km_try ?? 50) * distanceKm,
       decimals,
     );
+    const vatRate = Number(settings?.vat_rate ?? 0.2);
+    const vatTl = roundMoney(netTl * vatRate, decimals);
+    const grossTl = roundMoney(netTl + vatTl, decimals);
     const commissionRate = Number(settings?.commission_rate ?? 0.2);
 
     return new Response(
       JSON.stringify({
         distanceKm,
-        totalTl,
-        commissionTl: roundMoney(totalTl * commissionRate, decimals),
-        courierEarningTl: roundMoney(totalTl * (1 - commissionRate), decimals),
+        netTl,
+        vatTl,
+        vatRate,
+        grossTl,
+        totalTl: grossTl,
+        commissionTl: roundMoney(netTl * commissionRate, decimals),
+        courierEarningTl: roundMoney(netTl * (1 - commissionRate), decimals),
       }),
       { headers: { ...cors, "Content-Type": "application/json" } },
     );

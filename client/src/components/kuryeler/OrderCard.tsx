@@ -1,10 +1,11 @@
 import { StatusBadge } from "@/components/kuryeler/BrandShell";
 import { OrderMap } from "@/components/kuryeler/OrderMap";
+import { PriceLines } from "@/components/kuryeler/PriceLines";
 import { cardClass } from "@/lib/kuryelerTheme";
 import {
+  breakdownFromOrder,
   formatDateTimeTr,
   formatKm,
-  formatTlWithVat,
   PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
   STATUS_LABELS,
@@ -36,9 +37,11 @@ export function OrderCard({
         </div>
         <StatusBadge label={STATUS_LABELS[status]} className={statusTone(order.status)} />
       </div>
-      <p className="mt-3 text-sm text-[#b4a882]">
-        {formatTlWithVat(order.totalPriceTl)}
-        {order.distanceKm > 0 ? ` · ${formatKm(order.distanceKm)}` : ""}
+      <div className="mt-3">
+        <PriceLines price={breakdownFromOrder(order)} />
+      </div>
+      <p className="mt-2 text-sm text-[#b4a882]">
+        {order.distanceKm > 0 ? formatKm(order.distanceKm) : ""}
         {order.weightKg ? ` · ${order.weightKg} kg` : ""}
       </p>
       <p className="mt-1 break-words text-xs leading-5 text-[#8a7c52]">

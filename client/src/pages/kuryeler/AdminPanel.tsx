@@ -19,6 +19,7 @@ import {
   updatePricing,
   updateUserRole,
 } from "@/lib/kuryelerApi";
+import { PriceLines } from "@/components/kuryeler/PriceLines";
 import { cardClass, fieldClass, goldBtn, ghostBtn, selectClass } from "@/lib/kuryelerTheme";
 import {
   calculateDeliveryPrice,
@@ -26,7 +27,9 @@ import {
   formatKm,
   formatTariff,
   formatTl,
-  formatTlWithVat,
+  roundMoney,
+  VAT_EXCL_LABEL,
+  VAT_INCL_LABEL,
   GEOCODERS,
   ROLE_LABELS,
   ROUTING_PROVIDER_LABELS,
@@ -88,7 +91,7 @@ function AdminHome() {
 
   const couriers = users.filter(item => item.role === "courier");
   const customers = users.filter(item => item.role === "customer");
-  const sample = calculateDeliveryPrice({ distanceKm: 7.4, pricing });
+  const sample = calculateDeliveryPrice({ distanceKm: 10, pricing });
 
   const savePricing = async (event: FormEvent) => {
     event.preventDefault();
@@ -135,7 +138,7 @@ function AdminHome() {
             <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
               {[
                 ["Bugünün siparişleri", String(stats?.todayOrders ?? "—")],
-                ["Bugün gelir", stats ? formatTlWithVat(stats.todayRevenueTl) : "—"],
+                ["Bugün gelir", stats ? `${formatTl(stats.todayRevenueTl)} ${VAT_INCL_LABEL}` : "—"],
                 ["Aktif kurye", String(stats?.activeCouriers ?? "—")],
                 ["Bekleyen / yolda", `${stats?.pendingOrders ?? 0} / ${stats?.enRouteOrders ?? 0}`],
               ].map(([label, value]) => (
@@ -179,7 +182,7 @@ function AdminHome() {
                         showMap
                         extra={
                           <p className="mt-2 text-xs text-[#8a7c52]">
-                            Firma payı {formatTl(order.companyRevenueTl)} · Kurye {formatTl(order.courierEarningTl)}
+                            Firma payı {formatTl(order.companyRevenueTl)} {VAT_EXCL_LABEL} · Kurye {formatTl(order.courierEarningTl)} {VAT_EXCL_LABEL}
                           </p>
                         }
                         actions={
@@ -252,10 +255,10 @@ function AdminHome() {
                 <form className={`${cardClass} h-fit space-y-3 p-5`} onSubmit={savePricing}>
                   <h2 className="text-lg font-black">Sürüş ücreti (TL)</h2>
                   <p className="text-xs text-[#8a7c52]">
-                    Ana fiyat: açılış + km bedeli × yol mesafesi. Kuş uçuşu kullanılmaz. Döviz veya kur yoktur.
+                    Ana fiyat KDV hariçtir: açılış + km bedeli × yol mesafesi. Üstüne KDV eklenir. Kuş uçuşu kullanılmaz. Fiyat yalnızca Türk lirasıdır.
                   </p>
                   <label className="block text-sm">
-                    Açılış ücreti (TL)
+                    Açılış ücreti (TL, KDV hariç)
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
@@ -267,7 +270,7 @@ function AdminHome() {
                     <FieldError id="base-err" message={pricingErrors.baseTry} />
                   </label>
                   <label className="block text-sm">
-                    Kilometre bedeli (TL / km)
+                    Kilometre bedeli (TL / km, KDV hariç)
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
@@ -290,6 +293,19 @@ function AdminHome() {
                       onChange={e => setPricing({ ...pricing, roundingDecimals: Number(e.target.value) })}
                     />
                     <FieldError id="round-err" message={pricingErrors.roundingDecimals} />
+                  </label>
+                  <label className="block text-sm">
+                    KDV oranı (%)
+                    <Input
+                      className={`${fieldClass} mt-1`}
+                      type="number"
+                      min={0}
+                      max={100}
+                      step="0.01"
+                      value={roundMoney(pricing.vatRate * 100, 2)}
+                      onChange={e => setPricing({ ...pricing, vatRate: Number(e.target.value) / 100 })}
+                    />
+                    <FieldError id="vat-err" message={pricingErrors.vatRate} />
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <input
@@ -339,7 +355,7 @@ function AdminHome() {
                     </select>
                   </label>
                   <label className="block text-sm">
-                    Kurye kesintisi (0–1)
+                    Kurye kesintisi (0–1, KDV hariç net üzerinden)
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
@@ -352,9 +368,11 @@ function AdminHome() {
                     <FieldError id="commission-err" message={pricingErrors.commissionRate} />
                   </label>
                   <div className="rounded-xl border border-[#3a3014] bg-black p-3 text-sm">
-                    <p className="font-bold text-[#D4AF37]">Örnek: {formatKm(7.4)}</p>
-                    <p className="mt-1 text-[#f5edd6]">{formatTlWithVat(sample.totalTl)}</p>
-                    <p className="text-xs text-[#8a7c52]">{formatTariff(pricing)}</p>
+                    <p className="font-bold text-[#D4AF37]">Örnek: {formatKm(10)}</p>
+                    <div className="mt-2">
+                      <PriceLines price={sample} />
+                    </div>
+                    <p className="mt-2 text-xs text-[#8a7c52]">{formatTariff(pricing)}</p>
                   </div>
                   <Button className={`h-11 w-full ${goldBtn}`} disabled={busy}>
                     {busy ? "Kaydediliyor…" : "Fiyat ayarlarını kaydet"}
@@ -363,7 +381,8 @@ function AdminHome() {
                 <div className={`${cardClass} p-5`}>
                   <h2 className="text-lg font-black">Bölge listesi (isteğe bağlı referans)</h2>
                   <p className="mt-1 text-xs text-[#8a7c52]">
-                    Sipariş ücreti bu tablodan hesaplanmaz. Eski İstanbul CSV’si yalnızca yönetici notu olarak durur.
+                    Sipariş ücreti bu tablodan hesaplanmaz. Eski İstanbul CSV’si yalnızca yönetici notu olarak durur
+                    (gösterilen rakamlar KDV hariç referanstır).
                   </p>
                   <Button
                     type="button"
@@ -386,13 +405,13 @@ function AdminHome() {
                             type="number"
                             min={0}
                             defaultValue={row.fiyatTl}
-                            aria-label={`${row.bolge} referans fiyat`}
+                            aria-label={`${row.bolge} referans fiyat, KDV hariç`}
                             onBlur={event => {
                               const next = Number(event.target.value);
                               if (next !== row.fiyatTl) void saveZone(row.bolge, next);
                             }}
                           />
-                          <span className="text-xs text-[#8a7c52]">TL</span>
+                          <span className="text-xs text-[#8a7c52]">TL {VAT_EXCL_LABEL}</span>
                         </li>
                       ))}
                     </ul>

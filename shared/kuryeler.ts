@@ -6,7 +6,9 @@ export const BRAND_NAME = "kuryeler.tr";
 export const BRAND_PRODUCT = "Hızlıgel";
 export const BRAND_CITY = "İstanbul";
 export const CURRENCY_SUFFIX = "TL";
-export const VAT_STATUS_NOTE = "KDV ?";
+export const VAT_EXCL_LABEL = "KDV hariç";
+export const VAT_INCL_LABEL = "KDV dahil";
+export const DEFAULT_VAT_RATE = 0.2;
 export const BRAND_URL = "https://kuryeler.tr";
 export const CONTACT_EMAIL = "iletisim@kuryeler.tr";
 export const CONTACT_PHONE_DISPLAY = "0532 474 67 45";
@@ -92,6 +94,7 @@ export type PricingSettings = {
   baseTry: number;
   perKmTry: number;
   roundingDecimals: number;
+  vatRate: number;
   routingProvider: RoutingProvider;
   routingUrl: string;
   geocoder: Geocoder;
@@ -103,6 +106,7 @@ export const DEFAULT_PRICING: PricingSettings = {
   baseTry: 600,
   perKmTry: 50,
   roundingDecimals: 2,
+  vatRate: DEFAULT_VAT_RATE,
   routingProvider: "osrm",
   routingUrl: "https://router.project-osrm.org",
   geocoder: "nominatim",
@@ -170,29 +174,40 @@ export type PriceBreakdown = {
   distanceKm: number;
   baseTry: number;
   distanceFeeTry: number;
+  vatRate: number;
+  netTl: number;
+  vatTl: number;
+  grossTl: number;
   totalTl: number;
   commissionTl: number;
   courierEarningTl: number;
   companyRevenueTl: number;
 };
 
-/** Sürüş km’si — kuş uçuşu değil. ücret = açılış_tl + km_tl × km */
+/** Sürüş km’si — kuş uçuşu değil. net = açılış_tl + km_tl × km (KDV hariç); üstüne KDV eklenir. */
 export function calculateDeliveryPrice(input: {
   distanceKm: number;
   pricing?: PricingSettings;
 }): PriceBreakdown {
   const pricing = input.pricing ?? DEFAULT_PRICING;
   const distanceKm = Math.max(0, Number(input.distanceKm) || 0);
+  const vatRate = Number.isFinite(pricing.vatRate) ? Math.max(0, pricing.vatRate) : DEFAULT_VAT_RATE;
   const distanceFeeTry = pricing.perKmTry * distanceKm;
-  const totalTl = roundMoney(pricing.baseTry + distanceFeeTry, pricing.roundingDecimals);
-  const commissionTl = roundMoney(totalTl * pricing.commissionRate, pricing.roundingDecimals);
+  const netTl = roundMoney(pricing.baseTry + distanceFeeTry, pricing.roundingDecimals);
+  const vatTl = roundMoney(netTl * vatRate, pricing.roundingDecimals);
+  const grossTl = roundMoney(netTl + vatTl, pricing.roundingDecimals);
+  const commissionTl = roundMoney(netTl * pricing.commissionRate, pricing.roundingDecimals);
   return {
     distanceKm: roundMoney(distanceKm, Math.max(2, pricing.roundingDecimals)),
     baseTry: pricing.baseTry,
     distanceFeeTry: roundMoney(distanceFeeTry, pricing.roundingDecimals),
-    totalTl,
+    vatRate,
+    netTl,
+    vatTl,
+    grossTl,
+    totalTl: grossTl,
     commissionTl,
-    courierEarningTl: roundMoney(totalTl - commissionTl, pricing.roundingDecimals),
+    courierEarningTl: roundMoney(netTl - commissionTl, pricing.roundingDecimals),
     companyRevenueTl: commissionTl,
   };
 }
@@ -204,12 +219,40 @@ export function formatTl(value: number | string) {
   })} ${CURRENCY_SUFFIX}`;
 }
 
-export function formatTlWithVat(value: number | string) {
-  return `${formatTl(value)} (${VAT_STATUS_NOTE})`;
+export function formatVatPercent(rate: number) {
+  const pct = roundMoney((Number(rate) || 0) * 100, 2);
+  return `%${pct.toLocaleString("tr-TR", { maximumFractionDigits: 2 })}`;
 }
 
 export function formatTariff(pricing: PricingSettings = DEFAULT_PRICING) {
-  return `Açılış ${formatTl(pricing.baseTry)} + km başı ${formatTl(pricing.perKmTry)} (${VAT_STATUS_NOTE})`;
+  return `Açılış ${formatTl(pricing.baseTry)} + km başı ${formatTl(pricing.perKmTry)} (${VAT_EXCL_LABEL})`;
+}
+
+export function formatPriceBreakdown(price: Pick<PriceBreakdown, "netTl" | "vatTl" | "grossTl" | "vatRate">) {
+  return [
+    `${formatTl(price.netTl)} ${VAT_EXCL_LABEL}`,
+    `KDV (${formatVatPercent(price.vatRate)}): ${formatTl(price.vatTl)}`,
+    `${formatTl(price.grossTl)} ${VAT_INCL_LABEL}`,
+  ].join(" · ");
+}
+
+export function breakdownFromOrder(
+  order: Pick<DeliveryOrder, "distanceKm" | "netPriceTl" | "vatTl" | "totalPriceTl" | "courierEarningTl" | "companyRevenueTl">,
+  pricing: PricingSettings = DEFAULT_PRICING,
+): PriceBreakdown {
+  const computed = calculateDeliveryPrice({ distanceKm: order.distanceKm, pricing });
+  const netTl = order.netPriceTl > 0 ? order.netPriceTl : computed.netTl;
+  const vatTl = order.vatTl > 0 || order.netPriceTl > 0 ? order.vatTl : computed.vatTl;
+  const grossTl = order.totalPriceTl > 0 ? order.totalPriceTl : roundMoney(netTl + vatTl, pricing.roundingDecimals);
+  return {
+    ...computed,
+    netTl,
+    vatTl,
+    grossTl,
+    totalTl: grossTl,
+    courierEarningTl: order.courierEarningTl || computed.courierEarningTl,
+    companyRevenueTl: order.companyRevenueTl || computed.companyRevenueTl,
+  };
 }
 
 export function formatKm(value: number) {
@@ -308,6 +351,8 @@ export type DeliveryOrder = {
   signatureData: string | null;
   weightKg: number;
   distanceKm: number;
+  netPriceTl: number;
+  vatTl: number;
   totalPriceTl: number;
   courierEarningTl: number;
   companyRevenueTl: number;

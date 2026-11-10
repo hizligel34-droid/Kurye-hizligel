@@ -1,6 +1,6 @@
 -- Sürüş (yol) mesafesine göre TL fiyat + 30 kg üst sınırı
 -- Kuş uçuşu kullanılmaz; distance_km OSRM/ORS sürüş rotasından gelir.
--- Ücret dövize endeksli değildir (32 sayılı Karar).
+-- Ücret yalnızca Türk lirasıdır.
 
 alter table public.pricing_settings add column if not exists base_try numeric(10, 2) not null default 600;
 alter table public.pricing_settings add column if not exists per_km_try numeric(10, 2) not null default 50;

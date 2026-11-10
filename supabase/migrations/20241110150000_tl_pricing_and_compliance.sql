@@ -1,6 +1,6 @@
 -- TL tarife (açılış 600 + km 50), vitrin modu, kurye pano redaksiyonu,
 -- tahmin edilemeyen takip kodu, sipariş teyit kuyruğu.
--- Döviz / kur hesabı kaldırılır (32 sayılı Karar).
+-- Ücret yalnızca Türk lirasıdır.
 
 alter table public.pricing_settings add column if not exists base_try numeric(10, 2) not null default 600;
 alter table public.pricing_settings add column if not exists per_km_try numeric(10, 2) not null default 50;
@@ -36,11 +36,6 @@ create trigger orders_recalculate_price
 before insert or update of distance_km, weight_kg
 on public.orders
 for each row execute function public.recalculate_order_price();
-
-alter table public.orders drop column if exists price_usd;
-alter table public.pricing_settings drop column if exists base_usd;
-alter table public.pricing_settings drop column if exists per_km_usd;
-alter table public.pricing_settings drop column if exists usd_to_try;
 
 drop policy if exists orders_select on public.orders;
 create policy orders_select on public.orders

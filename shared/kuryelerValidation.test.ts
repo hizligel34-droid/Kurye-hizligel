@@ -99,6 +99,7 @@ describe("kuryeler.tr form doğrulama", () => {
         baseTry: 600,
         perKmTry: 50,
         roundingDecimals: 2,
+        vatRate: 0.2,
         routingProvider: "osrm",
         commissionRate: 0.2,
       }),
@@ -108,10 +109,21 @@ describe("kuryeler.tr form doğrulama", () => {
         baseTry: -1,
         perKmTry: 1,
         roundingDecimals: 9,
+        vatRate: 0.2,
         routingProvider: "hayir",
         commissionRate: 2,
       }).baseTry,
     ).toBeTruthy();
+    expect(
+      validatePricingForm({
+        baseTry: 600,
+        perKmTry: 50,
+        roundingDecimals: 2,
+        vatRate: 1.5,
+        routingProvider: "osrm",
+        commissionRate: 0.2,
+      }).vatRate,
+    ).toMatch(/KDV oranı/);
   });
 
   it("boş takip kodunu çevirir", () => {

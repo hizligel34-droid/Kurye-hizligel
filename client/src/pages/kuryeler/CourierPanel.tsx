@@ -18,9 +18,11 @@ import {
 import { cardClass, goldBtn, ghostBtn } from "@/lib/kuryelerTheme";
 import {
   courierStatusActionLabel,
+  breakdownFromOrder,
   formatKm,
+  formatPriceBreakdown,
   formatTl,
-  formatTlWithVat,
+  VAT_EXCL_LABEL,
   nextCourierStatus,
   type DeliveryOrder,
   type OrderStatus,
@@ -138,7 +140,7 @@ function CourierHome() {
             <section className="grid grid-cols-3 gap-2 sm:gap-3">
               {[
                 ["Bugün teslim", String(stats.deliveredCount)],
-                ["Bugün kazanç", formatTlWithVat(stats.earningTl)],
+                ["Bugün kazanç", `${formatTl(stats.earningTl)} ${VAT_EXCL_LABEL}`],
                 ["Aktif iş", String(stats.activeCount)],
               ].map(([label, value]) => (
                 <div key={label} className={`${cardClass} min-w-0 p-3 sm:p-4`}>
@@ -163,8 +165,8 @@ function CourierHome() {
                       showMap
                       extra={
                         <p className="mt-2 text-xs text-[#8a7c52]">
-                          Sürüş {formatKm(order.distanceKm)} · {formatTlWithVat(order.totalPriceTl)}
-                          {order.boardOnly ? " · ilçe / km / ücret" : order.courierEarningTl > 0 ? ` · kurye payı ${formatTl(order.courierEarningTl)}` : ""}
+                          Sürüş {formatKm(order.distanceKm)} · {formatPriceBreakdown(breakdownFromOrder(order))}
+                          {order.boardOnly ? " · ilçe / km / ücret" : order.courierEarningTl > 0 ? ` · kurye payı ${formatTl(order.courierEarningTl)} ${VAT_EXCL_LABEL}` : ""}
                         </p>
                       }
                       actions={

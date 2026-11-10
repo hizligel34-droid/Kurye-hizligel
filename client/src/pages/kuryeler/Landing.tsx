@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useKuryelerAuth, panelPathForRole } from "@/contexts/KuryelerAuth";
 import { getPricing } from "@/lib/kuryelerApi";
 import { contactEmail, contactPhoneDisplay } from "@/lib/contact";
+import { PriceLines } from "@/components/kuryeler/PriceLines";
 import { cardClass, goldBtn, ghostBtn } from "@/lib/kuryelerTheme";
 import {
   BRAND_NAME,
@@ -16,8 +17,8 @@ import {
   calculateDeliveryPrice,
   DEFAULT_PRICING,
   formatKm,
+  formatPriceBreakdown,
   formatTariff,
-  formatTlWithVat,
   isShowcaseMode,
 } from "@shared/kuryeler";
 import { PWA_APPS } from "@shared/kuryelerPwa";
@@ -27,7 +28,7 @@ import { Link } from "wouter";
 
 const steps = [
   { title: "Noktaları seçin", body: "Alım ve teslim yerini haritadan veya adres aramasından işaretleyin." },
-  { title: "Sürüş ücretini görün", body: `${formatTariff()}. Kuş uçuşu değil, gerçek rota.` },
+  { title: "Sürüş ücretini görün", body: `${formatTariff()}. Üstüne KDV eklenir. Kuş uçuşu değil, gerçek rota.` },
   { title: "Kurye alsın", body: "Hızlıgel Kurye uygulamasındaki kurye işi, rotayı ve km’yi görür." },
   { title: "Teslim", body: "Alındı fotoğrafı, yolda, teslim fotoğrafı ve imza. En fazla 30 kg." },
 ];
@@ -56,8 +57,9 @@ const apps = [
 export default function Landing() {
   const { user } = useKuryelerAuth();
   const [showcase, setShowcase] = useState(isShowcaseMode());
-  const samplePrice = calculateDeliveryPrice({ distanceKm: 7.4 });
+  const samplePrice = calculateDeliveryPrice({ distanceKm: 10 });
   const sample3 = calculateDeliveryPrice({ distanceKm: 3 });
+  const sample74 = calculateDeliveryPrice({ distanceKm: 7.4 });
   const sample12 = calculateDeliveryPrice({ distanceKm: 12 });
   const ctaHref = showcase ? "/iletisim" : user ? panelPathForRole(user.role) : "/musteri/";
 
@@ -121,7 +123,7 @@ export default function Landing() {
               </h1>
               <p className="mt-4 max-w-lg text-base leading-7 text-[#b4a882]">
                 {showcase
-                  ? `Sipariş formu kapalıdır. Tarifeyi görün, telefon veya WhatsApp ile ulaşın. ${formatTariff(DEFAULT_PRICING)}.`
+                  ? `Sipariş formu kapalıdır. Tarifeyi görün, telefon veya WhatsApp ile ulaşın. ${formatTariff(DEFAULT_PRICING)}. Üstüne KDV eklenir.`
                   : "Müşteri, kurye ve yönetici birbirinden bağımsız yüklenir. iPhone’da üç ayrı ana ekran ikonu: Hızlıgel Müşteri, Hızlıgel Kurye, Hızlıgel Yönetici."}
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -157,17 +159,17 @@ export default function Landing() {
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-bold">Örnek sürüş ücreti</p>
                   <span className="rounded-full border border-[#3a3014] bg-[#1a1508] px-3 py-1 text-xs font-bold text-[#D4AF37]">
-                    {formatKm(7.4)}
+                    {formatKm(10)}
                   </span>
                 </div>
                 <div className="rounded-2xl border border-[#3a3014] bg-black p-4">
-                  <p className="text-3xl font-black text-[#D4AF37]">{formatTlWithVat(samplePrice.totalTl)}</p>
-                  <p className="mt-1 text-sm text-[#8a7c52]">{formatTariff()}</p>
+                  <PriceLines price={samplePrice} size="large" />
+                  <p className="mt-2 text-sm text-[#8a7c52]">{formatTariff()}</p>
                 </div>
                 <ul className="space-y-2 text-sm text-[#b4a882]">
-                  <li>3 km → {formatTlWithVat(sample3.totalTl)}</li>
-                  <li>7,4 km → {formatTlWithVat(samplePrice.totalTl)}</li>
-                  <li>12 km → {formatTlWithVat(sample12.totalTl)}</li>
+                  <li>3 km → {formatPriceBreakdown(sample3)}</li>
+                  <li>7,4 km → {formatPriceBreakdown(sample74)}</li>
+                  <li>12 km → {formatPriceBreakdown(sample12)}</li>
                 </ul>
               </CardContent>
             </Card>

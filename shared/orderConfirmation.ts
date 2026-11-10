@@ -2,10 +2,12 @@ import {
   BUSINESS,
   CONTACT_EMAIL,
   CONTACT_PHONE_DISPLAY,
+  breakdownFromOrder,
   formatDateTimeTr,
   formatKm,
-  formatTlWithVat,
-  VAT_STATUS_NOTE,
+  formatPriceBreakdown,
+  formatTariff,
+  VAT_EXCL_LABEL,
   type DeliveryOrder,
 } from "./kuryeler";
 
@@ -20,6 +22,7 @@ export type OutboundMail = {
 
 export function buildOrderConfirmationMail(order: DeliveryOrder, toEmail: string): Omit<OutboundMail, "id" | "createdAt"> {
   const subject = `Sipariş teyidi · ${order.trackingCode}`;
+  const price = breakdownFromOrder(order);
   const body = [
     `Hızlıgel / kuryeler.tr sipariş teyidi`,
     ``,
@@ -30,7 +33,8 @@ export function buildOrderConfirmationMail(order: DeliveryOrder, toEmail: string
     `Sürüş: ${formatKm(order.distanceKm)}`,
     `Ağırlık: ${order.weightKg} kg`,
     `Tarih/saat: ${formatDateTimeTr(order.scheduledAt)}`,
-    `Toplam: ${formatTlWithVat(order.totalPriceTl)}`,
+    `Tarife: ${formatTariff()}`,
+    `Ücret: ${formatPriceBreakdown(price)}`,
     `Ödeme: ${order.paymentMethod}`,
     ``,
     `Hizmet sağlayıcı: ${BUSINESS.legalName} – Hızlıgel / kuryeler.tr`,
@@ -40,7 +44,7 @@ export function buildOrderConfirmationMail(order: DeliveryOrder, toEmail: string
     ``,
     `Cayma: Bu hizmet seçtiğiniz tarih ve saatte yapılan bir eşya taşımasıdır ve onayınızla hemen başlar; bu nedenle cayma hakkı kullanılamaz (Mesafeli Sözleşmeler Yönetmeliği md.15/1-g, h). Kurye atanmadan önce ücretsiz iptal edebilirsiniz.`,
     ``,
-    `Fiyatlar sabit Türk lirasıdır (${VAT_STATUS_NOTE}).`,
+    `Fiyatlar sabit Türk lirasıdır; tarife ${VAT_EXCL_LABEL}tır, üzerine KDV eklenir.`,
     `Sipariş ve ön bilgi metni hesabınızın Geçmiş sekmesinde saklanır.`,
   ].join("\n");
   return { kind: "order_confirmation", toEmail, subject, body };

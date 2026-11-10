@@ -18,7 +18,7 @@ Pazarlama sitesi: `/` (üç uygulamaya bağlantı verir, kendi başına bir pane
 - iPhone 13 Safari: her uygulama kendi `apple-touch-icon` (180px) ve `apple-mobile-web-app-title` ile Ana Ekrana Ekle
 - Çevrimdışı kabuk (`offline.html` + uygulama kapsamlı service worker)
 - Sipariş: ürün, haritada alım/teslim, sürüş km, TL ücret, ağırlık (en fazla 30 kg), teslim alan kişi, gün ve saat, notlar, durum (Bekliyor / Alındı / Yolda / Teslim edildi / İptal), ödeme yöntemi/durumu
-- Ana fiyat: **600 TL açılış + 50 TL × sürüş km** (kuş uçuşu değil). Örnek: 7,4 km → 970 TL (`KDV ?`). Açılış, km bedeli ve yuvarlama Yönetici uygulamasından değişir. Döviz/kur yoktur.
+- Ana fiyat **KDV hariç**: **600 TL açılış + 50 TL × sürüş km** (kuş uçuşu değil). Üstüne varsayılan **%20 KDV** eklenir (Yönetici panelinden değişir). Örnek: 10 km → 1.100 TL KDV hariç + 220 TL KDV = **1.320 TL KDV dahil**. Fiyat yalnızca Türk lirasıdır.
 - Harita: Leaflet + OpenStreetMap karoları, Nominatim/Photon adres araması (Ara düğmesi, otomatik tamamlama yok), OSRM (veya OpenRouteService) sürüş rotası
 - Kurye: iş kabul (kabul öncesi yalnızca ilçe/km/ücret), rota ve km, alım fotoğrafı, teslim fotoğrafı + imza, günlük kazanç
 - Yönetici: tüm siparişler, kurye atama, TL fiyat ayarları ve vitrin modu; eski 55 bölgelik CSV yalnızca isteğe bağlı referans
@@ -29,10 +29,12 @@ Pazarlama sitesi: `/` (üç uygulamaya bağlantı verir, kendi başına bir pane
 ## Fiyat nasıl hesaplanır?
 
 ```
-ücret_tl = yuvarla(açılış_tl + km_tl × sürüş_km)
+net_tl   = yuvarla(açılış_tl + km_tl × sürüş_km)   # KDV hariç
+kdv_tl   = yuvarla(net_tl × kdv_orani)             # varsayılan 0,20
+brüt_tl  = net_tl + kdv_tl                         # KDV dahil
 ```
 
-Varsayılan: açılış **600 TL**, km **50 TL**, 2 ondalık. 7,4 km → **970 TL**. KDV durumu henüz netleşmediği için ekranda `KDV ?` notu vardır (`KDV dahil` yazılmaz). Bedel dövize veya kura endeksli değildir. Mesafe haritadaki **yol/sürüş** rotasıdır; kuş uçuşu kullanılmaz.
+Varsayılan: açılış **600 TL**, km **50 TL**, KDV **%20**, 2 ondalık. 10 km → **1.100 TL KDV hariç · 220 TL KDV · 1.320 TL KDV dahil**. 7,4 km → 970 + 194 = 1.164 TL. Kurye payı ve komisyon **net (KDV hariç)** üzerinden hesaplanır. Fiyat yalnızca Türk lirasıdır. Mesafe haritadaki **yol/sürüş** rotasıdır; kuş uçuşu kullanılmaz. Ekranlarda tarife `KDV hariç` etiketlenir; KDV tutarı ve KDV dahil toplam ayrıca gösterilir.
 
 Paket ağırlığı zorunludur. **30 kg üzeri** sipariş hem uygulamada hem veritabanında (`CHECK` + tetikleyici) şu mesajla reddedilir: `Maksimum taşıma sınırı 30 kg`.
 
@@ -78,7 +80,8 @@ Geliştirmede `localhost` de çalışır; canlıda SSL zorunludur.
    - `supabase/migrations/20241110120000_district_prices_and_order_fields.sql`
    - `supabase/migrations/20241110140000_driving_distance_pricing.sql`
    - `supabase/migrations/20241110150000_tl_pricing_and_compliance.sql`
-   - `supabase/seed.sql` (TL fiyat ayarları + isteğe bağlı bölge referansı; demo hesap bloğunu canlıda çalıştırmayın)
+   - `supabase/migrations/20241110160000_vat_exclusive.sql`
+   - `supabase/seed.sql` (TL fiyat ayarları + KDV oranı + isteğe bağlı bölge referansı; demo hesap bloğunu canlıda çalıştırmayın)
 3. Authentication → Email açık. İlk kurulumda Confirm email kapatılabilir.
 4. Site URL: `https://kuryeler.tr`  
    Redirect: `https://kuryeler.tr/**`, `https://kuryeler.tr/musteri/**`, `https://kuryeler.tr/kurye/**`, `https://kuryeler.tr/yonetici/**` ve yerel `http://localhost:4173/**`

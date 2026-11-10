@@ -7,18 +7,22 @@ import {
   CONTACT_PHONE_DISPLAY,
   CONTACT_WHATSAPP_E164,
   DEFAULT_PRICING,
+  DEFAULT_VAT_RATE,
   displayStatus,
+  formatPriceBreakdown,
   formatTariff,
-  formatTlWithVat,
+  formatVatPercent,
   generateTrackingCode,
   MAX_WEIGHT_KG,
   nextCourierStatus,
   redactPendingForCourier,
   STATUS_LABELS,
-  VAT_STATUS_NOTE,
+  VAT_EXCL_LABEL,
+  VAT_INCL_LABEL,
   WEIGHT_LIMIT_MESSAGE,
   type DeliveryOrder,
 } from "./kuryeler";
+import { buildOrderConfirmationMail } from "./orderConfirmation";
 
 describe("kuryeler.tr sipariş durumları", () => {
   it("Bekliyor → atama → alındı → yolda → teslim adımlarına izin verir", () => {
@@ -59,19 +63,38 @@ describe("kuryeler.tr sipariş durumları", () => {
 });
 
 describe("kuryeler.tr sürüş fiyatı", () => {
-  it("7,4 km sürüş için 970 TL üretir (600 + 50×km)", () => {
+  it("10 km için 1.100 TL KDV hariç + %20 KDV = 1.320 TL üretir", () => {
+    const result = calculateDeliveryPrice({ distanceKm: 10 });
+    expect(result.netTl).toBe(1100);
+    expect(result.vatTl).toBe(220);
+    expect(result.grossTl).toBe(1320);
+    expect(result.totalTl).toBe(1320);
+    expect(result.vatRate).toBe(0.2);
+    expect(result.baseTry).toBe(600);
+    expect(result.distanceFeeTry).toBe(500);
+    expect(result.commissionTl).toBe(220);
+    expect(result.courierEarningTl).toBe(880);
+  });
+
+  it("7,4 km sürüş için net 970 TL + 194 TL KDV üretir (600 + 50×km)", () => {
     const result = calculateDeliveryPrice({ distanceKm: 7.4 });
-    expect(result.totalTl).toBe(970);
+    expect(result.netTl).toBe(970);
+    expect(result.vatTl).toBe(194);
+    expect(result.grossTl).toBe(1164);
+    expect(result.totalTl).toBe(1164);
     expect(result.baseTry).toBe(600);
     expect(result.distanceFeeTry).toBe(370);
   });
 
-  it("yönetici açılış ve km bedelini kullanır", () => {
+  it("yönetici açılış, km bedeli ve KDV oranını kullanır", () => {
     const result = calculateDeliveryPrice({
       distanceKm: 10,
-      pricing: { ...DEFAULT_PRICING, baseTry: 90, perKmTry: 20, commissionRate: 0.1 },
+      pricing: { ...DEFAULT_PRICING, baseTry: 90, perKmTry: 20, commissionRate: 0.1, vatRate: 0.1 },
     });
-    expect(result.totalTl).toBe(290);
+    expect(result.netTl).toBe(290);
+    expect(result.vatTl).toBe(29);
+    expect(result.grossTl).toBe(319);
+    expect(result.totalTl).toBe(319);
     expect(result.commissionTl).toBe(29);
   });
 
@@ -80,25 +103,41 @@ describe("kuryeler.tr sürüş fiyatı", () => {
     expect(WEIGHT_LIMIT_MESSAGE).toBe("Maksimum taşıma sınırı 30 kg");
   });
 
-  it("KDV durumunu yer tutucu olarak gösterir, KDV dahil demez", () => {
-    expect(VAT_STATUS_NOTE).toBe("KDV ?");
-    expect(formatTlWithVat(970)).toBe("970 TL (KDV ?)");
-    expect(formatTariff()).toMatch(/Açılış 600 TL \+ km başı 50 TL \(KDV \?\)/);
-    expect(formatTlWithVat(970)).not.toMatch(/dahil/i);
+  it("tarifeyi KDV hariç etiketler ve KDV tutarı ile KDV dahil toplamı ayırır", () => {
+    expect(DEFAULT_VAT_RATE).toBe(0.2);
+    expect(DEFAULT_PRICING.vatRate).toBe(0.2);
+    expect(VAT_EXCL_LABEL).toBe("KDV hariç");
+    expect(VAT_INCL_LABEL).toBe("KDV dahil");
+    expect(formatVatPercent(0.2)).toBe("%20");
+    expect(formatTariff()).toBe("Açılış 600 TL + km başı 50 TL (KDV hariç)");
+    expect(formatTariff()).not.toMatch(/KDV \?/);
+    const sample = calculateDeliveryPrice({ distanceKm: 10 });
+    expect(formatPriceBreakdown(sample)).toBe("1.100 TL KDV hariç · KDV (%20): 220 TL · 1.320 TL KDV dahil");
   });
 
-  it("varsayılan tarifede döviz alanı bulundurmaz", () => {
+  it("varsayılan tarife yalnızca TL alanları taşır", () => {
+    expect(Object.keys(DEFAULT_PRICING).sort()).toEqual(
+      [
+        "baseTry",
+        "commissionRate",
+        "geocoder",
+        "perKmTry",
+        "roundingDecimals",
+        "routingProvider",
+        "routingUrl",
+        "showcaseMode",
+        "vatRate",
+      ].sort(),
+    );
     expect(DEFAULT_PRICING).toEqual(
       expect.objectContaining({
         baseTry: 600,
         perKmTry: 50,
         roundingDecimals: 2,
+        vatRate: 0.2,
         showcaseMode: false,
       }),
     );
-    expect(DEFAULT_PRICING).not.toHaveProperty("baseUsd");
-    expect(DEFAULT_PRICING).not.toHaveProperty("usdToTry");
-    expect(DEFAULT_PRICING).not.toHaveProperty("perKmUsd");
   });
 });
 
@@ -148,7 +187,9 @@ describe("kurye pano redaksiyonu", () => {
       signatureData: null,
       weightKg: 2,
       distanceKm: 7.4,
-      totalPriceTl: 970,
+      netPriceTl: 970,
+      vatTl: 194,
+      totalPriceTl: 1164,
       courierEarningTl: 776,
       companyRevenueTl: 194,
       pickupLat: 41,
@@ -170,7 +211,60 @@ describe("kurye pano redaksiyonu", () => {
     expect(redacted.contactPhone).toBe("");
     expect(redacted.notes).toBe("");
     expect(redacted.pickupLat).toBeNull();
-    expect(redacted.totalPriceTl).toBe(970);
+    expect(redacted.netPriceTl).toBe(970);
+    expect(redacted.vatTl).toBe(194);
+    expect(redacted.totalPriceTl).toBe(1164);
     expect(redacted.distanceKm).toBe(7.4);
+  });
+});
+
+describe("sipariş teyit e-postası", () => {
+  it("KDV hariç / KDV / KDV dahil satırlarını içerir", () => {
+    const quote = calculateDeliveryPrice({ distanceKm: 10 });
+    const mail = buildOrderConfirmationMail(
+      {
+        id: "1",
+        trackingCode: "KY-MAIL",
+        customerId: "c1",
+        courierId: null,
+        status: "pending",
+        product: "Evrak",
+        pickupAddress: "Kadıköy",
+        dropoffAddress: "Beşiktaş",
+        bolge: "Beşiktaş",
+        recipientName: "Ayşe",
+        scheduledAt: "2026-11-10T14:00:00.000Z",
+        notes: "",
+        contactPhone: "05420000000",
+        paymentMethod: "nakit",
+        paymentStatus: "bekliyor",
+        pickupPhoto: null,
+        deliveryPhoto: null,
+        signatureData: null,
+        weightKg: 2,
+        distanceKm: 10,
+        netPriceTl: quote.netTl,
+        vatTl: quote.vatTl,
+        totalPriceTl: quote.grossTl,
+        courierEarningTl: quote.courierEarningTl,
+        companyRevenueTl: quote.companyRevenueTl,
+        pickupLat: 41,
+        pickupLng: 29,
+        dropoffLat: 41.1,
+        dropoffLng: 29.1,
+        routeGeojson: "[]",
+        createdAt: "",
+        updatedAt: "",
+        assignedAt: null,
+        pickedUpAt: null,
+        deliveredAt: null,
+        cancelledAt: null,
+      },
+      "musteri@ornek.tr",
+    );
+    expect(mail.body).toContain("1.100 TL KDV hariç");
+    expect(mail.body).toContain("KDV (%20): 220 TL");
+    expect(mail.body).toContain("1.320 TL KDV dahil");
+    expect(mail.body).not.toContain("KDV ?");
   });
 });

@@ -7,9 +7,13 @@ import {
   CONTACT_EMAIL,
   CONTACT_PHONE_DISPLAY,
   DEFAULT_PRICING,
+  calculateDeliveryPrice,
+  formatPriceBreakdown,
   formatTariff,
+  formatVatPercent,
   MAX_WEIGHT_KG,
-  VAT_STATUS_NOTE,
+  VAT_EXCL_LABEL,
+  VAT_INCL_LABEL,
 } from "@shared/kuryeler";
 import { Link } from "wouter";
 
@@ -90,7 +94,7 @@ function GuideBody() {
           teslim alan kişi, gün-saat, telefon ve ödeme yöntemini girin.
         </li>
         <li>
-          Sağdaki özet kutusunda sürüş mesafesini ve toplam ücreti ({VAT_STATUS_NOTE}) kontrol edin. Hatalı
+          Sağdaki özet kutusunda sürüş mesafesini, {VAT_EXCL_LABEL} tutarı, KDV’yi ve {VAT_INCL_LABEL} toplamı kontrol edin. Hatalı
           bilgiyi bu aşamada alanlara dönerek düzeltebilirsiniz.
         </li>
         <li>
@@ -226,6 +230,7 @@ function KvkkBody() {
 
 function TermsBody() {
   const tariff = formatTariff(DEFAULT_PRICING);
+  const sample10 = calculateDeliveryPrice({ distanceKm: 10 });
   return (
     <>
       <section>
@@ -246,10 +251,12 @@ function TermsBody() {
       <section>
         <h2 className="text-lg font-black text-[#f5edd6]">3. Ücret</h2>
         <p className="mt-2">
-          Ücret Türk lirası olarak gösterilir ve TL ile ödenir: {tariff}. Mesafe haritadaki rota üzerinden
-          hesaplanır, kuş uçuşu değildir. Siparişi onaylamadan önce toplam tutar gösterilir; teslim adresini
-          siz değiştirmedikçe bu tutar artmaz. Ödeme yöntemleri: nakit, havale/EFT, kapıda kart. Gerçek kart
-          tahsilatı bu sürümde yoktur; yöntem kayıt edilir. Fiyatlar dövize veya kura endeksli değildir.
+          Ücret Türk lirası olarak gösterilir ve TL ile ödenir. Tarife {VAT_EXCL_LABEL}tır: {tariff}.
+          Üzerine {formatVatPercent(DEFAULT_PRICING.vatRate)} KDV eklenir. Örnek 10 km: {formatPriceBreakdown(sample10)}.
+          Mesafe haritadaki rota üzerinden hesaplanır, kuş uçuşu değildir. Siparişi onaylamadan önce KDV’siz tutar,
+          KDV ve {VAT_INCL_LABEL} toplam gösterilir; teslim adresini siz değiştirmedikçe bu tutar artmaz.
+          Ödeme yöntemleri: nakit, havale/EFT, kapıda kart. Gerçek kart tahsilatı bu sürümde yoktur; yöntem kayıt
+          edilir. Fiyat yalnızca Türk lirasıdır.
         </p>
       </section>
       <section>
