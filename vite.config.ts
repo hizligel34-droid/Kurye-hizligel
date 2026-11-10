@@ -169,6 +169,17 @@ function hizligelAppFallback(): Plugin {
         return;
       }
     }
+    if (
+      pathname.startsWith("/api") ||
+      pathname.startsWith("/assets/") ||
+      pathname.startsWith("/pwa/") ||
+      pathname.includes(".")
+    ) {
+      return;
+    }
+    if (pathname !== "/") {
+      req.url = `/index.html${qs}`;
+    }
   };
   return {
     name: "hizligel-app-fallback",

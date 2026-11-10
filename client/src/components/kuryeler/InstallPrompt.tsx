@@ -56,7 +56,7 @@ export function InstallPrompt({ panel }: { panel: PwaPanel }) {
       </ol>
       <button
         type="button"
-        className="mt-2 text-xs font-bold text-[#8a7c52]"
+        className="mt-2 min-h-11 text-xs font-bold text-[#b4a882]"
         onClick={() => {
           sessionStorage.setItem(`hizligel.install.${panel}`, "gizle");
           setVisible(false);

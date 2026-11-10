@@ -327,6 +327,7 @@ function CustomerHome() {
                     <button
                       key={method}
                       type="button"
+                      aria-pressed={paymentMethod === method}
                       className={`min-h-11 rounded-xl border px-2 text-xs font-bold ${
                         paymentMethod === method
                           ? "border-[#D4AF37] bg-[#1a1508] text-[#D4AF37]"

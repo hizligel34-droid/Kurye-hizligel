@@ -26,10 +26,11 @@ import type { User } from "@supabase/supabase-js";
 
 const DEMO_KEY = "kuryeler.tr.demo.v6";
 
-export const DEMO_ACCOUNTS = [
+const LIVE_BACKEND = Boolean(import.meta.env.VITE_SUPABASE_URL?.trim());
+
+const DEMO_ACCOUNT_PUBLIC = [
   {
     email: "musteri@kuryeler.tr",
-    password: "KuryelerMusteri1!",
     role: "customer" as const,
     fullName: "Ayşe Müşteri",
     phone: "05421110003",
@@ -37,7 +38,6 @@ export const DEMO_ACCOUNTS = [
   },
   {
     email: "kurye@kuryeler.tr",
-    password: "KuryelerKurye1!",
     role: "courier" as const,
     fullName: "Mehmet Kurye",
     phone: "05421110002",
@@ -45,13 +45,21 @@ export const DEMO_ACCOUNTS = [
   },
   {
     email: "yonetici@kuryeler.tr",
-    password: "KuryelerYonetici1!",
     role: "admin" as const,
     fullName: "Şerif Yönetici",
     phone: "05421110001",
     id: "demo-admin",
   },
 ] as const;
+
+/** Canlı Supabase derlemesinde şifreler paket dışına çıkar; yerel demo için kalır. */
+export const DEMO_ACCOUNTS = LIVE_BACKEND
+  ? DEMO_ACCOUNT_PUBLIC.map(account => ({ ...account, password: "" }))
+  : [
+      { ...DEMO_ACCOUNT_PUBLIC[0], password: "KuryelerMusteri1!" },
+      { ...DEMO_ACCOUNT_PUBLIC[1], password: "KuryelerKurye1!" },
+      { ...DEMO_ACCOUNT_PUBLIC[2], password: "KuryelerYonetici1!" },
+    ];
 
 export type SessionUser = Profile;
 

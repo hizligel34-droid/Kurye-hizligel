@@ -5,6 +5,7 @@ import {
   type PaymentMethod,
   type RoutingProvider,
 } from "./kuryeler";
+import { isPlausibleDrivingDistance } from "./kuryelerSecurity";
 import { isValidTurkishMobilePhone } from "./orderValidation";
 
 export type FieldErrors = Record<string, string>;
@@ -103,6 +104,20 @@ export function validateDeliveryOrder(input: {
   if (weightError) errors.weightKg = weightError;
   if (!(input.distanceKm > 0) || !input.pickupLat || !input.dropoffLat) {
     errors.route = "Haritada alım ve teslim noktalarını seçip sürüş rotasını hesaplatın.";
+  } else if (
+    input.pickupLat != null &&
+    input.pickupLng != null &&
+    input.dropoffLat != null &&
+    input.dropoffLng != null &&
+    !isPlausibleDrivingDistance(input.distanceKm, {
+      lat: input.pickupLat,
+      lng: input.pickupLng,
+    }, {
+      lat: input.dropoffLat,
+      lng: input.dropoffLng,
+    })
+  ) {
+    errors.route = "Sürüş mesafesi seçilen noktalarla uyuşmuyor. Rotayı yeniden hesaplayın.";
   }
   return errors;
 }

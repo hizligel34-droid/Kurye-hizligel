@@ -79,6 +79,11 @@ describe("kuryeler.tr form doğrulama", () => {
     expect(validateDeliveryOrder(validOrder)).toEqual({});
   });
 
+  it("kuş uçuşundan kısa mesafeyi reddeder", () => {
+    const errors = validateDeliveryOrder({ ...validOrder, distanceKm: 0.2 });
+    expect(errors.route).toMatch(/uyuşmuyor/);
+  });
+
   it("30 kg üzerini tam Türkçe mesajla reddeder", () => {
     expect(validateWeightKg(30)).toBeNull();
     expect(validateWeightKg(30.1)).toBe(WEIGHT_LIMIT_MESSAGE);
