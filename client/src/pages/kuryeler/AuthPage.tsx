@@ -33,16 +33,17 @@ export default function AuthPage({
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   useEffect(() => {
+    if (dataMode !== "demo") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("demo") !== "1") return;
     const account = DEMO_ACCOUNTS.find(item => item.role === expectedRole);
-    if (!account) return;
+    if (!account?.password) return;
     setEmail(account.email);
     setPassword(account.password);
     void signIn(account.email, account.password)
       .then(() => navigate("/"))
       .catch(error => toast.error(error instanceof Error ? error.message : "Demo giriş başarısız"));
-  }, [expectedRole]);
+  }, [expectedRole, dataMode]);
 
   useEffect(() => {
     if (user) navigate("/");
