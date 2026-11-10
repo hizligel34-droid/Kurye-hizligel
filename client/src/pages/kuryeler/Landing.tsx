@@ -17,8 +17,9 @@ import {
   calculateDeliveryPrice,
   DEFAULT_PRICING,
   formatKm,
-  formatPriceBreakdown,
-  formatTariff,
+  formatPriceHint,
+  formatPriceInclusive,
+  formatTariffInclusive,
   isShowcaseMode,
 } from "@shared/kuryeler";
 import { PWA_APPS } from "@shared/kuryelerPwa";
@@ -28,7 +29,7 @@ import { Link } from "wouter";
 
 const steps = [
   { title: "Noktaları seçin", body: "Alım ve teslim yerini haritadan veya adres aramasından işaretleyin." },
-  { title: "Sürüş ücretini görün", body: `${formatTariff()}. Üstüne KDV eklenir. Kuş uçuşu değil, gerçek rota.` },
+  { title: "Sürüş ücretini görün", body: `${formatTariffInclusive()}. Kuş uçuşu değil, gerçek rota.` },
   { title: "Kurye alsın", body: "Hızlıgel Kurye uygulamasındaki kurye işi, rotayı ve km’yi görür." },
   { title: "Teslim", body: "Alındı fotoğrafı, yolda, teslim fotoğrafı ve imza. En fazla 30 kg." },
 ];
@@ -123,7 +124,7 @@ export default function Landing() {
               </h1>
               <p className="mt-4 max-w-lg text-base leading-7 text-[#b4a882]">
                 {showcase
-                  ? `Sipariş formu kapalıdır. Tarifeyi görün, telefon veya WhatsApp ile ulaşın. ${formatTariff(DEFAULT_PRICING)}. Üstüne KDV eklenir.`
+                  ? `Sipariş formu kapalıdır. Tarifeyi görün, telefon veya WhatsApp ile ulaşın. ${formatTariffInclusive(DEFAULT_PRICING)}.`
                   : "Müşteri, kurye ve yönetici birbirinden bağımsız yüklenir. iPhone’da üç ayrı ana ekran ikonu: Hızlıgel Müşteri, Hızlıgel Kurye, Hızlıgel Yönetici."}
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -163,13 +164,22 @@ export default function Landing() {
                   </span>
                 </div>
                 <div className="rounded-2xl border border-[#3a3014] bg-black p-4">
-                  <PriceLines price={samplePrice} size="large" />
-                  <p className="mt-2 text-sm text-[#8a7c52]">{formatTariff()}</p>
+                  <PriceLines price={samplePrice} size="large" audience="consumer" />
+                  <p className="mt-2 text-sm text-[#8a7c52]">{formatTariffInclusive()}</p>
                 </div>
                 <ul className="space-y-2 text-sm text-[#b4a882]">
-                  <li>3 km → {formatPriceBreakdown(sample3)}</li>
-                  <li>7,4 km → {formatPriceBreakdown(sample74)}</li>
-                  <li>12 km → {formatPriceBreakdown(sample12)}</li>
+                  <li>
+                    3 km → {formatPriceInclusive(sample3)}
+                    <span className="block text-xs text-[#8a7c52]">{formatPriceHint(sample3)}</span>
+                  </li>
+                  <li>
+                    7,4 km → {formatPriceInclusive(sample74)}
+                    <span className="block text-xs text-[#8a7c52]">{formatPriceHint(sample74)}</span>
+                  </li>
+                  <li>
+                    12 km → {formatPriceInclusive(sample12)}
+                    <span className="block text-xs text-[#8a7c52]">{formatPriceHint(sample12)}</span>
+                  </li>
                 </ul>
               </CardContent>
             </Card>

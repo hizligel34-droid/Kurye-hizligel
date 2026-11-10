@@ -94,7 +94,7 @@ function GuideBody() {
           teslim alan kişi, gün-saat, telefon ve ödeme yöntemini girin.
         </li>
         <li>
-          Sağdaki özet kutusunda sürüş mesafesini, {VAT_EXCL_LABEL} tutarı, KDV’yi ve {VAT_INCL_LABEL} toplamı kontrol edin. Hatalı
+          Sağdaki özet kutusunda sürüş mesafesini ve {VAT_INCL_LABEL} toplam ücreti kontrol edin. Hatalı
           bilgiyi bu aşamada alanlara dönerek düzeltebilirsiniz.
         </li>
         <li>
@@ -253,8 +253,8 @@ function TermsBody() {
         <p className="mt-2">
           Ücret Türk lirası olarak gösterilir ve TL ile ödenir. Tarife {VAT_EXCL_LABEL}tır: {tariff}.
           Üzerine {formatVatPercent(DEFAULT_PRICING.vatRate)} KDV eklenir. Örnek 10 km: {formatPriceBreakdown(sample10)}.
-          Mesafe haritadaki rota üzerinden hesaplanır, kuş uçuşu değildir. Siparişi onaylamadan önce KDV’siz tutar,
-          KDV ve {VAT_INCL_LABEL} toplam gösterilir; teslim adresini siz değiştirmedikçe bu tutar artmaz.
+          Mesafe haritadaki rota üzerinden hesaplanır, kuş uçuşu değildir. Siparişi onaylamadan önce {VAT_INCL_LABEL} toplam
+          gösterilir; fatura satırında {VAT_EXCL_LABEL} tutar ve KDV ayrıca yazılır. Teslim adresini siz değiştirmedikçe bu tutar artmaz.
           Ödeme yöntemleri: nakit, havale/EFT, kapıda kart. Gerçek kart tahsilatı bu sürümde yoktur; yöntem kayıt
           edilir. Fiyat yalnızca Türk lirasıdır.
         </p>

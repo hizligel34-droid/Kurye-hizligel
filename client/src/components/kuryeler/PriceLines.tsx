@@ -1,4 +1,5 @@
 import {
+  formatPriceHint,
   formatTl,
   formatVatPercent,
   VAT_EXCL_LABEL,
@@ -9,10 +10,24 @@ import {
 export function PriceLines({
   price,
   size = "normal",
+  audience = "consumer",
 }: {
   price: PriceBreakdown;
   size?: "normal" | "large";
+  audience?: "consumer" | "business";
 }) {
+  if (audience === "consumer") {
+    const grossClass = size === "large" ? "text-3xl font-black text-[#D4AF37]" : "text-base font-black text-[#D4AF37]";
+    return (
+      <div className="space-y-1">
+        <p className={grossClass}>
+          {formatTl(price.grossTl)} <span className="text-xs font-bold">{VAT_INCL_LABEL}</span>
+        </p>
+        <p className="text-xs text-[#8a7c52]">{formatPriceHint(price)}</p>
+      </div>
+    );
+  }
+
   const netClass = size === "large" ? "text-lg font-black text-[#f5edd6]" : "text-sm font-semibold text-[#f5edd6]";
   const grossClass = size === "large" ? "text-3xl font-black text-[#D4AF37]" : "text-base font-black text-[#D4AF37]";
   return (

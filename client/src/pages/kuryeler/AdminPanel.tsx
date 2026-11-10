@@ -179,6 +179,7 @@ function AdminHome() {
                       <OrderCard
                         key={order.id}
                         order={order}
+                        audience="business"
                         showMap
                         extra={
                           <p className="mt-2 text-xs text-[#8a7c52]">
@@ -370,7 +371,7 @@ function AdminHome() {
                   <div className="rounded-xl border border-[#3a3014] bg-black p-3 text-sm">
                     <p className="font-bold text-[#D4AF37]">Örnek: {formatKm(10)}</p>
                     <div className="mt-2">
-                      <PriceLines price={sample} />
+                      <PriceLines price={sample} audience="business" />
                     </div>
                     <p className="mt-2 text-xs text-[#8a7c52]">{formatTariff(pricing)}</p>
                   </div>

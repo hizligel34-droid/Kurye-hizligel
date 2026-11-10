@@ -24,13 +24,12 @@ import {
   CONTACT_PHONE_DISPLAY,
   DEFAULT_PRICING,
   MAX_WEIGHT_KG,
-  VAT_EXCL_LABEL,
   VAT_INCL_LABEL,
   calculateDeliveryPrice,
   formatDateTimeTr,
   formatKm,
-  formatTariff,
-  formatTl,
+  formatPriceInclusive,
+  formatTariffInclusive,
   isActiveOrder,
   isShowcaseMode,
   PAYMENT_METHOD_LABELS,
@@ -205,9 +204,9 @@ function CustomerHome() {
         {isShowcaseMode(pricing) ? (
           <div className="mt-5 rounded-2xl border border-[#3a3014] bg-[#1a1508] p-4 text-sm leading-6 text-[#D4AF37]">
             Vitrin modu açık: sipariş formu kapalıdır. Tarifeyi görün ve {CONTACT_PHONE_DISPLAY} veya WhatsApp ile ulaşın.
-            <p className="mt-2 text-[#b4a882]">{formatTariff(pricing)}</p>
+            <p className="mt-2 text-[#b4a882]">{formatTariffInclusive(pricing)}</p>
             <div className="mt-3">
-              <PriceLines price={calculateDeliveryPrice({ distanceKm: 10, pricing })} />
+              <PriceLines price={calculateDeliveryPrice({ distanceKm: 10, pricing })} audience="consumer" />
             </div>
           </div>
         ) : null}
@@ -357,17 +356,17 @@ function CustomerHome() {
               {quote && quote.netTl > 0 ? (
                 <>
                   <div className="mt-4">
-                    <PriceLines price={quote} size="large" />
+                    <PriceLines price={quote} size="large" audience="consumer" />
                   </div>
                   <p className="mt-2 text-xs text-[#8a7c52]">
                     Hizmet: İstanbul içi kurye ile {product || "gönderi"} taşıma · {formatKm(quote.distanceKm)} sürüş · en fazla {MAX_WEIGHT_KG} kg
                   </p>
                   <p className="mt-1 text-xs text-[#8a7c52]">Tarih/saat: {formatDateTimeTr(scheduledAt)}</p>
                   <p className="mt-1 text-xs text-[#8a7c52]">
-                    {VAT_EXCL_LABEL}: {formatTl(quote.netTl)} · {VAT_INCL_LABEL}: {formatTl(quote.grossTl)} · Ödeme: {PAYMENT_METHOD_LABELS[paymentMethod]}
+                    Toplam: {formatPriceInclusive(quote)} · Ödeme: {PAYMENT_METHOD_LABELS[paymentMethod]}
                   </p>
                   <p className="mt-1 text-xs text-[#8a7c52]">
-                    Sürüş {formatKm(quote.distanceKm)} · {formatTariff(pricing)}
+                    Sürüş {formatKm(quote.distanceKm)} · {formatTariffInclusive(pricing)}
                   </p>
                 </>
               ) : (
@@ -385,7 +384,7 @@ function CustomerHome() {
                 Şikâyet: {CONTACT_EMAIL} · Tüketici hakem heyeti / arabuluculuk.
               </p>
               <p className="mt-2 text-xs text-[#8a7c52]">
-                Fiyat yol (sürüş) mesafesine göredir, kuş uçuşu değildir. Tarife {VAT_EXCL_LABEL}tır; görünen toplama KDV eklenir.
+                Fiyat yol (sürüş) mesafesine göredir, kuş uçuşu değildir. Görünen tutar {VAT_INCL_LABEL}dir.
                 Gerçek kart tahsilatı yok; yöntem ve durum kayıt edilir. {MAX_WEIGHT_KG} kg üzeri kabul edilmez.
               </p>
               <label className="mt-4 flex items-start gap-2 text-xs leading-5 text-[#b4a882]">
@@ -435,6 +434,7 @@ function CustomerHome() {
                 <OrderCard
                   key={order.id}
                   order={order}
+                  audience="consumer"
                   showMap
                   extra={
                     <p className="mt-2 text-xs text-[#8a7c52]">
@@ -452,7 +452,7 @@ function CustomerHome() {
             {history.length === 0 ? (
               <EmptyState title="Geçmiş boş" body="Teslim edilen veya iptal edilen siparişler burada görünür." />
             ) : (
-              history.map(order => <OrderCard key={order.id} order={order} />)
+              history.map(order => <OrderCard key={order.id} order={order} audience="consumer" />)
             )}
           </div>
         )}

@@ -10,7 +10,10 @@ import {
   DEFAULT_VAT_RATE,
   displayStatus,
   formatPriceBreakdown,
+  formatPriceHint,
+  formatPriceInclusive,
   formatTariff,
+  formatTariffInclusive,
   formatVatPercent,
   generateTrackingCode,
   MAX_WEIGHT_KG,
@@ -103,15 +106,17 @@ describe("kuryeler.tr sürüş fiyatı", () => {
     expect(WEIGHT_LIMIT_MESSAGE).toBe("Maksimum taşıma sınırı 30 kg");
   });
 
-  it("tarifeyi KDV hariç etiketler ve KDV tutarı ile KDV dahil toplamı ayırır", () => {
+  it("tüketiciye KDV dahil tarife ve örnek gösterir, faturada kırılım kalır", () => {
     expect(DEFAULT_VAT_RATE).toBe(0.2);
     expect(DEFAULT_PRICING.vatRate).toBe(0.2);
     expect(VAT_EXCL_LABEL).toBe("KDV hariç");
     expect(VAT_INCL_LABEL).toBe("KDV dahil");
     expect(formatVatPercent(0.2)).toBe("%20");
+    expect(formatTariffInclusive()).toBe("Açılış 720 TL + km başı 60 TL (KDV dahil)");
     expect(formatTariff()).toBe("Açılış 600 TL + km başı 50 TL (KDV hariç)");
-    expect(formatTariff()).not.toMatch(/KDV \?/);
     const sample = calculateDeliveryPrice({ distanceKm: 10 });
+    expect(formatPriceInclusive(sample)).toBe("1.320 TL (KDV dahil)");
+    expect(formatPriceHint(sample)).toBe("1.100 TL + 220 TL KDV");
     expect(formatPriceBreakdown(sample)).toBe("1.100 TL KDV hariç · KDV (%20): 220 TL · 1.320 TL KDV dahil");
   });
 
@@ -262,9 +267,10 @@ describe("sipariş teyit e-postası", () => {
       },
       "musteri@ornek.tr",
     );
+    expect(mail.body).toContain("1.320 TL (KDV dahil)");
+    expect(mail.body).toContain("1.100 TL + 220 TL KDV");
     expect(mail.body).toContain("1.100 TL KDV hariç");
     expect(mail.body).toContain("KDV (%20): 220 TL");
-    expect(mail.body).toContain("1.320 TL KDV dahil");
     expect(mail.body).not.toContain("KDV ?");
   });
 });
