@@ -1,18 +1,21 @@
 import { describe, expect, it } from "vitest";
+import { DISTRICT_PRICES } from "./fiyatListesi";
 import {
   calculateDeliveryPrice,
   canTransitionStatus,
   CONTACT_PHONE_DISPLAY,
   CONTACT_WHATSAPP_E164,
   DEFAULT_PRICING,
-  estimateDistanceKm,
+  displayStatus,
   generateTrackingCode,
+  MAX_WEIGHT_KG,
   nextCourierStatus,
   STATUS_LABELS,
+  WEIGHT_LIMIT_MESSAGE,
 } from "./kuryeler";
 
 describe("kuryeler.tr sipariş durumları", () => {
-  it("Beklemede → atandı → alındı → yolda → teslim adımlarına izin verir", () => {
+  it("Bekliyor → atama → alındı → yolda → teslim adımlarına izin verir", () => {
     expect(canTransitionStatus("pending", "assigned")).toBe(true);
     expect(canTransitionStatus("assigned", "picked_up")).toBe(true);
     expect(canTransitionStatus("picked_up", "en_route")).toBe(true);
@@ -38,61 +41,44 @@ describe("kuryeler.tr sipariş durumları", () => {
     expect(nextCourierStatus("pending")).toBeNull();
   });
 
-  it("Türkçe durum etiketlerini korur", () => {
-    expect(STATUS_LABELS.pending).toBe("Beklemede");
-    expect(STATUS_LABELS.assigned).toBe("Kuryeye atandı");
+  it("müşteriye beş Türkçe durum gösterir", () => {
+    expect(STATUS_LABELS.pending).toBe("Bekliyor");
+    expect(STATUS_LABELS.assigned).toBe("Bekliyor");
     expect(STATUS_LABELS.picked_up).toBe("Alındı");
     expect(STATUS_LABELS.en_route).toBe("Yolda");
     expect(STATUS_LABELS.delivered).toBe("Teslim edildi");
     expect(STATUS_LABELS.cancelled).toBe("İptal");
+    expect(displayStatus("assigned")).toBe("pending");
   });
 });
 
-describe("kuryeler.tr fiyatlandırma", () => {
-  it("açılış ücreti + km bedeli + paket ek ücretini toplar", () => {
-    const result = calculateDeliveryPrice({
-      pickupDistrict: "Kadıköy",
-      dropoffDistrict: "Kadıköy",
-      packageType: "orta",
-      distanceKm: 4,
-      pricing: DEFAULT_PRICING,
-    });
-    expect(result.baseFeeTl).toBe(150);
-    expect(result.distanceFeeTl).toBe(100);
-    expect(result.packageFeeTl).toBe(25);
-    expect(result.zoneSurchargeTl).toBe(0);
-    expect(result.totalTl).toBe(275);
-    expect(result.commissionTl).toBe(55);
-    expect(result.courierEarningTl).toBe(220);
+describe("kuryeler.tr sürüş fiyatı", () => {
+  it("7,4 km sürüş için 8,4 USD üretir", () => {
+    const result = calculateDeliveryPrice({ distanceKm: 7.4 });
+    expect(result.priceUsd).toBe(8.4);
+    expect(result.baseUsd).toBe(1);
+    expect(result.distanceFeeUsd).toBe(7.4);
   });
 
-  it("Avrupa–Anadolu geçişinde bölge ek ücreti uygular", () => {
+  it("yönetici açılış ve km bedelini kullanır", () => {
     const result = calculateDeliveryPrice({
-      pickupDistrict: "Beşiktaş",
-      dropoffDistrict: "Kadıköy",
-      packageType: "evrak",
-      distanceKm: 8,
+      distanceKm: 10,
+      pricing: { ...DEFAULT_PRICING, baseUsd: 2, perKmUsd: 0.5, commissionRate: 0.1 },
     });
-    expect(result.zoneSurchargeTl).toBe(40);
-    expect(result.totalTl).toBe(150 + 8 * 25 + 40);
+    expect(result.priceUsd).toBe(7);
+    expect(result.commissionUsd).toBe(0.7);
   });
 
-  it("bölge kapalıysa kıta ek ücreti almaz", () => {
-    const result = calculateDeliveryPrice({
-      pickupDistrict: "Beşiktaş",
-      dropoffDistrict: "Kadıköy",
-      packageType: "evrak",
-      distanceKm: 8,
-      pricing: { ...DEFAULT_PRICING, useZones: false },
-    });
-    expect(result.zoneSurchargeTl).toBe(0);
-    expect(result.totalTl).toBe(350);
+  it("ağırlık üst sınırını 30 kg olarak tutar", () => {
+    expect(MAX_WEIGHT_KG).toBe(30);
+    expect(WEIGHT_LIMIT_MESSAGE).toBe("Maksimum taşıma sınırı 30 kg");
   });
+});
 
-  it("Kadıköy–Beşiktaş mesafe tahminini üretir", () => {
-    const km = estimateDistanceKm("Kadıköy", "Beşiktaş");
-    expect(km).toBeGreaterThan(4);
-    expect(km).toBeLessThan(20);
+describe("kuryeler.tr bölge referans listesi", () => {
+  it("CSV’deki 55 İstanbul bölgesini isteğe bağlı referans olarak yükler", () => {
+    expect(DISTRICT_PRICES).toHaveLength(55);
+    expect(DISTRICT_PRICES.find(row => row.bolge === "Beşiktaş")?.fiyatTl).toBe(350);
   });
 });
 

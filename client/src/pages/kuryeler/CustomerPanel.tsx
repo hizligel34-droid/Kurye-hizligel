@@ -1,7 +1,7 @@
-import { AddressFields, type AddressDraft } from "@/components/kuryeler/AddressFields";
 import { BrandShell, InstallHint, StatusBadge } from "@/components/kuryeler/BrandShell";
 import { OrderCard } from "@/components/kuryeler/OrderCard";
 import { RequireRole } from "@/components/kuryeler/RequireRole";
+import { RoutePicker, type RouteSelection } from "@/components/kuryeler/RoutePicker";
 import { EmptyState, ErrorState, FieldError, LoadingState } from "@/components/kuryeler/UiStates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,17 +15,21 @@ import {
   subscribeToOrders,
   type CreateOrderInput,
 } from "@/lib/kuryelerApi";
-import { areaClass, cardClass, fieldClass, goldBtn, selectClass } from "@/lib/kuryelerTheme";
+import { areaClass, cardClass, fieldClass, goldBtn } from "@/lib/kuryelerTheme";
 import {
+  DEFAULT_PRICING,
+  MAX_WEIGHT_KG,
+  formatKm,
   formatTl,
+  formatUsd,
   isActiveOrder,
-  PACKAGE_DESCRIPTIONS,
-  PACKAGE_LABELS,
-  PACKAGE_TYPES,
+  PAYMENT_METHOD_LABELS,
+  PAYMENT_METHODS,
   STATUS_LABELS,
   statusTone,
+  WEIGHT_LIMIT_MESSAGE,
   type DeliveryOrder,
-  type PackageType,
+  type PaymentMethod,
   type PricingSettings,
 } from "@shared/kuryeler";
 import { firstError, validateDeliveryOrder, type FieldErrors } from "@shared/kuryelerValidation";
@@ -33,16 +37,25 @@ import { normalizeTurkishMobilePhone } from "@shared/orderValidation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
-const emptyAddress: AddressDraft = { district: "", neighborhood: "", street: "", note: "" };
+function defaultSchedule() {
+  const date = new Date(Date.now() + 90 * 60 * 1000);
+  date.setMinutes(0, 0, 0);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 function CustomerHome() {
   const { user, refresh } = useKuryelerAuth();
-  const [pickup, setPickup] = useState<AddressDraft>({ ...emptyAddress, district: "Kadıköy" });
-  const [dropoff, setDropoff] = useState<AddressDraft>({ ...emptyAddress, district: "Beşiktaş" });
-  const [packageType, setPackageType] = useState<PackageType>("kucuk");
+  const [product, setProduct] = useState("");
+  const [route, setRoute] = useState<RouteSelection | null>(null);
+  const [routeError, setRouteError] = useState<string | undefined>();
+  const [weightKg, setWeightKg] = useState("1");
+  const [recipientName, setRecipientName] = useState("");
+  const [scheduledAt, setScheduledAt] = useState(defaultSchedule);
   const [notes, setNotes] = useState("");
   const [phone, setPhone] = useState(user?.phone ?? "");
-  const [pricing, setPricing] = useState<PricingSettings | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("nakit");
+  const [pricing, setPricing] = useState<PricingSettings>(DEFAULT_PRICING);
   const [orders, setOrders] = useState<DeliveryOrder[]>([]);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -69,23 +82,28 @@ function CustomerHome() {
     });
   }, [user?.id]);
 
+  const weightValue = Number(weightKg.replace(",", "."));
   const input: CreateOrderInput = {
-    pickupDistrict: pickup.district,
-    pickupNeighborhood: pickup.neighborhood,
-    pickupStreet: pickup.street,
-    pickupNote: pickup.note,
-    dropoffDistrict: dropoff.district,
-    dropoffNeighborhood: dropoff.neighborhood,
-    dropoffStreet: dropoff.street,
-    dropoffNote: dropoff.note,
-    packageType,
+    product,
+    pickupAddress: route?.pickupAddress ?? "",
+    dropoffAddress: route?.dropoffAddress ?? "",
+    recipientName,
+    scheduledAt,
     notes,
     contactPhone: phone,
+    paymentMethod,
+    weightKg: weightValue,
+    distanceKm: route?.distanceKm ?? 0,
+    pickupLat: route?.pickupLat ?? 0,
+    pickupLng: route?.pickupLng ?? 0,
+    dropoffLat: route?.dropoffLat ?? 0,
+    dropoffLng: route?.dropoffLng ?? 0,
+    routeGeojson: route ? JSON.stringify(route.geometry) : null,
   };
 
   const quote = useMemo(
-    () => (pricing && pickup.district && dropoff.district ? estimateOrder(input, pricing) : null),
-    [pricing, pickup, dropoff, packageType],
+    () => (route && route.distanceKm > 0 ? estimateOrder(input, pricing) : null),
+    [pricing, route?.distanceKm],
   );
 
   const active = orders.filter(o => isActiveOrder(o.status));
@@ -95,18 +113,21 @@ function CustomerHome() {
     event.preventDefault();
     if (!user) return;
     const nextErrors = validateDeliveryOrder({
-      pickupDistrict: pickup.district,
-      pickupNeighborhood: pickup.neighborhood,
-      pickupStreet: pickup.street,
-      dropoffDistrict: dropoff.district,
-      dropoffNeighborhood: dropoff.neighborhood,
-      dropoffStreet: dropoff.street,
-      contactPhone: phone,
+      ...input,
+      pickupLat: route?.pickupLat,
+      pickupLng: route?.pickupLng,
+      dropoffLat: route?.dropoffLat,
+      dropoffLng: route?.dropoffLng,
     });
+    if (routeError) nextErrors.route = routeError;
     setFieldErrors(nextErrors);
     const message = firstError(nextErrors);
     if (message) {
       toast.error(message);
+      return;
+    }
+    if (weightValue > MAX_WEIGHT_KG) {
+      toast.error(WEIGHT_LIMIT_MESSAGE);
       return;
     }
     setBusy(true);
@@ -116,7 +137,9 @@ function CustomerHome() {
         contactPhone: normalizeTurkishMobilePhone(phone),
       });
       toast.success(`Sipariş alındı · ${order.trackingCode}`);
+      setProduct("");
       setNotes("");
+      setWeightKg("1");
       setFieldErrors({});
       setTab("aktif");
       await load();
@@ -166,24 +189,84 @@ function CustomerHome() {
         {!loading && !error && tab === "yeni" && (
           <form className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]" onSubmit={submit} noValidate>
             <div className={`${cardClass} min-w-0 space-y-4 p-4 sm:p-5`}>
-              <AddressFields id="pickup" label="Alış adresi" value={pickup} onChange={setPickup} errors={fieldErrors} />
-              <AddressFields id="dropoff" label="Teslim adresi" value={dropoff} onChange={setDropoff} errors={fieldErrors} />
-              <label className="block space-y-2" htmlFor="package-type">
-                <span className="text-sm font-bold text-[#D4AF37]">Paket türü</span>
-                <select
-                  id="package-type"
-                  className={selectClass}
-                  value={packageType}
-                  onChange={e => setPackageType(e.target.value as PackageType)}
-                >
-                  {PACKAGE_TYPES.map(type => (
-                    <option key={type} value={type}>
-                      {PACKAGE_LABELS[type]}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-xs text-[#8a7c52]">{PACKAGE_DESCRIPTIONS[packageType]}</span>
-              </label>
+              <div>
+                <label className="mb-1 block text-sm font-bold text-[#D4AF37]" htmlFor="product">
+                  Ürün
+                </label>
+                <Input
+                  id="product"
+                  className={fieldClass}
+                  placeholder="Evrak, paket, yemek…"
+                  value={product}
+                  aria-invalid={Boolean(fieldErrors.product)}
+                  aria-describedby={fieldErrors.product ? "product-err" : undefined}
+                  onChange={e => setProduct(e.target.value)}
+                />
+                <FieldError id="product-err" message={fieldErrors.product} />
+              </div>
+              <RoutePicker
+                pricing={pricing}
+                value={route}
+                onChange={(next, err) => {
+                  setRoute(next);
+                  setRouteError(err);
+                  if (err) setFieldErrors(prev => ({ ...prev, route: err }));
+                  else setFieldErrors(prev => ({ ...prev, route: "" }));
+                }}
+              />
+              <FieldError id="route-err" message={fieldErrors.route} />
+              <div>
+                <label className="mb-1 block text-sm font-bold text-[#D4AF37]" htmlFor="weight">
+                  Ağırlık (kg) · en fazla {MAX_WEIGHT_KG} kg
+                </label>
+                <Input
+                  id="weight"
+                  className={fieldClass}
+                  type="number"
+                  min={0.1}
+                  max={MAX_WEIGHT_KG}
+                  step="0.1"
+                  inputMode="decimal"
+                  value={weightKg}
+                  aria-invalid={Boolean(fieldErrors.weightKg)}
+                  aria-describedby={fieldErrors.weightKg ? "weight-err" : undefined}
+                  onChange={e => setWeightKg(e.target.value)}
+                />
+                <FieldError id="weight-err" message={fieldErrors.weightKg} />
+                {weightValue > MAX_WEIGHT_KG ? (
+                  <p className="mt-1 text-xs text-red-400">{WEIGHT_LIMIT_MESSAGE}</p>
+                ) : null}
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-bold text-[#D4AF37]" htmlFor="recipient">
+                  Teslim alan kişi
+                </label>
+                <Input
+                  id="recipient"
+                  className={fieldClass}
+                  placeholder="Ad soyad"
+                  value={recipientName}
+                  aria-invalid={Boolean(fieldErrors.recipientName)}
+                  aria-describedby={fieldErrors.recipientName ? "recipient-err" : undefined}
+                  onChange={e => setRecipientName(e.target.value)}
+                />
+                <FieldError id="recipient-err" message={fieldErrors.recipientName} />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-bold text-[#D4AF37]" htmlFor="when">
+                  Gün ve saat
+                </label>
+                <Input
+                  id="when"
+                  className={fieldClass}
+                  type="datetime-local"
+                  value={scheduledAt}
+                  aria-invalid={Boolean(fieldErrors.scheduledAt)}
+                  aria-describedby={fieldErrors.scheduledAt ? "when-err" : undefined}
+                  onChange={e => setScheduledAt(e.target.value)}
+                />
+                <FieldError id="when-err" message={fieldErrors.scheduledAt} />
+              </div>
               <div>
                 <label className="mb-1 block text-sm font-bold text-[#D4AF37]" htmlFor="contact-phone">
                   İletişim telefonu
@@ -201,52 +284,57 @@ function CustomerHome() {
                 />
                 <FieldError id="contact-phone-err" message={fieldErrors.contactPhone} />
               </div>
+              <fieldset>
+                <legend className="mb-2 text-sm font-bold text-[#D4AF37]">Ödeme yöntemi</legend>
+                <div className="grid grid-cols-3 gap-2">
+                  {PAYMENT_METHODS.map(method => (
+                    <button
+                      key={method}
+                      type="button"
+                      className={`min-h-11 rounded-xl border px-2 text-xs font-bold ${
+                        paymentMethod === method
+                          ? "border-[#D4AF37] bg-[#1a1508] text-[#D4AF37]"
+                          : "border-[#3a3014] text-[#b4a882]"
+                      }`}
+                      onClick={() => setPaymentMethod(method)}
+                    >
+                      {PAYMENT_METHOD_LABELS[method]}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
               <label className="block" htmlFor="order-notes">
                 <span className="mb-1 block text-sm font-bold text-[#D4AF37]">Notlar (isteğe bağlı)</span>
                 <Textarea
                   id="order-notes"
                   className={areaClass}
-                  placeholder="Kapıda ödeme, kırılır vb."
+                  placeholder="Kapı kodu, kırılır vb."
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                 />
               </label>
             </div>
             <aside className={`${cardClass} h-fit min-w-0 p-4 sm:p-5 lg:sticky lg:top-24`}>
-              <p className="text-sm font-bold text-[#D4AF37]">Fiyat tahmini</p>
-              {quote ? (
-                <ul className="mt-4 space-y-2 text-sm text-[#b4a882]">
-                  <li className="flex justify-between gap-3">
-                    <span>Mesafe</span>
-                    <span>{quote.distanceKm.toLocaleString("tr-TR")} km</span>
-                  </li>
-                  <li className="flex justify-between gap-3">
-                    <span>Açılış</span>
-                    <span>{formatTl(quote.baseFeeTl)}</span>
-                  </li>
-                  <li className="flex justify-between gap-3">
-                    <span>Km bedeli</span>
-                    <span>{formatTl(quote.distanceFeeTl)}</span>
-                  </li>
-                  <li className="flex justify-between gap-3">
-                    <span>Paket</span>
-                    <span>{formatTl(quote.packageFeeTl)}</span>
-                  </li>
-                  {quote.zoneSurchargeTl > 0 && (
-                    <li className="flex justify-between gap-3">
-                      <span>Avrupa–Anadolu</span>
-                      <span>{formatTl(quote.zoneSurchargeTl)}</span>
-                    </li>
-                  )}
-                  <li className="flex justify-between gap-3 border-t border-[#3a3014] pt-2 text-lg font-black text-[#D4AF37]">
-                    <span>Toplam</span>
-                    <span>{formatTl(quote.totalTl)}</span>
-                  </li>
-                </ul>
+              <p className="text-sm font-bold text-[#D4AF37]">Ücret</p>
+              {quote && quote.priceUsd > 0 ? (
+                <>
+                  <p className="mt-4 text-3xl font-black text-[#D4AF37]">{formatUsd(quote.priceUsd, pricing.roundingDecimals)}</p>
+                  {pricing.usdToTry > 0 ? (
+                    <p className="mt-1 text-sm text-[#b4a882]">≈ {formatTl(quote.priceTl)}</p>
+                  ) : null}
+                  <p className="mt-2 text-xs text-[#8a7c52]">
+                    Sürüş {formatKm(quote.distanceKm)} · {formatUsd(pricing.baseUsd, pricing.roundingDecimals)} açılış +{" "}
+                    {formatUsd(pricing.perKmUsd, pricing.roundingDecimals)}/km
+                  </p>
+                </>
               ) : (
-                <p className="mt-4 text-sm text-[#8a7c52]">İlçeleri seçince fiyat görünür.</p>
+                <p className="mt-4 text-sm text-[#8a7c52]">Alım ve teslim noktalarını seçince sürüş ücreti görünür.</p>
               )}
-              <Button className={`mt-5 h-12 w-full ${goldBtn}`} disabled={busy}>
+              <p className="mt-2 text-xs text-[#8a7c52]">
+                Fiyat yol (sürüş) mesafesine göredir, kuş uçuşu değildir. Gerçek kart tahsilatı yok; yöntem ve durum kayıt
+                edilir. {MAX_WEIGHT_KG} kg üzeri kabul edilmez.
+              </p>
+              <Button className={`mt-5 h-12 w-full ${goldBtn}`} disabled={busy || !quote}>
                 {busy ? "Gönderiliyor…" : "Siparişi oluştur"}
               </Button>
             </aside>
@@ -258,7 +346,7 @@ function CustomerHome() {
             {active.length === 0 ? (
               <EmptyState
                 title="Aktif sipariş yok"
-                body="Yeni sipariş sekmesinden alış ve teslim adresini yazarak hemen kurye çağırabilirsiniz."
+                body="Yeni sipariş sekmesinden haritada alım ve teslim noktalarını seçerek kurye çağırın."
                 action={
                   <Button className={goldBtn} onClick={() => setTab("yeni")}>
                     Sipariş oluştur
@@ -270,6 +358,7 @@ function CustomerHome() {
                 <OrderCard
                   key={order.id}
                   order={order}
+                  showMap
                   extra={
                     <p className="mt-2 text-xs text-[#8a7c52]">
                       Durum canlı güncellenir: {STATUS_LABELS[order.status]}

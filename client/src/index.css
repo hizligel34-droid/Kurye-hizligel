@@ -68,3 +68,16 @@ button:active { transform: scale(.97); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+.leaflet-kuryeler.leaflet-container {
+  background: #0a0a0a;
+  z-index: 0;
+  font-family: inherit;
+}
+.leaflet-kuryeler .leaflet-control-attribution {
+  background: rgba(10, 10, 10, 0.85);
+  color: #8a7c52;
+  font-size: 10px;
+}
+.leaflet-kuryeler .leaflet-control-attribution a {
+  color: #d4af37;
+}

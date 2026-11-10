@@ -100,7 +100,7 @@ def paint(size: int, kind: str) -> list[tuple[int, int, int, int]]:
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     for name, kind in MARKS.items():
-        for size in (192, 512):
+        for size in (180, 192, 512):
             path = OUT / f"{name}-{size}.png"
             write_png(path, size, paint(size, kind))
             print(path)

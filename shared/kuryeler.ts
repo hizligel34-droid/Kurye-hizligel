@@ -1,13 +1,19 @@
-/** kuryeler.tr domain: roles, statuses, Istanbul coverage and pricing. */
+/** kuryeler.tr — roller, durumlar, sürüş mesafesi fiyatı ve sipariş modeli. */
+
+export { DISTRICT_NAMES, DISTRICT_PRICES, findDistrictPrice, type DistrictPrice } from "./fiyatListesi";
 
 export const BRAND_NAME = "kuryeler.tr";
+export const BRAND_PRODUCT = "Hızlıgel";
 export const BRAND_CITY = "İstanbul";
 export const CURRENCY_SUFFIX = "TL";
+export const USD_SUFFIX = "USD";
 export const BRAND_URL = "https://kuryeler.tr";
 export const CONTACT_EMAIL = "iletisim@kuryeler.tr";
 export const CONTACT_PHONE_DISPLAY = "0532 474 67 45";
-/** WhatsApp uluslararası format (başında + yok). VITE_WHATSAPP_NUMBER ile override. */
 export const CONTACT_WHATSAPP_E164 = "905324746745";
+
+export const MAX_WEIGHT_KG = 30;
+export const WEIGHT_LIMIT_MESSAGE = "Maksimum taşıma sınırı 30 kg";
 
 export const USER_ROLES = ["customer", "courier", "admin"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
@@ -22,8 +28,19 @@ export const ORDER_STATUSES = [
 ] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-export const PACKAGE_TYPES = ["evrak", "kucuk", "orta", "buyuk", "gida"] as const;
-export type PackageType = (typeof PACKAGE_TYPES)[number];
+export const PUBLIC_STATUSES = ["pending", "picked_up", "en_route", "delivered", "cancelled"] as const;
+
+export const PAYMENT_METHODS = ["nakit", "havale", "kart_kapida"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const PAYMENT_STATUSES = ["bekliyor", "odendi"] as const;
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+export const ROUTING_PROVIDERS = ["osrm", "ors", "custom"] as const;
+export type RoutingProvider = (typeof ROUTING_PROVIDERS)[number];
+
+export const GEOCODERS = ["nominatim", "photon"] as const;
+export type Geocoder = (typeof GEOCODERS)[number];
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   customer: "Müşteri",
@@ -32,106 +49,51 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: "Beklemede",
-  assigned: "Kuryeye atandı",
+  pending: "Bekliyor",
+  assigned: "Bekliyor",
   picked_up: "Alındı",
   en_route: "Yolda",
   delivered: "Teslim edildi",
   cancelled: "İptal",
 };
 
-export const PACKAGE_LABELS: Record<PackageType, string> = {
-  evrak: "Evrak",
-  kucuk: "Küçük paket",
-  orta: "Orta paket",
-  buyuk: "Büyük paket",
-  gida: "Gıda",
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  nakit: "Nakit",
+  havale: "Havale / EFT",
+  kart_kapida: "Kapıda kart",
 };
 
-export const PACKAGE_DESCRIPTIONS: Record<PackageType, string> = {
-  evrak: "Zarf, belge, küçük dosya",
-  kucuk: "Ayakkabı kutusu veya küçük poşet",
-  orta: "Standart koli, birkaç ürün",
-  buyuk: "Büyük koli veya hacimli gönderi",
-  gida: "Sıcak/soğuk gıda, market poşeti",
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  bekliyor: "Ödeme bekliyor",
+  odendi: "Ödendi",
 };
 
-export type ContinentSide = "avrupa" | "anadolu";
-
-export type IstanbulDistrict = {
-  name: string;
-  side: ContinentSide;
-  lat: number;
-  lng: number;
+export const ROUTING_PROVIDER_LABELS: Record<RoutingProvider, string> = {
+  osrm: "OSRM (router.project-osrm.org)",
+  ors: "OpenRouteService",
+  custom: "Özel OSRM uyumlu sunucu",
 };
-
-/** İstanbul ilçe merkezleri (yaklaşık); km tahmini için haversine. */
-export const ISTANBUL_DISTRICTS: IstanbulDistrict[] = [
-  { name: "Adalar", side: "anadolu", lat: 40.876, lng: 29.095 },
-  { name: "Arnavutköy", side: "avrupa", lat: 41.185, lng: 28.74 },
-  { name: "Ataşehir", side: "anadolu", lat: 40.983, lng: 29.127 },
-  { name: "Avcılar", side: "avrupa", lat: 40.979, lng: 28.721 },
-  { name: "Bağcılar", side: "avrupa", lat: 41.039, lng: 28.856 },
-  { name: "Bahçelievler", side: "avrupa", lat: 41.002, lng: 28.86 },
-  { name: "Bakırköy", side: "avrupa", lat: 40.981, lng: 28.877 },
-  { name: "Başakşehir", side: "avrupa", lat: 41.093, lng: 28.802 },
-  { name: "Bayrampaşa", side: "avrupa", lat: 41.048, lng: 28.9 },
-  { name: "Beşiktaş", side: "avrupa", lat: 41.043, lng: 29.008 },
-  { name: "Beykoz", side: "anadolu", lat: 41.125, lng: 29.108 },
-  { name: "Beylikdüzü", side: "avrupa", lat: 41.001, lng: 28.642 },
-  { name: "Beyoğlu", side: "avrupa", lat: 41.038, lng: 28.985 },
-  { name: "Büyükçekmece", side: "avrupa", lat: 41.021, lng: 28.585 },
-  { name: "Çatalca", side: "avrupa", lat: 41.143, lng: 28.461 },
-  { name: "Çekmeköy", side: "anadolu", lat: 41.037, lng: 29.2 },
-  { name: "Esenler", side: "avrupa", lat: 41.043, lng: 28.876 },
-  { name: "Esenyurt", side: "avrupa", lat: 41.033, lng: 28.675 },
-  { name: "Eyüpsultan", side: "avrupa", lat: 41.056, lng: 28.922 },
-  { name: "Fatih", side: "avrupa", lat: 41.018, lng: 28.95 },
-  { name: "Gaziosmanpaşa", side: "avrupa", lat: 41.076, lng: 28.911 },
-  { name: "Güngören", side: "avrupa", lat: 41.021, lng: 28.873 },
-  { name: "Kadıköy", side: "anadolu", lat: 40.983, lng: 29.037 },
-  { name: "Kağıthane", side: "avrupa", lat: 41.08, lng: 28.973 },
-  { name: "Kartal", side: "anadolu", lat: 40.911, lng: 29.194 },
-  { name: "Küçükçekmece", side: "avrupa", lat: 41.003, lng: 28.78 },
-  { name: "Maltepe", side: "anadolu", lat: 40.935, lng: 29.151 },
-  { name: "Pendik", side: "anadolu", lat: 40.877, lng: 29.233 },
-  { name: "Sancaktepe", side: "anadolu", lat: 41.002, lng: 29.237 },
-  { name: "Sarıyer", side: "avrupa", lat: 41.166, lng: 29.057 },
-  { name: "Silivri", side: "avrupa", lat: 41.073, lng: 28.246 },
-  { name: "Sultanbeyli", side: "anadolu", lat: 40.968, lng: 29.267 },
-  { name: "Sultangazi", side: "avrupa", lat: 41.107, lng: 28.868 },
-  { name: "Şile", side: "anadolu", lat: 41.175, lng: 29.613 },
-  { name: "Şişli", side: "avrupa", lat: 41.06, lng: 28.987 },
-  { name: "Tuzla", side: "anadolu", lat: 40.816, lng: 29.305 },
-  { name: "Ümraniye", side: "anadolu", lat: 41.016, lng: 29.124 },
-  { name: "Üsküdar", side: "anadolu", lat: 41.023, lng: 29.016 },
-  { name: "Zeytinburnu", side: "avrupa", lat: 41.003, lng: 28.91 },
-];
-
-export const DISTRICT_NAMES = ISTANBUL_DISTRICTS.map(d => d.name);
 
 export type PricingSettings = {
-  baseFeeTl: number;
-  perKmTl: number;
+  baseUsd: number;
+  perKmUsd: number;
+  roundingDecimals: number;
+  usdToTry: number;
+  routingProvider: RoutingProvider;
+  routingUrl: string;
+  geocoder: Geocoder;
   commissionRate: number;
-  useZones: boolean;
-  crossSideSurchargeTl: number;
-  packageFees: Record<PackageType, number>;
 };
 
 export const DEFAULT_PRICING: PricingSettings = {
-  baseFeeTl: 150,
-  perKmTl: 25,
+  baseUsd: 1,
+  perKmUsd: 1,
+  roundingDecimals: 2,
+  usdToTry: 34.5,
+  routingProvider: "osrm",
+  routingUrl: "https://router.project-osrm.org",
+  geocoder: "nominatim",
   commissionRate: 0.2,
-  useZones: true,
-  crossSideSurchargeTl: 40,
-  packageFees: {
-    evrak: 0,
-    kucuk: 0,
-    orta: 25,
-    buyuk: 50,
-    gida: 20,
-  },
 };
 
 const STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
@@ -162,81 +124,64 @@ export function courierStatusActionLabel(current: OrderStatus) {
   return null;
 }
 
-export function findDistrict(name: string) {
-  const key = name.trim().toLocaleLowerCase("tr-TR");
-  return ISTANBUL_DISTRICTS.find(d => d.name.toLocaleLowerCase("tr-TR") === key) ?? null;
+export function displayStatus(status: OrderStatus): Exclude<OrderStatus, "assigned"> {
+  if (status === "assigned") return "pending";
+  return status;
 }
 
-export function haversineKm(
-  a: { lat: number; lng: number },
-  b: { lat: number; lng: number },
-) {
-  const radians = (value: number) => (value * Math.PI) / 180;
-  const earthRadiusKm = 6371;
-  const dLat = radians(b.lat - a.lat);
-  const dLng = radians(b.lng - a.lng);
-  const sinLat = Math.sin(dLat / 2);
-  const sinLng = Math.sin(dLng / 2);
-  const arc =
-    sinLat * sinLat +
-    Math.cos(radians(a.lat)) * Math.cos(radians(b.lat)) * sinLng * sinLng;
-  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(arc), Math.sqrt(1 - arc));
-}
-
-/** District-center distance with a 1.35 road-factor (not bird-flight). */
-export function estimateDistanceKm(pickupDistrict: string, dropoffDistrict: string) {
-  const pickup = findDistrict(pickupDistrict);
-  const dropoff = findDistrict(dropoffDistrict);
-  if (!pickup || !dropoff) return 0;
-  if (pickup.name === dropoff.name) return 3;
-  return Number((haversineKm(pickup, dropoff) * 1.35).toFixed(2));
+export function roundMoney(value: number, decimals: number) {
+  const digits = Math.max(0, Math.min(6, Math.floor(Number.isFinite(decimals) ? decimals : 2)));
+  const factor = 10 ** digits;
+  return Math.round((Number(value) + Number.EPSILON) * factor) / factor;
 }
 
 export type PriceBreakdown = {
   distanceKm: number;
-  baseFeeTl: number;
-  distanceFeeTl: number;
-  packageFeeTl: number;
-  zoneSurchargeTl: number;
+  baseUsd: number;
+  distanceFeeUsd: number;
+  priceUsd: number;
+  priceTl: number;
+  commissionUsd: number;
+  courierEarningUsd: number;
   totalTl: number;
   commissionTl: number;
   courierEarningTl: number;
   companyRevenueTl: number;
 };
 
+/** Sürüş km’si — kuş uçuşu değil. price = baseUsd + perKmUsd * km */
 export function calculateDeliveryPrice(input: {
-  pickupDistrict: string;
-  dropoffDistrict: string;
-  packageType: PackageType;
-  distanceKm?: number;
+  distanceKm: number;
   pricing?: PricingSettings;
 }): PriceBreakdown {
   const pricing = input.pricing ?? DEFAULT_PRICING;
-  const distanceKm =
-    input.distanceKm != null && Number.isFinite(input.distanceKm)
-      ? Math.max(0, Number(input.distanceKm))
-      : estimateDistanceKm(input.pickupDistrict, input.dropoffDistrict);
-  const packageFeeTl = pricing.packageFees[input.packageType] ?? 0;
-  const pickup = findDistrict(input.pickupDistrict);
-  const dropoff = findDistrict(input.dropoffDistrict);
-  const crossSide =
-    Boolean(pricing.useZones && pickup && dropoff && pickup.side !== dropoff.side);
-  const zoneSurchargeTl = crossSide ? pricing.crossSideSurchargeTl : 0;
-  const distanceFeeTl = Number((distanceKm * pricing.perKmTl).toFixed(2));
-  const rawTotal = pricing.baseFeeTl + distanceFeeTl + packageFeeTl + zoneSurchargeTl;
-  const totalTl = Number(Math.max(pricing.baseFeeTl, rawTotal).toFixed(2));
-  const commissionTl = Number((totalTl * pricing.commissionRate).toFixed(2));
+  const distanceKm = Math.max(0, Number(input.distanceKm) || 0);
+  const distanceFeeUsd = pricing.perKmUsd * distanceKm;
+  const priceUsd = roundMoney(pricing.baseUsd + distanceFeeUsd, pricing.roundingDecimals);
+  const priceTl =
+    pricing.usdToTry > 0 ? roundMoney(priceUsd * pricing.usdToTry, pricing.roundingDecimals) : 0;
+  const commissionUsd = roundMoney(priceUsd * pricing.commissionRate, pricing.roundingDecimals);
+  const commissionTl = roundMoney(priceTl * pricing.commissionRate, pricing.roundingDecimals);
   return {
-    distanceKm: Number(distanceKm.toFixed(2)),
-    baseFeeTl: pricing.baseFeeTl,
-    distanceFeeTl,
-    packageFeeTl,
-    zoneSurchargeTl,
-    totalTl,
+    distanceKm: roundMoney(distanceKm, Math.max(2, pricing.roundingDecimals)),
+    baseUsd: pricing.baseUsd,
+    distanceFeeUsd: roundMoney(distanceFeeUsd, pricing.roundingDecimals),
+    priceUsd,
+    priceTl,
+    commissionUsd,
+    courierEarningUsd: roundMoney(priceUsd - commissionUsd, pricing.roundingDecimals),
+    totalTl: priceTl,
     commissionTl,
-    courierEarningTl: Number((totalTl - commissionTl).toFixed(2)),
+    courierEarningTl: roundMoney(priceTl - commissionTl, pricing.roundingDecimals),
     companyRevenueTl: commissionTl,
   };
+}
+
+export function formatUsd(value: number | string, decimals = 2) {
+  return `${Number(value).toLocaleString("tr-TR", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })} ${USD_SUFFIX}`;
 }
 
 export function formatTl(value: number | string) {
@@ -244,6 +189,13 @@ export function formatTl(value: number | string) {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   })} ${CURRENCY_SUFFIX}`;
+}
+
+export function formatKm(value: number) {
+  return `${Number(value).toLocaleString("tr-TR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 2,
+  })} km`;
 }
 
 export function generateTrackingCode(now = new Date()) {
@@ -263,11 +215,9 @@ export function isActiveOrder(status: OrderStatus) {
 }
 
 export function statusTone(status: OrderStatus) {
-  switch (status) {
+  switch (displayStatus(status)) {
     case "pending":
       return "bg-[#2a2410] text-[#D4AF37]";
-    case "assigned":
-      return "bg-[#1a2330] text-[#d4c48a]";
     case "picked_up":
       return "bg-[#241a30] text-[#e6d9a8]";
     case "en_route":
@@ -279,29 +229,50 @@ export function statusTone(status: OrderStatus) {
   }
 }
 
+export function formatDateTimeTr(value: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("tr-TR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export type LatLng = { lat: number; lng: number };
+
 export type DeliveryOrder = {
   id: string;
   trackingCode: string;
   customerId: string;
   courierId: string | null;
   status: OrderStatus;
+  product: string;
   pickupAddress: string;
-  pickupDistrict: string;
-  pickupNeighborhood: string;
-  pickupStreet: string;
-  pickupNote: string;
   dropoffAddress: string;
-  dropoffDistrict: string;
-  dropoffNeighborhood: string;
-  dropoffStreet: string;
-  dropoffNote: string;
-  packageType: PackageType;
+  bolge: string;
+  recipientName: string;
+  scheduledAt: string | null;
   notes: string;
   contactPhone: string;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  pickupPhoto: string | null;
+  deliveryPhoto: string | null;
+  signatureData: string | null;
+  weightKg: number;
   distanceKm: number;
+  priceUsd: number;
   totalPriceTl: number;
   courierEarningTl: number;
   companyRevenueTl: number;
+  pickupLat: number | null;
+  pickupLng: number | null;
+  dropoffLat: number | null;
+  dropoffLng: number | null;
+  routeGeojson: string | null;
   createdAt: string;
   updatedAt: string;
   assignedAt: string | null;
@@ -322,6 +293,7 @@ export type Profile = {
 
 export type DashboardStats = {
   todayOrders: number;
+  todayRevenueUsd: number;
   todayRevenueTl: number;
   activeCouriers: number;
   pendingOrders: number;

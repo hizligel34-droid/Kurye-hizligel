@@ -1,73 +1,89 @@
-# kuryeler.tr
+# Hızlıgel · kuryeler.tr
 
-İstanbul (Türkiye) için kurye teslimat platformu. Marka: **kuryeler.tr**. Arayüz Türkçe, para birimi **TL**, tema **siyah + altın (#D4AF37)**.
+İstanbul kurye platformu. Marka: **Hızlıgel** (alan adı **kuryeler.tr**). Arayüz Türkçe, tema siyah + altın (`#D4AF37`).
 
-Bu depo zaten çalışan bir TypeScript kurye uygulamasıydı (Vite + React, eski Run Courier panelleri, Express/tRPC/MySQL). Yeni ürün bunun üzerine kuruldu: **statik SPA + Supabase** (Turhost’a FTP ile yüklenebilir). Eski ekranlar `/eski` altında duruyor; atılmadı.
+Üç **tamamen ayrı** yüklenebilir uygulama vardır. Birbirinin içinden rol değiştirilmez; her uygulamanın kendi girişi, ikonu ve kapsamı vardır.
 
-## Bu sürümde yapılan iyileştirmeler
+| Uygulama | Adres | PWA adı | iOS/Android paket |
+| --- | --- | --- | --- |
+| Müşteri | `/musteri/` | **Hızlıgel Müşteri** | `tr.hizligel.musteri` |
+| Kurye | `/kurye/` | **Hızlıgel Kurye** | `tr.hizligel.kurye` |
+| Yönetici | `/yonetici/` | **Hızlıgel Yönetici** | `tr.hizligel.yonetici` |
 
-- Siyah + altın (`#D4AF37`) tema: landing, giriş, üç panel, 404, KVKK, koşullar
-- Üç ayrı PWA: `/musteri`, `/kurye`, `/yonetici` (farklı `id`, ad, ikon, start_url)
-- Turhost statik SPA + `.htaccess` + README’de FTP yayını
-- Boş / yükleniyor / hata durumları ve Yeniden dene
-- Türkçe form doğrulama (sipariş, giriş, fiyat, takip) + `aria-invalid` / `aria-describedby`
-- Erişilebilirlik: skip link, etiketler, `aria-current`, `:focus-visible` altın halka
-- SEO: description, Open Graph, Twitter, canonical, JSON-LD, robots.txt, sitemap
-- Favicon + siyah-altın PWA ikonları
-- KVKK ve kullanım koşulları taslak sayfaları
-- Landing’de WhatsApp + telefon CTA ve sabit WhatsApp düğmesi
-- 404 Türkçe (ana sayfa + müşteri paneli)
-- 375 / 768 / 1280: marka adı her genişlikte, yığılır grid, alt menü, taşma önleme
-- Eski Run Courier ekranları `/eski` altında; kod bölünerek asıl paket küçültüldü
+Pazarlama sitesi: `/` (üç uygulamaya bağlantı verir, kendi başına bir panel değildir).
 
-## Ne var?
+## Bu sürümde ne var?
 
-Üç rol, üç ayrı uygulama adresi (Mac’te ayrı PWA olarak yüklenebilir):
+- Üç ayrı HTML girişi, üç manifest (`name` / `short_name` / `icon` / `start_url` / `scope`)
+- iPhone 13 Safari: her uygulama kendi `apple-touch-icon` (180px) ve `apple-mobile-web-app-title` ile Ana Ekrana Ekle
+- Çevrimdışı kabuk (`offline.html` + uygulama kapsamlı service worker)
+- Sipariş: ürün, haritada alım/teslim, sürüş km, USD ücret, ağırlık (en fazla 30 kg), teslim alan kişi, gün ve saat, notlar, durum (Bekliyor / Alındı / Yolda / Teslim edildi / İptal), ödeme yöntemi/durumu
+- Ana fiyat: **1 USD açılış + 1 USD × sürüş km** (kuş uçuşu değil). Örnek: 7,4 km → 8,4 USD. Açılış, km bedeli, yuvarlama ve USD/TL kuru Yönetici uygulamasından değişir
+- Harita: Leaflet + OpenStreetMap karoları, Nominatim/Photon adres araması, OSRM (veya OpenRouteService) sürüş rotası
+- Kurye: iş kabul, rota ve km, alım fotoğrafı, teslim fotoğrafı + imza, günlük kazanç
+- Yönetici: tüm siparişler, kurye atama, USD fiyat ayarları; eski 55 bölgelik CSV yalnızca isteğe bağlı referans
+- Supabase Auth + RLS + Realtime; env yoksa **yerel demo**
+- Capacitor sarmalayıcı: üç ayrı `capacitor.config.ts` (ücretli Apple/Google hesabı gerekmez)
+- Turhost statik yayın (`pnpm build:static` → `dist/public` + `.htaccess`)
 
-| Uygulama | Adres | PWA adı |
-| --- | --- | --- |
-| Müşteri | `/musteri` | kuryeler.tr Müşteri |
-| Kurye | `/kurye` | kuryeler.tr Kurye |
-| Yönetici | `/yonetici` | kuryeler.tr Yönetici |
+## Fiyat nasıl hesaplanır?
 
-- **Müşteri:** kayıt/giriş, alış + teslim adresi, paket türü, not, telefon, fiyat tahmini, canlı durum (Beklemede → Kuryeye atandı → Alındı → Yolda → Teslim edildi / İptal), geçmiş.
-- **Kurye:** giriş, çevrimiçi/çevrimdışı, müsait işleri kabul, durumu adım adım güncelleme, günlük kazanç.
-- **Yönetici:** bugünün siparişleri, aktif kuryeler, gelir; atama/iptal; kurye ve müşteri rolleri; açılış ücreti + km + Avrupa/Anadolu bölge eki.
-- **Landing:** `/` — sipariş CTA’sı.
-- **Takip:** `/takip` (kod ile).
+```
+ücret_usd = yuvarla(açılış_usd + km_usd × sürüş_km)
+```
 
-Veri katmanı: **Supabase Auth + Postgres + RLS + Realtime**. Sunucu mantığı SQL fonksiyonları ve isteğe bağlı Edge Function (`supabase/functions/estimate-price`). Ortam değişkeni yoksa uygulama **yerel demo** ile açılır (Supabase şart değil, ekran görüntüsü ve deneme için).
+Varsayılan: açılış 1 USD, km 1 USD, 2 ondalık. 7,4 km → **8,4 USD**. İsteğe bağlı TL karşılığı yönetici kurundan üretilir (kur 0 ise TL gösterilmez). Mesafe haritadaki **yol/sürüş** rotasıdır; kuş uçuşu kullanılmaz.
+
+Paket ağırlığı zorunludur. **30 kg üzeri** sipariş hem uygulamada hem veritabanında (`CHECK` + tetikleyici) şu mesajla reddedilir: `Maksimum taşıma sınırı 30 kg`.
+
+Ücretsiz araçlar (kullanım politikasına uyulur: 500 ms arama gecikmesi, Nominatim `email`, OSM atıfı):
+
+- Harita: Leaflet + OpenStreetMap karoları
+- Adres: Nominatim (varsayılan) veya Photon
+- Rota: OSRM `router.project-osrm.org` (varsayılan) veya OpenRouteService (ücretsiz katman, `VITE_ORS_API_KEY`). Yönetici rota sağlayıcısını değiştirebilir.
 
 ## Yerel çalışma
 
 ```bash
 pnpm install
-cp .env.example .env   # isteğe bağlı; boş bırakılırsa demo modu
-pnpm icons             # PWA ikonları (python3)
+cp .env.example .env   # boş bırakılırsa demo modu
+pnpm icons             # 180 / 192 / 512 PWA ikonları
 pnpm test
 pnpm check
-pnpm build:static
+pnpm build:static      # Turhost: dist/public + .htaccess
 pnpm dev:spa           # http://localhost:4173
 ```
 
-Demo girişleri (yalnızca demo / seed; canlıda değiştirin):
+Demo girişleri (yalnızca ilgili uygulamada):
 
-- Müşteri: `musteri@kuryeler.tr` / `KuryelerMusteri1!`
-- Kurye: `kurye@kuryeler.tr` / `KuryelerKurye1!`
-- Yönetici: `yonetici@kuryeler.tr` / `KuryelerYonetici1!`
+- Hızlıgel Müşteri: `musteri@kuryeler.tr` / `KuryelerMusteri1!`
+- Hızlıgel Kurye: `kurye@kuryeler.tr` / `KuryelerKurye1!`
+- Hızlıgel Yönetici: `yonetici@kuryeler.tr` / `KuryelerYonetici1!`
 
-## Supabase kurulumu (canlıya almak için)
+Yanlış rol ile giriş reddedilir (ör. kurye hesabı Müşteri uygulamasına giremez).
 
-1. [supabase.com](https://supabase.com) üzerinde proje açın (bölge: Frankfurt önerilir).
-2. SQL Editor’de sırayla çalıştırın:
+## iPhone 13 Safari — ana ekrana üç ayrı ikon
+
+1. Safari ile **https** üzerinden sırayla açın: `/musteri/`, `/kurye/`, `/yonetici/`.
+2. Her sayfada alttaki **Paylaş** (kare + ok) → **Ana Ekrana Ekle** → **Ekle**.
+3. İsimler otomatik gelir: Hızlıgel Müşteri / Hızlıgel Kurye / Hızlıgel Yönetici.
+4. Chrome veya başka tarayıcı kullanmayın; iOS yalnızca Safari’de bu menüyü sunar.
+5. Kapsamlar (`/musteri/`, `/kurye/`, `/yonetici/`) ayrı olduğu için üç ikon da durur.
+
+Geliştirmede `localhost` de çalışır; canlıda SSL zorunludur.
+
+## Supabase kurulumu
+
+1. [supabase.com](https://supabase.com) üzerinde proje açın (Frankfurt önerilir).
+2. SQL Editor’de sırayla:
    - `supabase/migrations/20241109120000_kuryeler_init.sql`
-   - `supabase/seed.sql`
-3. Authentication → Providers → Email açık olsun. İlk kurulumda **Confirm email**’i kapatabilirsiniz (yoksa kayıt sonrası e-posta onayı gerekir).
-4. Authentication → URL Configuration:
-   - Site URL: `https://kuryeler.tr`
-   - Redirect: `https://kuryeler.tr/**` ve yerel `http://localhost:4173/**`
-5. Project Settings → API: **Project URL** ve **anon public** anahtarını kopyalayın. `service_role` anahtarını asla SPA’ya veya Git’e koymayın.
-6. `.env` dosyasına yazın, sonra **yeniden derleyin** (Vite değişkenleri derleme anında gömülür):
+   - `supabase/migrations/20241110120000_district_prices_and_order_fields.sql`
+   - `supabase/migrations/20241110140000_driving_distance_pricing.sql`
+   - `supabase/seed.sql` (USD fiyat ayarları + isteğe bağlı bölge referansı + demo hesaplar)
+3. Authentication → Email açık. İlk kurulumda Confirm email kapatılabilir.
+4. Site URL: `https://kuryeler.tr`  
+   Redirect: `https://kuryeler.tr/**`, `https://kuryeler.tr/musteri/**`, `https://kuryeler.tr/kurye/**`, `https://kuryeler.tr/yonetici/**` ve yerel `http://localhost:4173/**`
+5. `.env`:
 
 ```
 VITE_SUPABASE_URL=https://xxxx.supabase.co
@@ -75,9 +91,13 @@ VITE_SUPABASE_ANON_KEY=eyJ...
 VITE_WHATSAPP_NUMBER=905324746745
 VITE_CONTACT_EMAIL=iletisim@kuryeler.tr
 VITE_CONTACT_PHONE=0532 474 67 45
+# isteğe bağlı OpenRouteService (yoksa OSRM kullanılır)
+# VITE_ORS_API_KEY=
 ```
 
-7. İlk yönetici: seed’deki `yonetici@kuryeler.tr` veya SQL:
+Sonra **yeniden** `pnpm build:static`. `service_role` anahtarını asla SPA’ya koymayın.
+
+6. İlk yönetici:
 
 ```sql
 update public.profiles
@@ -85,69 +105,53 @@ set role = 'admin'
 where id = (select id from auth.users where email = 'sizin@eposta');
 ```
 
-8. Realtime: migration `orders` ve `profiles` tablolarını yayına ekler. Dashboard → Replication’dan kontrol edin.
-9. İsteğe bağlı Edge Function:
+## Turhost statik yayın
+
+1. `pnpm build:static` → çıktı `dist/public/` (`index.html`, `musteri/`, `kurye/`, `yonetici/`, `assets/`, `.htaccess`).
+2. FTP / Dosya Yöneticisi ile **public_html** köküne `dist/public` **içeriğini** yükleyin.
+3. `.htaccess` şarttır: `/musteri/giris` gibi adresleri ilgili `index.html`’e çevirir.
+4. SSL açık olsun.
+5. Env değişince Turhost’ta dosya düzenlemek yetmez; yeniden derleyip yükleyin.
+
+## Capacitor (ileride iOS/Android)
+
+Ücretli hesap **gerekmez**; yalnızca yapılandırma vardır. Native proje üretmek için kendi bilgisayarınızda:
 
 ```bash
-npx supabase functions deploy estimate-price
+pnpm build:static
+pnpm native:prepare
+# isteğe bağlı, kendi makinenizde:
+npm i -D @capacitor/cli @capacitor/core
+npx cap add ios --config native/hizligel-musteri/capacitor.config.ts
+npx cap add android --config native/hizligel-kurye/capacitor.config.ts
 ```
 
-## Turhost’a yayınlama (önerilen)
+Üç config:
 
-Turhost paylaşımlı hosting (cPanel/Plesk) Node.js vaat etmez. Bu proje **statik dosya** olarak çalışır: tarayıcı doğrudan Supabase konuşur.
+- `native/hizligel-musteri/capacitor.config.ts` → `tr.hizligel.musteri`
+- `native/hizligel-kurye/capacitor.config.ts` → `tr.hizligel.kurye`
+- `native/hizligel-yonetici/capacitor.config.ts` → `tr.hizligel.yonetici`
 
-1. Bilgisayarınızda `pnpm build:static` çalıştırın. Çıktı: `dist/public/` (`index.html`, `assets/`, `pwa/`, `.htaccess`).
-2. cPanel → Dosya Yöneticisi veya FTP ile **alan adının public_html** (veya `kuryeler.tr` klasörü) içine `dist/public` **içeriğini** yükleyin. `index.html` kökte olmalı.
-3. `.htaccess` yüklenmiş olmalı (Apache/LiteSpeed). Bu dosya `/musteri` gibi adresleri `index.html`’e çevirir. Yoksa 404 alırsınız.
-4. SSL (Let’s Encrypt) açık olsun; Supabase yalnızca HTTPS ister.
-5. Env değişince dosyaları Turhost’ta “düzenlemek” yetmez: `.env`’i güncelleyip **yeniden `pnpm build:static`** alın ve tekrar yükleyin.
+App Store / Play Store yayını Apple ve Google geliştirici hesapları ister; bu depo onları zorunlu kılmaz.
 
-### SPA 404 olursa
+## Güvenlik
 
-- `.htaccess` yüklü mü, `mod_rewrite` açık mı diye hostinge sorun.
-- Alternatif: Plesk’te Apache/nginx “additional directives” ile `try_files $uri $uri/ /index.html;`
-
-### Mac’te üç ayrı uygulama
-
-1. Site canlıyken Chrome veya Safari ile sırayla açın: `/musteri`, `/kurye`, `/yonetici`.
-2. **Safari:** Paylaş → Dock’a Ekle (her panel ayrı isim/ikon).
-3. **Chrome:** Adres çubuğu yükle simgesi → “Uygulama olarak yükle”. Manifest `id` ve `start_url` farklı olduğu için üçü ayrı uygulama olur.
-
-## Vercel (alternatif)
-
-Turhost yoksa Vercel de olur: Git bağlantısı, Framework Vite, Output `dist/public`, env olarak `VITE_SUPABASE_*`. `_redirects` SPA fallback içindir. Asıl hedef Turhost’tur.
-
-## Güvenlik notu
-
-- Anon key kamuya açıktır; koruma **RLS** ile yapılır. Migration politikalarını atlamayın.
-- Fiyat sipariş yazılırken SQL tetikleyicisiyle yeniden hesaplanır.
-- Yönetici rolü kayıt formundan verilemez.
-- Demo şifrelerini canlıda mutlaka değiştirin veya seed kullanıcılarını silin.
-
-## Bilinen eksikler (v1 sonrası)
-
-- Gerçek kart ödemesi / iyzico-PayTR yok (fiyat gösterilir, tahsilat yok).
-- Canlı GPS harita kurye konumu yok (durum akışı var).
-- SMS / WhatsApp bildirimi yok.
-- Adresler İstanbul ilçe listesi + serbest sokak; Türkiye geneli API Turhost statik kurulumunda yok.
-- Eski Run Courier Express+MySQL yığını yalnızca `/eski` ve `pnpm dev` ile durur; Turhost statik yayın bunu kullanmaz.
+- Anon key kamuya açıktır; koruma RLS ile yapılır.
+- Sipariş ücreti `distance_km` üzerinden SQL tetikleyicisiyle USD yazılır; 30 kg `CHECK` + tetikleyici ile kesilir.
+- Yönetici kaydı Müşteri/Kurye formundan açılamaz.
+- Kart ödemesi yoktur; yalnızca nakit / havale / kapıda kart kaydı tutulur.
 
 ## Ekran görüntüleri
 
-`docs/ekran-goruntuleri/` (375 / 768 / 1280):
-
-- `landing-375.png`, `landing-768.png`, `landing-1280.png`
-- `musteri-375.png`, `musteri-768.png`, `musteri-1280.png`
-- `kurye-375.png`, `kurye-768.png`, `kurye-1280.png`
-- `yonetici-375.png`, `yonetici-768.png`, `yonetici-1280.png`
-- `kvkk-1280.png`, `404-375.png`, `takip-375.png`, `giris-1280.png`
+`docs/ekran-goruntuleri/` — iPhone 13 genişliği (390px) ve masaüstü.
 
 ## Geliştirici komutları
 
 | Komut | Ne işe yarar |
 | --- | --- |
-| `pnpm dev:spa` | Statik Vite (Turhost ile aynı mimari) |
-| `pnpm build:static` | `dist/public` üret |
+| `pnpm dev:spa` | Vite (üç uygulama + site) |
+| `pnpm build:static` | `dist/public` (Turhost) |
+| `pnpm native:prepare` | Üç Capacitor webDir |
 | `pnpm check` | TypeScript |
-| `pnpm test` | Vitest (eski sözleşmeler + kuryeler.tr fiyat/durum) |
-| `pnpm dev` | Eski Express sunucusu (zorunlu değil) |
+| `pnpm test` | Vitest |
+| `pnpm icons` | PWA ikonları |

@@ -1,11 +1,20 @@
-# kuryeler.tr — Turhost / Apache / LiteSpeed SPA yönlendirmesi
+# Hızlıgel — Turhost / Apache / LiteSpeed
+# Üç ayrı uygulama + pazarlama sitesi SPA yönlendirmesi
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-  RewriteRule ^index\.html$ - [L]
+
+  RewriteRule ^musteri$ /musteri/ [R=301,L]
+  RewriteRule ^kurye$ /kurye/ [R=301,L]
+  RewriteRule ^yonetici$ /yonetici/ [R=301,L]
+
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
+
+  RewriteRule ^musteri/ /musteri/index.html [L]
+  RewriteRule ^kurye/ /kurye/index.html [L]
+  RewriteRule ^yonetici/ /yonetici/index.html [L]
   RewriteRule . /index.html [L]
 </IfModule>
 

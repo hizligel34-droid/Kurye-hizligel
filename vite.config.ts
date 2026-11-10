@@ -150,7 +150,52 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+function hizligelAppFallback(): Plugin {
+  const apps = ["/musteri", "/kurye", "/yonetici"];
+  const rewrite = (req: { url?: string }) => {
+    const raw = req.url ?? "";
+    const [pathname, search = ""] = raw.split("?");
+    const qs = search ? `?${search}` : "";
+    if (pathname.startsWith("/src") || pathname.startsWith("/@") || pathname.startsWith("/node_modules")) {
+      return;
+    }
+    for (const app of apps) {
+      if (pathname === app) {
+        req.url = `${app}/index.html${qs}`;
+        return;
+      }
+      if (pathname.startsWith(`${app}/`) && !pathname.split("/").pop()?.includes(".")) {
+        req.url = `${app}/index.html${qs}`;
+        return;
+      }
+    }
+  };
+  return {
+    name: "hizligel-app-fallback",
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        rewrite(req);
+        next();
+      });
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        rewrite(req);
+        next();
+      });
+    },
+  };
+}
+
+const clientRoot = path.resolve(import.meta.dirname, "client");
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+  vitePluginManusDebugCollector(),
+  hizligelAppFallback(),
+];
 
 export default defineConfig({
   plugins,
@@ -162,11 +207,20 @@ export default defineConfig({
     },
   },
   envDir: path.resolve(import.meta.dirname),
-  root: path.resolve(import.meta.dirname, "client"),
+  root: clientRoot,
   publicDir: path.resolve(import.meta.dirname, "client", "public"),
+  appType: "mpa",
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: path.resolve(clientRoot, "index.html"),
+        musteri: path.resolve(clientRoot, "musteri/index.html"),
+        kurye: path.resolve(clientRoot, "kurye/index.html"),
+        yonetici: path.resolve(clientRoot, "yonetici/index.html"),
+      },
+    },
   },
   server: {
     host: true,
