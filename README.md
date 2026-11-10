@@ -18,7 +18,7 @@ Pazarlama sitesi: `/` (üç uygulamaya bağlantı verir, kendi başına bir pane
 - iPhone 13 Safari: her uygulama kendi `apple-touch-icon` (180px) ve `apple-mobile-web-app-title` ile Ana Ekrana Ekle
 - Çevrimdışı kabuk (`offline.html` + uygulama kapsamlı service worker)
 - Sipariş: ürün, haritada alım/teslim, sürüş km, TL ücret, ağırlık (en fazla 30 kg), teslim alan kişi, gün ve saat, notlar, durum (Bekliyor / Alındı / Yolda / Teslim edildi / İptal), ödeme yöntemi/durumu
-- Ana fiyat **KDV hariç**: **600 TL açılış + 50 TL × sürüş km** (kuş uçuşu değil). Üstüne varsayılan **%20 KDV** eklenir (Yönetici panelinden değişir). Örnek: 10 km → 1.100 TL KDV hariç + 220 TL KDV = **1.320 TL KDV dahil**. Fiyat yalnızca Türk lirasıdır.
+- Ana fiyat **KDV hariç 600 TL açılış + 50 TL × sürüş km**, üstüne varsayılan **%20 KDV**. Tüketici ekranlarında büyük fiyat **KDV dahil**dir: **720 TL açılış + 60 TL/km**, örnek 10 km = **1.320 TL (KDV dahil)** (isteğe bağlı kırılım: 1.100 TL + 220 TL KDV). Yönetici / fatura metinlerinde KDV hariç + KDV kırılımı kalır. Fiyat yalnızca Türk lirasıdır.
 - Harita: Leaflet + OpenStreetMap karoları, Nominatim/Photon adres araması (Ara düğmesi, otomatik tamamlama yok), OSRM (veya OpenRouteService) sürüş rotası
 - Kurye: iş kabul (kabul öncesi yalnızca ilçe/km/ücret), rota ve km, alım fotoğrafı, teslim fotoğrafı + imza, günlük kazanç
 - Yönetici: tüm siparişler, kurye atama, TL fiyat ayarları ve vitrin modu; eski 55 bölgelik CSV yalnızca isteğe bağlı referans
@@ -34,7 +34,7 @@ kdv_tl   = yuvarla(net_tl × kdv_orani)             # varsayılan 0,20
 brüt_tl  = net_tl + kdv_tl                         # KDV dahil
 ```
 
-Varsayılan: açılış **600 TL**, km **50 TL**, KDV **%20**, 2 ondalık. 10 km → **1.100 TL KDV hariç · 220 TL KDV · 1.320 TL KDV dahil**. 7,4 km → 970 + 194 = 1.164 TL. Kurye payı ve komisyon **net (KDV hariç)** üzerinden hesaplanır. Fiyat yalnızca Türk lirasıdır. Mesafe haritadaki **yol/sürüş** rotasıdır; kuş uçuşu kullanılmaz. Ekranlarda tarife `KDV hariç` etiketlenir; KDV tutarı ve KDV dahil toplam ayrıca gösterilir.
+Varsayılan: açılış **600 TL**, km **50 TL**, KDV **%20**, 2 ondalık. Tüketiciye: **Açılış 720 TL + km başı 60 TL (KDV dahil)**; 10 km = **1.320 TL (KDV dahil)**. 7,4 km → 1.164 TL (KDV dahil). Kurye payı ve komisyon **net** üzerinden hesaplanır. Fatura ve sözleşme metinlerinde 1.100 TL + 220 TL KDV kırılımı durur. Fiyat yalnızca Türk lirasıdır. Mesafe haritadaki **yol/sürüş** rotasıdır; kuş uçuşu kullanılmaz.
 
 Paket ağırlığı zorunludur. **30 kg üzeri** sipariş hem uygulamada hem veritabanında (`CHECK` + tetikleyici) şu mesajla reddedilir: `Maksimum taşıma sınırı 30 kg`.
 

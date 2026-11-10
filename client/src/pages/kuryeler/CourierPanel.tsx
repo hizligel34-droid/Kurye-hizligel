@@ -162,6 +162,7 @@ function CourierHome() {
                     <OrderCard
                       key={order.id}
                       order={order}
+                      audience="business"
                       showMap
                       extra={
                         <p className="mt-2 text-xs text-[#8a7c52]">
@@ -196,6 +197,7 @@ function CourierHome() {
                       <OrderCard
                         key={order.id}
                         order={order}
+                        audience="business"
                         showMap
                         extra={
                           <p className="mt-2 text-xs text-[#8a7c52]">

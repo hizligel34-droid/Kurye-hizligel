@@ -20,11 +20,13 @@ export function OrderCard({
   extra,
   actions,
   showMap = false,
+  audience = "consumer",
 }: {
   order: DeliveryOrder;
   extra?: ReactNode;
   actions?: ReactNode;
   showMap?: boolean;
+  audience?: "consumer" | "business";
 }) {
   const status = displayStatus(order.status);
   const board = Boolean(order.boardOnly);
@@ -38,7 +40,7 @@ export function OrderCard({
         <StatusBadge label={STATUS_LABELS[status]} className={statusTone(order.status)} />
       </div>
       <div className="mt-3">
-        <PriceLines price={breakdownFromOrder(order)} />
+        <PriceLines price={breakdownFromOrder(order)} audience={audience} />
       </div>
       <p className="mt-2 text-sm text-[#b4a882]">
         {order.distanceKm > 0 ? formatKm(order.distanceKm) : ""}

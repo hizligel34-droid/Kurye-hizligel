@@ -228,6 +228,21 @@ export function formatTariff(pricing: PricingSettings = DEFAULT_PRICING) {
   return `Açılış ${formatTl(pricing.baseTry)} + km başı ${formatTl(pricing.perKmTry)} (${VAT_EXCL_LABEL})`;
 }
 
+export function formatTariffInclusive(pricing: PricingSettings = DEFAULT_PRICING) {
+  const vatRate = Number.isFinite(pricing.vatRate) ? Math.max(0, pricing.vatRate) : DEFAULT_VAT_RATE;
+  const baseGross = roundMoney(pricing.baseTry * (1 + vatRate), pricing.roundingDecimals);
+  const kmGross = roundMoney(pricing.perKmTry * (1 + vatRate), pricing.roundingDecimals);
+  return `Açılış ${formatTl(baseGross)} + km başı ${formatTl(kmGross)} (${VAT_INCL_LABEL})`;
+}
+
+export function formatPriceInclusive(price: Pick<PriceBreakdown, "grossTl">) {
+  return `${formatTl(price.grossTl)} (${VAT_INCL_LABEL})`;
+}
+
+export function formatPriceHint(price: Pick<PriceBreakdown, "netTl" | "vatTl">) {
+  return `${formatTl(price.netTl)} + ${formatTl(price.vatTl)} KDV`;
+}
+
 export function formatPriceBreakdown(price: Pick<PriceBreakdown, "netTl" | "vatTl" | "grossTl" | "vatRate">) {
   return [
     `${formatTl(price.netTl)} ${VAT_EXCL_LABEL}`,
