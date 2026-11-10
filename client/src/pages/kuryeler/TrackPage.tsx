@@ -113,8 +113,7 @@ export default function TrackPage() {
               />
             </div>
             <p className="mt-3 text-sm text-[#b4a882]">
-              {result.product}
-              {result.distanceKm > 0 ? ` · ${formatKm(result.distanceKm)}` : result.bolge ? ` · ${result.bolge}` : ""}
+              {result.distanceKm > 0 ? formatKm(result.distanceKm) : result.bolge || "İstanbul"}
             </p>
             <p className="mt-2 text-xs leading-5 text-[#8a7c52]">
               Alım: {result.pickupAddress}

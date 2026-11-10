@@ -60,8 +60,8 @@ as $$
 begin
   if new.tracking_code is null
      or btrim(new.tracking_code) = ''
-     or new.tracking_code !~ '^KY-[A-Z0-9]{6,14}$' then
-    new.tracking_code := 'KY-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10));
+     or new.tracking_code !~ '^KY-[A-Z0-9]{6,32}$' then
+    new.tracking_code := 'KY-' || upper(replace(gen_random_uuid()::text, '-', ''));
   else
     new.tracking_code := upper(btrim(new.tracking_code));
   end if;

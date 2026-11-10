@@ -1,25 +1,26 @@
 -- kuryeler.tr örnek / ilk kurulum verisi
 -- 1) Bu dosyayı SQL Editor'de çalıştırın (fiyat listesi + bölgeler).
--- 2) Authentication > Users üzerinden hesap oluşturun VEYA aşağıdaki
---    auth.users eklerini (isteğe bağlı) kullanın, ardından yönetici rolünü atayın.
+-- 2) Authentication > Users üzerinden hesap oluşturun, ardından yönetici rolünü atayın.
+-- CANLIYA ALMAYIN: aşağıdaki demo kullanıcı bloğunu canlı veritabanında çalıştırmayın.
 
 insert into public.pricing_settings (
   id, base_fee_tl, per_km_tl, commission_rate, use_zones, cross_side_surcharge_tl,
   package_evrak_tl, package_kucuk_tl, package_orta_tl, package_buyuk_tl, package_gida_tl,
-  base_usd, per_km_usd, rounding_decimals, usd_to_try, routing_provider, routing_url, geocoder
+  base_try, per_km_try, vat_rate, rounding_decimals, routing_provider, routing_url, geocoder, showcase_mode
 ) values (
-  1, 0, 0, 0.2000, false, 0, 0, 0, 0, 0, 0,
-  1, 1, 2, 34.5, 'osrm', 'https://router.project-osrm.org', 'nominatim'
+  1, 600, 50, 0.2000, false, 0, 0, 0, 0, 0, 0,
+  600, 50, 0.2000, 2, 'osrm', 'https://router.project-osrm.org', 'nominatim', false
 )
 on conflict (id) do update set
   commission_rate = excluded.commission_rate,
-  base_usd = excluded.base_usd,
-  per_km_usd = excluded.per_km_usd,
+  base_try = excluded.base_try,
+  per_km_try = excluded.per_km_try,
+  vat_rate = excluded.vat_rate,
   rounding_decimals = excluded.rounding_decimals,
-  usd_to_try = excluded.usd_to_try,
   routing_provider = excluded.routing_provider,
   routing_url = excluded.routing_url,
   geocoder = excluded.geocoder,
+  showcase_mode = excluded.showcase_mode,
   updated_at = now();
 
 insert into public.district_prices (bolge, fiyat_tl, lat, lng) values
@@ -85,8 +86,8 @@ on conflict (bolge) do update set
   updated_at = now();
 
 -- ---------------------------------------------------------------------------
--- İsteğe bağlı demo hesapları (yalnızca geliştirme / ilk kurulum).
--- Canlıya almadan ÖNCE bu şifreleri değiştirin veya hesapları silin.
+-- İsteğe bağlı demo hesapları — YALNIZCA yerel/geliştirme.
+-- Canlı veritabanında bu bloğu çalıştırmayın; çalıştırdıysanız hesapları silin.
 -- pgcrypto gerekir (migration içinde açılır).
 -- ---------------------------------------------------------------------------
 

@@ -44,8 +44,14 @@ export function safeMediaUrl(value: string | null | undefined): string | null {
 }
 
 export function randomTrackingCode(): string {
-  const bytes = new Uint8Array(8);
-  crypto.getRandomValues(bytes);
-  const rand = Array.from(bytes, byte => (byte % 36).toString(36).toUpperCase()).join("");
-  return `KY-${rand}`;
+  const bytes = new Uint8Array(16);
+  const cryptoObj = globalThis.crypto;
+  if (!cryptoObj?.getRandomValues) {
+    throw new Error("Güvenli rastgele üretici yok");
+  }
+  cryptoObj.getRandomValues(bytes);
+  const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
+  return `KY-${hex}`;
 }

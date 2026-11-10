@@ -28,6 +28,8 @@ function Router() {
         <Route path="/takip/:code" component={TrackPage} />
         <Route path="/kvkk">{() => <LegalPage kind="kvkk" />}</Route>
         <Route path="/kosullar">{() => <LegalPage kind="kosullar" />}</Route>
+        <Route path="/iletisim">{() => <LegalPage kind="iletisim" />}</Route>
+        <Route path="/islem-rehberi">{() => <LegalPage kind="islem-rehberi" />}</Route>
         <Route path="/eski" component={Home} />
         <Route path="/eski/order" component={Home} />
         <Route path="/eski/track" component={Home} />

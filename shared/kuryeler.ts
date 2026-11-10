@@ -6,11 +6,27 @@ export const BRAND_NAME = "kuryeler.tr";
 export const BRAND_PRODUCT = "Hızlıgel";
 export const BRAND_CITY = "İstanbul";
 export const CURRENCY_SUFFIX = "TL";
-export const USD_SUFFIX = "USD";
+export const VAT_EXCL_LABEL = "KDV hariç";
+export const VAT_INCL_LABEL = "KDV dahil";
+export const DEFAULT_VAT_RATE = 0.2;
 export const BRAND_URL = "https://kuryeler.tr";
 export const CONTACT_EMAIL = "iletisim@kuryeler.tr";
 export const CONTACT_PHONE_DISPLAY = "0532 474 67 45";
 export const CONTACT_WHATSAPP_E164 = "905324746745";
+
+/** Köşeli parantezli alanlar işletme kimliği doldurulunca değişir. */
+export const BUSINESS = {
+  legalName: "[AD SOYAD]",
+  taxOffice: "[VERGİ DAİRESİ]",
+  taxId: "[VKN]",
+  address: "[AÇIK ADRES], İstanbul",
+  kep: "[KEP ADRESİ]",
+  chamber: "[ODA ADI – varsa]",
+  trademarkNote: "Marka: kuryeler.tr (başvuru no 2026/088618 – tescil süreci devam ediyor)",
+  kvkkEffective: "[TARİH]",
+  retentionOrdersYears: "[X]",
+  retentionPhotoMonths: "[X]",
+} as const;
 
 export const MAX_WEIGHT_KG = 30;
 export const WEIGHT_LIMIT_MESSAGE = "Maksimum taşıma sınırı 30 kg";
@@ -75,26 +91,45 @@ export const ROUTING_PROVIDER_LABELS: Record<RoutingProvider, string> = {
 };
 
 export type PricingSettings = {
-  baseUsd: number;
-  perKmUsd: number;
+  baseTry: number;
+  perKmTry: number;
   roundingDecimals: number;
-  usdToTry: number;
+  vatRate: number;
   routingProvider: RoutingProvider;
   routingUrl: string;
   geocoder: Geocoder;
   commissionRate: number;
+  showcaseMode: boolean;
 };
 
 export const DEFAULT_PRICING: PricingSettings = {
-  baseUsd: 1,
-  perKmUsd: 1,
+  baseTry: 600,
+  perKmTry: 50,
   roundingDecimals: 2,
-  usdToTry: 34.5,
+  vatRate: DEFAULT_VAT_RATE,
   routingProvider: "osrm",
   routingUrl: "https://router.project-osrm.org",
   geocoder: "nominatim",
   commissionRate: 0.2,
+  showcaseMode: false,
 };
+
+function readViteFlag(name: string): string {
+  try {
+    const env = (import.meta as { env?: Record<string, string | undefined> }).env;
+    return String(env?.[name] ?? "");
+  } catch {
+    return "";
+  }
+}
+
+export function envShowcaseMode() {
+  return readViteFlag("VITE_VITRIN_MODU") === "true";
+}
+
+export function isShowcaseMode(pricing?: PricingSettings | null) {
+  return Boolean(pricing?.showcaseMode) || envShowcaseMode();
+}
 
 const STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
   pending: ["assigned", "cancelled"],
@@ -137,51 +172,44 @@ export function roundMoney(value: number, decimals: number) {
 
 export type PriceBreakdown = {
   distanceKm: number;
-  baseUsd: number;
-  distanceFeeUsd: number;
-  priceUsd: number;
-  priceTl: number;
-  commissionUsd: number;
-  courierEarningUsd: number;
+  baseTry: number;
+  distanceFeeTry: number;
+  vatRate: number;
+  netTl: number;
+  vatTl: number;
+  grossTl: number;
   totalTl: number;
   commissionTl: number;
   courierEarningTl: number;
   companyRevenueTl: number;
 };
 
-/** Sürüş km’si — kuş uçuşu değil. price = baseUsd + perKmUsd * km */
+/** Sürüş km’si — kuş uçuşu değil. net = açılış_tl + km_tl × km (KDV hariç); üstüne KDV eklenir. */
 export function calculateDeliveryPrice(input: {
   distanceKm: number;
   pricing?: PricingSettings;
 }): PriceBreakdown {
   const pricing = input.pricing ?? DEFAULT_PRICING;
   const distanceKm = Math.max(0, Number(input.distanceKm) || 0);
-  const distanceFeeUsd = pricing.perKmUsd * distanceKm;
-  const priceUsd = roundMoney(pricing.baseUsd + distanceFeeUsd, pricing.roundingDecimals);
-  const priceTl =
-    pricing.usdToTry > 0 ? roundMoney(priceUsd * pricing.usdToTry, pricing.roundingDecimals) : 0;
-  const commissionUsd = roundMoney(priceUsd * pricing.commissionRate, pricing.roundingDecimals);
-  const commissionTl = roundMoney(priceTl * pricing.commissionRate, pricing.roundingDecimals);
+  const vatRate = Number.isFinite(pricing.vatRate) ? Math.max(0, pricing.vatRate) : DEFAULT_VAT_RATE;
+  const distanceFeeTry = pricing.perKmTry * distanceKm;
+  const netTl = roundMoney(pricing.baseTry + distanceFeeTry, pricing.roundingDecimals);
+  const vatTl = roundMoney(netTl * vatRate, pricing.roundingDecimals);
+  const grossTl = roundMoney(netTl + vatTl, pricing.roundingDecimals);
+  const commissionTl = roundMoney(netTl * pricing.commissionRate, pricing.roundingDecimals);
   return {
     distanceKm: roundMoney(distanceKm, Math.max(2, pricing.roundingDecimals)),
-    baseUsd: pricing.baseUsd,
-    distanceFeeUsd: roundMoney(distanceFeeUsd, pricing.roundingDecimals),
-    priceUsd,
-    priceTl,
-    commissionUsd,
-    courierEarningUsd: roundMoney(priceUsd - commissionUsd, pricing.roundingDecimals),
-    totalTl: priceTl,
+    baseTry: pricing.baseTry,
+    distanceFeeTry: roundMoney(distanceFeeTry, pricing.roundingDecimals),
+    vatRate,
+    netTl,
+    vatTl,
+    grossTl,
+    totalTl: grossTl,
     commissionTl,
-    courierEarningTl: roundMoney(priceTl - commissionTl, pricing.roundingDecimals),
+    courierEarningTl: roundMoney(netTl - commissionTl, pricing.roundingDecimals),
     companyRevenueTl: commissionTl,
   };
-}
-
-export function formatUsd(value: number | string, decimals = 2) {
-  return `${Number(value).toLocaleString("tr-TR", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  })} ${USD_SUFFIX}`;
 }
 
 export function formatTl(value: number | string) {
@@ -191,6 +219,42 @@ export function formatTl(value: number | string) {
   })} ${CURRENCY_SUFFIX}`;
 }
 
+export function formatVatPercent(rate: number) {
+  const pct = roundMoney((Number(rate) || 0) * 100, 2);
+  return `%${pct.toLocaleString("tr-TR", { maximumFractionDigits: 2 })}`;
+}
+
+export function formatTariff(pricing: PricingSettings = DEFAULT_PRICING) {
+  return `Açılış ${formatTl(pricing.baseTry)} + km başı ${formatTl(pricing.perKmTry)} (${VAT_EXCL_LABEL})`;
+}
+
+export function formatPriceBreakdown(price: Pick<PriceBreakdown, "netTl" | "vatTl" | "grossTl" | "vatRate">) {
+  return [
+    `${formatTl(price.netTl)} ${VAT_EXCL_LABEL}`,
+    `KDV (${formatVatPercent(price.vatRate)}): ${formatTl(price.vatTl)}`,
+    `${formatTl(price.grossTl)} ${VAT_INCL_LABEL}`,
+  ].join(" · ");
+}
+
+export function breakdownFromOrder(
+  order: Pick<DeliveryOrder, "distanceKm" | "netPriceTl" | "vatTl" | "totalPriceTl" | "courierEarningTl" | "companyRevenueTl">,
+  pricing: PricingSettings = DEFAULT_PRICING,
+): PriceBreakdown {
+  const computed = calculateDeliveryPrice({ distanceKm: order.distanceKm, pricing });
+  const netTl = order.netPriceTl > 0 ? order.netPriceTl : computed.netTl;
+  const vatTl = order.vatTl > 0 || order.netPriceTl > 0 ? order.vatTl : computed.vatTl;
+  const grossTl = order.totalPriceTl > 0 ? order.totalPriceTl : roundMoney(netTl + vatTl, pricing.roundingDecimals);
+  return {
+    ...computed,
+    netTl,
+    vatTl,
+    grossTl,
+    totalTl: grossTl,
+    courierEarningTl: order.courierEarningTl || computed.courierEarningTl,
+    companyRevenueTl: order.companyRevenueTl || computed.companyRevenueTl,
+  };
+}
+
 export function formatKm(value: number) {
   return `${Number(value).toLocaleString("tr-TR", {
     minimumFractionDigits: 1,
@@ -198,11 +262,39 @@ export function formatKm(value: number) {
   })} km`;
 }
 
-export function generateTrackingCode(_now = new Date()) {
-  const bytes = new Uint8Array(8);
-  crypto.getRandomValues(bytes);
-  const rand = Array.from(bytes, byte => (byte % 36).toString(36).toUpperCase()).join("");
-  return `KY-${rand}`;
+export function generateTrackingCode() {
+  const bytes = new Uint8Array(16);
+  const cryptoObj = globalThis.crypto;
+  if (!cryptoObj?.getRandomValues) {
+    throw new Error("Güvenli rastgele üretici yok");
+  }
+  cryptoObj.getRandomValues(bytes);
+  const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
+  return `KY-${hex}`;
+}
+
+export function redactPendingForCourier(order: DeliveryOrder): DeliveryOrder {
+  const district = order.bolge?.trim() || "İlçe";
+  return {
+    ...order,
+    boardOnly: true,
+    product: "Gönderi",
+    pickupAddress: district,
+    dropoffAddress: district,
+    recipientName: "",
+    contactPhone: "",
+    notes: "",
+    pickupLat: null,
+    pickupLng: null,
+    dropoffLat: null,
+    dropoffLng: null,
+    routeGeojson: null,
+    pickupPhoto: null,
+    deliveryPhoto: null,
+    signatureData: null,
+  };
 }
 
 export function isActiveOrder(status: OrderStatus) {
@@ -259,10 +351,12 @@ export type DeliveryOrder = {
   signatureData: string | null;
   weightKg: number;
   distanceKm: number;
-  priceUsd: number;
+  netPriceTl: number;
+  vatTl: number;
   totalPriceTl: number;
   courierEarningTl: number;
   companyRevenueTl: number;
+  boardOnly?: boolean;
   pickupLat: number | null;
   pickupLng: number | null;
   dropoffLat: number | null;
@@ -288,7 +382,6 @@ export type Profile = {
 
 export type DashboardStats = {
   todayOrders: number;
-  todayRevenueUsd: number;
   todayRevenueTl: number;
   activeCouriers: number;
   pendingOrders: number;
