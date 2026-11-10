@@ -73,30 +73,30 @@ begin
       '00000000-0000-0000-0000-000000000000', admin_id, 'authenticated', 'authenticated',
       'yonetici@kuryeler.tr', crypt('KuryelerYonetici1!', gen_salt('bf')), now(),
       '{"provider":"email","providers":["email"]}',
-      '{"full_name":"Şerif Yönetici","phone":"05551110001","role":"customer"}',
+      '{"full_name":"Şerif Yönetici","phone":"05421110001","role":"customer"}',
       now(), now(), '', '', '', ''
     ),
     (
       '00000000-0000-0000-0000-000000000000', courier_id, 'authenticated', 'authenticated',
       'kurye@kuryeler.tr', crypt('KuryelerKurye1!', gen_salt('bf')), now(),
       '{"provider":"email","providers":["email"]}',
-      '{"full_name":"Mehmet Kurye","phone":"05551110002","role":"courier"}',
+      '{"full_name":"Mehmet Kurye","phone":"05421110002","role":"courier"}',
       now(), now(), '', '', '', ''
     ),
     (
       '00000000-0000-0000-0000-000000000000', customer_id, 'authenticated', 'authenticated',
       'musteri@kuryeler.tr', crypt('KuryelerMusteri1!', gen_salt('bf')), now(),
       '{"provider":"email","providers":["email"]}',
-      '{"full_name":"Ayşe Müşteri","phone":"05551110003","role":"customer"}',
+      '{"full_name":"Ayşe Müşteri","phone":"05421110003","role":"customer"}',
       now(), now(), '', '', '', ''
     )
   on conflict (id) do nothing;
 
-  update public.profiles set role = 'admin', full_name = 'Şerif Yönetici', phone = '05551110001'
+  update public.profiles set role = 'admin', full_name = 'Şerif Yönetici', phone = '05421110001'
    where id = admin_id;
-  update public.profiles set role = 'courier', full_name = 'Mehmet Kurye', phone = '05551110002', is_online = true
+  update public.profiles set role = 'courier', full_name = 'Mehmet Kurye', phone = '05421110002', is_online = true
    where id = courier_id;
-  update public.profiles set role = 'customer', full_name = 'Ayşe Müşteri', phone = '05551110003'
+  update public.profiles set role = 'customer', full_name = 'Ayşe Müşteri', phone = '05421110003'
    where id = customer_id;
 
   insert into public.orders (
@@ -109,13 +109,13 @@ begin
       'KY-DEMO0001', customer_id, null, 'pending',
       'Caferağa, Moda Cad. No 12, Kadıköy, İstanbul', 'Kadıköy', 'Caferağa', 'Moda Caddesi', 'Kapıcıya bırakılabilir',
       'Levent, Büyükdere Cad. No 120, Beşiktaş, İstanbul', 'Beşiktaş', 'Levent', 'Büyükdere Caddesi', 'Resepsiyon',
-      'evrak', 'Sözleşme evrakı', '05551110003', 9.5
+      'evrak', 'Sözleşme evrakı', '05421110003', 9.5
     ),
     (
       'KY-DEMO0002', customer_id, courier_id, 'en_route',
       'Osmanağa, Bahariye Cad. No 45, Kadıköy, İstanbul', 'Kadıköy', 'Osmanağa', 'Bahariye Caddesi', '',
       'Acıbadem, Ataşehir, İstanbul', 'Ataşehir', 'Atatürk', 'Ataşehir Bulvarı', 'Daire 8',
-      'orta', 'Hediyelik kutu', '05551110003', 7.2
+      'orta', 'Hediyelik kutu', '05421110003', 7.2
     )
   on conflict (tracking_code) do nothing;
 end $$;

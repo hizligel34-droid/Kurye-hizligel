@@ -116,6 +116,7 @@ function TermsBody() {
         <h2 className="text-lg font-black text-[#f5edd6]">5. Uygulama</h2>
         <p className="mt-2">
           Uyuşmazlıklarda İstanbul mahkemeleri ve icra daireleri yetkilidir (emredici kurallar saklıdır).
+          İletişim: {CONTACT_EMAIL}, {CONTACT_PHONE_DISPLAY}.
         </p>
       </section>
     </>

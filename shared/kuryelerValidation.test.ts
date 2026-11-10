@@ -40,7 +40,7 @@ describe("kuryeler.tr form doğrulama", () => {
       dropoffDistrict: "Kadıköy",
       dropoffNeighborhood: "Caferağa",
       dropoffStreet: "Moda",
-      contactPhone: "05551110003",
+      contactPhone: "05421110003",
     });
     expect(errors.dropoffStreet).toMatch(/aynı olamaz/);
   });

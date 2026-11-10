@@ -72,8 +72,9 @@ Demo girişleri (yalnızca demo / seed; canlıda değiştirin):
 ```
 VITE_SUPABASE_URL=https://xxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
-VITE_WHATSAPP_NUMBER=9055xxxxxxx
+VITE_WHATSAPP_NUMBER=905324746745
 VITE_CONTACT_EMAIL=iletisim@kuryeler.tr
+VITE_CONTACT_PHONE=0532 474 67 45
 ```
 
 7. İlk yönetici: seed’deki `yonetici@kuryeler.tr` veya SQL:

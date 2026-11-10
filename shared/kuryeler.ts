@@ -5,9 +5,9 @@ export const BRAND_CITY = "İstanbul";
 export const CURRENCY_SUFFIX = "TL";
 export const BRAND_URL = "https://kuryeler.tr";
 export const CONTACT_EMAIL = "iletisim@kuryeler.tr";
-export const CONTACT_PHONE_DISPLAY = "0555 111 00 01";
+export const CONTACT_PHONE_DISPLAY = "0532 474 67 45";
 /** WhatsApp uluslararası format (başında + yok). VITE_WHATSAPP_NUMBER ile override. */
-export const CONTACT_WHATSAPP_E164 = "905551110001";
+export const CONTACT_WHATSAPP_E164 = "905324746745";
 
 export const USER_ROLES = ["customer", "courier", "admin"] as const;
 export type UserRole = (typeof USER_ROLES)[number];

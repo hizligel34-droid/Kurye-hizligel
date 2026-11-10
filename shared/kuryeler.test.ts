@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   calculateDeliveryPrice,
   canTransitionStatus,
+  CONTACT_PHONE_DISPLAY,
+  CONTACT_WHATSAPP_E164,
   DEFAULT_PRICING,
   estimateDistanceKm,
   generateTrackingCode,
@@ -97,5 +99,12 @@ describe("kuryeler.tr fiyatlandırma", () => {
 describe("kuryeler.tr takip kodu", () => {
   it("KY- önekiyle üretir", () => {
     expect(generateTrackingCode()).toMatch(/^KY-[A-Z0-9]+$/);
+  });
+});
+
+describe("kuryeler.tr iletişim", () => {
+  it("işletme telefonu ve WhatsApp numarasını gösterir", () => {
+    expect(CONTACT_PHONE_DISPLAY).toBe("0532 474 67 45");
+    expect(CONTACT_WHATSAPP_E164).toBe("905324746745");
   });
 });
