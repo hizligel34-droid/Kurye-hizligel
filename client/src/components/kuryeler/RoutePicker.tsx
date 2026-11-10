@@ -146,6 +146,10 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
             className={fieldClass}
             placeholder="Adres ara veya haritaya dokun"
             value={pickupQ}
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={pickupHits.length > 0}
+            aria-controls="pickup-hits"
             onFocus={() => setActive("pickup")}
             onChange={e => {
               setPickupQ(e.target.value);
@@ -153,9 +157,14 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
             }}
           />
           {pickupHits.length > 0 ? (
-            <ul className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-xl border border-[#3a3014] bg-black text-sm">
+            <ul
+              id="pickup-hits"
+              role="listbox"
+              aria-label="Alım adresi önerileri"
+              className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-xl border border-[#3a3014] bg-black text-sm"
+            >
               {pickupHits.map(hit => (
-                <li key={`${hit.lat}-${hit.lng}`}>
+                <li key={`${hit.lat}-${hit.lng}`} role="option">
                   <button
                     type="button"
                     className="w-full px-3 py-2 text-left hover:bg-[#1a1508]"
@@ -177,6 +186,10 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
             className={fieldClass}
             placeholder="Adres ara veya haritaya dokun"
             value={dropoffQ}
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={dropoffHits.length > 0}
+            aria-controls="dropoff-hits"
             onFocus={() => setActive("dropoff")}
             onChange={e => {
               setDropoffQ(e.target.value);
@@ -184,9 +197,14 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
             }}
           />
           {dropoffHits.length > 0 ? (
-            <ul className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-xl border border-[#3a3014] bg-black text-sm">
+            <ul
+              id="dropoff-hits"
+              role="listbox"
+              aria-label="Teslim adresi önerileri"
+              className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-xl border border-[#3a3014] bg-black text-sm"
+            >
               {dropoffHits.map(hit => (
-                <li key={`${hit.lat}-${hit.lng}`}>
+                <li key={`${hit.lat}-${hit.lng}`} role="option">
                   <button
                     type="button"
                     className="w-full px-3 py-2 text-left hover:bg-[#1a1508]"

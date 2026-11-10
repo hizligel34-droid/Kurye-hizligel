@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { goldBtn, ghostBtn } from "@/lib/kuryelerTheme";
+import { safeMediaUrl } from "@shared/kuryelerSecurity";
 import { useEffect, useRef, useState } from "react";
 
 function compressImage(file: File): Promise<string> {
@@ -94,18 +95,24 @@ export function ProofCapture({
             <input
               className="mt-2 block w-full text-sm text-[#b4a882] file:mr-3 file:rounded-xl file:border-0 file:bg-[#D4AF37] file:px-3 file:py-2 file:font-bold file:text-black"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               capture="environment"
               onChange={event => {
                 const file = event.target.files?.[0];
                 if (!file) return;
+                if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) {
+                  setPhoto(null);
+                  return;
+                }
                 setBusy(true);
                 void compressImage(file)
-                  .then(setPhoto)
+                  .then(dataUrl => setPhoto(safeMediaUrl(dataUrl)))
                   .finally(() => setBusy(false));
               }}
             />
-            {photo ? <img src={photo} alt="Alım veya teslim fotoğrafı" className="mt-2 h-32 w-full rounded-2xl object-cover" /> : null}
+            {photo ? (
+              <img src={photo} alt="Alım veya teslim fotoğrafı" className="mt-2 h-32 w-full rounded-2xl object-cover" />
+            ) : null}
           </label>
         ) : null}
         {needSignature ? (
@@ -114,6 +121,8 @@ export function ProofCapture({
             <canvas
               ref={canvasRef}
               className="mt-2 h-[140px] w-full touch-none rounded-2xl bg-[#141414]"
+              role="img"
+              aria-label="Teslim alan imza alanı"
               onPointerDown={event => {
                 drawing.current = true;
                 canvasRef.current?.getContext("2d")?.beginPath();

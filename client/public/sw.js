@@ -1,13 +1,8 @@
-const CACHE_NAME = "kuryeler-tr-shell-v1";
+const CACHE_PREFIX = "kuryeler-tr-shell-";
+const CACHE_NAME = CACHE_PREFIX + "v2";
 const SHELL = [
   "/",
-  "/musteri",
-  "/kurye",
-  "/yonetici",
   "/pwa/site.webmanifest",
-  "/pwa/musteri.webmanifest",
-  "/pwa/kurye.webmanifest",
-  "/pwa/yonetici.webmanifest",
 ];
 
 self.addEventListener("install", event => {
@@ -20,7 +15,11 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))),
+      Promise.all(
+        keys
+          .filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+          .map(key => caches.delete(key)),
+      ),
     ),
   );
   self.clients.claim();

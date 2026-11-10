@@ -83,8 +83,12 @@ describe("kuryeler.tr bölge referans listesi", () => {
 });
 
 describe("kuryeler.tr takip kodu", () => {
-  it("KY- önekiyle üretir", () => {
-    expect(generateTrackingCode()).toMatch(/^KY-[A-Z0-9]+$/);
+  it("KY- önekiyle tahmin edilmesi zor kod üretir", () => {
+    const a = generateTrackingCode();
+    const b = generateTrackingCode();
+    expect(a).toMatch(/^KY-[A-Z0-9]{8}$/);
+    expect(b).toMatch(/^KY-[A-Z0-9]{8}$/);
+    expect(a).not.toBe(b);
   });
 });
 

@@ -6,7 +6,7 @@ import { Link } from "wouter";
 export function SiteFooter() {
   return (
     <footer className="border-t border-[#3a3014] bg-black py-8">
-      <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 text-sm text-[#8a7c52] md:flex-row md:items-center md:justify-between">
+      <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 text-sm text-[#b4a882] md:flex-row md:items-center md:justify-between">
         <div>
           <p>© {new Date().getFullYear()} {BRAND_NAME}</p>
           <p className="mt-1 inline-flex items-center gap-2">

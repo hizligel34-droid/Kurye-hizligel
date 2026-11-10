@@ -21,7 +21,7 @@ export function LoadingState({ label = "Yükleniyor…" }: { label?: string }) {
       aria-live="polite"
       className={`${cardClass} flex items-center gap-3 p-5 text-sm text-[#b4a882]`}
     >
-      <Loader2 className="size-5 animate-spin text-[#D4AF37]" />
+      <Loader2 className="size-5 animate-spin text-[#D4AF37]" aria-hidden />
       {label}
     </div>
   );
@@ -56,7 +56,7 @@ export function ErrorState({
   return (
     <div role="alert" className={`${cardClass} p-6`}>
       <div className="flex items-start gap-3">
-        <AlertCircle className="mt-0.5 size-5 shrink-0 text-[#D4AF37]" />
+        <AlertCircle className="mt-0.5 size-5 shrink-0 text-[#D4AF37]" aria-hidden />
         <div className="min-w-0">
           <p className="font-bold">Bir sorun oluştu</p>
           <p className="mt-1 text-sm text-[#8a7c52]">{message}</p>

@@ -198,16 +198,11 @@ export function formatKm(value: number) {
   })} km`;
 }
 
-export function generateTrackingCode(now = new Date()) {
-  const stamp = now
-    .toISOString()
-    .replace(/[-:TZ.]/g, "")
-    .slice(2, 12);
-  const rand = Math.floor(Math.random() * 36 ** 3)
-    .toString(36)
-    .toUpperCase()
-    .padStart(3, "0");
-  return `KY-${stamp}${rand}`.slice(0, 16);
+export function generateTrackingCode(_now = new Date()) {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  const rand = Array.from(bytes, byte => (byte % 36).toString(36).toUpperCase()).join("");
+  return `KY-${rand}`;
 }
 
 export function isActiveOrder(status: OrderStatus) {

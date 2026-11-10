@@ -2,10 +2,10 @@ export const GOLD = "#D4AF37";
 export const INK = "#0A0A0A";
 
 export const fieldClass =
-  "h-11 rounded-xl border border-[#3a3014] bg-[#141414] text-[#f5edd6] placeholder:text-[#8a7c52]";
+  "h-11 rounded-xl border border-[#3a3014] bg-[#141414] text-[#f5edd6] placeholder:text-[#b4a882]";
 
 export const areaClass =
-  "min-h-24 rounded-xl border border-[#3a3014] bg-[#141414] text-[#f5edd6] placeholder:text-[#8a7c52]";
+  "min-h-24 rounded-xl border border-[#3a3014] bg-[#141414] text-[#f5edd6] placeholder:text-[#b4a882]";
 
 export const selectClass =
   "h-11 w-full rounded-xl border border-[#3a3014] bg-[#141414] px-3 text-sm font-semibold text-[#f5edd6]";

@@ -1,5 +1,6 @@
 const SCOPE = "/yonetici/";
-const CACHE_NAME = "hizligel-yonetici-shell-v1";
+const CACHE_PREFIX = "hizligel-yonetici-shell-";
+const CACHE_NAME = CACHE_PREFIX + "v2";
 const SHELL = [
   SCOPE,
   SCOPE + "index.html",
@@ -20,7 +21,11 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))),
+      Promise.all(
+        keys
+          .filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+          .map(key => caches.delete(key)),
+      ),
     ),
   );
   self.clients.claim();
@@ -34,8 +39,10 @@ self.addEventListener("fetch", event => {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(SCOPE + "index.html", copy));
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(SCOPE + "index.html", copy));
+          }
           return response;
         })
         .catch(() =>

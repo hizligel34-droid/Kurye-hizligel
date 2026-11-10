@@ -12,10 +12,10 @@ export function BrandMark({ compact = false, href = "/" }: { compact?: boolean; 
   return (
     <Link href={href} className="flex min-h-11 min-w-0 items-center gap-2 font-black tracking-tight text-[#f5edd6]">
       <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#D4AF37] bg-black text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.25)]">
-        <Bike size={20} />
+        <Bike size={20} aria-hidden />
       </span>
       <span className={`truncate ${compact ? "text-base" : "text-base sm:text-xl"}`}>
-        Hızlıgel<span className="text-[#D4AF37]"></span>
+        Hızlıgel
       </span>
     </Link>
   );
@@ -121,7 +121,7 @@ export function BrandShell({
                   : "text-[#8a7c52]"
               }`}
             >
-              <item.icon className="mb-0.5 size-4" />
+              <item.icon className="mb-0.5 size-4" aria-hidden />
               {item.label}
             </Link>
           ))}
