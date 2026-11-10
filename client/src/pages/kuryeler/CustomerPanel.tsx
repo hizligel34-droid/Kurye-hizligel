@@ -16,6 +16,7 @@ import {
   listNotifications,
   listOrdersFor,
   queueOrderConfirmation,
+  recordLegalAcceptance,
   subscribeToOrders,
   type CreateOrderInput,
 } from "@/lib/kuryelerApi";
@@ -33,10 +34,10 @@ import {
   calculateDeliveryPrice,
   formatDateTimeTr,
   formatKm,
-  formatDeliveryTarget,
+  formatCustomerDelivery,
   formatPriceInclusive,
   formatTariffInclusive,
-  DELIVERY_TARGET_DISCLAIMER,
+  PUBLIC_DELIVERY_DETAIL,
   isActiveOrder,
   isShowcaseMode,
   PAYMENT_METHOD_LABELS,
@@ -47,6 +48,8 @@ import {
   type PaymentMethod,
   type PricingSettings,
 } from "@shared/kuryeler";
+import { DraftLegalBanner } from "@/components/kuryeler/DraftLegalBanner";
+import { LEGAL_DOCUMENTS, LEGAL_VERSION, ORDER_CHECKBOX_LABELS, ORDER_CONFIRM_BUTTON, sha256Hex } from "@shared/legalTexts";
 import { canCustomerCancel, cancelCopy, paymentHint } from "@shared/kuryelerSupport";
 import { firstError, validateDeliveryOrder, type FieldErrors } from "@shared/kuryelerValidation";
 import { normalizeTurkishMobilePhone } from "@shared/orderValidation";
@@ -184,6 +187,30 @@ function CustomerHome() {
         contactPhone: normalizeTurkishMobilePhone(phone),
         recipientPhone: normalizeTurkishMobilePhone(recipientPhone),
       });
+      const [onBilgiSha, mesafeliSha] = await Promise.all([
+        sha256Hex(LEGAL_DOCUMENTS.on_bilgi.body),
+        sha256Hex(LEGAL_DOCUMENTS.mesafeli.body),
+      ]);
+      try {
+        await Promise.all([
+          recordLegalAcceptance({
+            docKey: "on_bilgi",
+            version: LEGAL_VERSION,
+            contentSha256: onBilgiSha,
+            checkboxKey: "on_bilgi_teyit",
+            orderId: order.id,
+          }),
+          recordLegalAcceptance({
+            docKey: "mesafeli",
+            version: LEGAL_VERSION,
+            contentSha256: mesafeliSha,
+            checkboxKey: "cayma_istisna",
+            orderId: order.id,
+          }),
+        ]);
+      } catch (acceptErr) {
+        toast.error(acceptErr instanceof Error ? acceptErr.message : "Kabul kaydı yazılamadı");
+      }
       if (paymentMethod === "iyzico") {
         try {
           const checkout = await startIyzicoCheckout(order.id);
@@ -310,8 +337,10 @@ function CustomerHome() {
               <FieldError id="route-err" message={fieldErrors.route} />
               {route && route.distanceKm > 0 ? (
                 <p className="text-sm text-[#b4a882]">
-                  {formatDeliveryTarget(route.distanceKm, pricing.deliveryTargetTiers)}
-                  <span className="mt-1 block text-xs text-[#8a7c52]">{DELIVERY_TARGET_DISCLAIMER}</span>
+                  {formatCustomerDelivery(route.distanceKm, pricing)}
+                  {pricing.deliveryTargetsPublic ? null : (
+                    <span className="mt-1 block text-xs text-[#8a7c52]">{PUBLIC_DELIVERY_DETAIL}</span>
+                  )}
                 </p>
               ) : null}
               <div>
@@ -475,9 +504,11 @@ function CustomerHome() {
                     Sürüş {formatKm(quote.distanceKm)} · {formatTariffInclusive(pricing)}
                   </p>
                   <p className="mt-3 text-sm font-semibold text-[#f5edd6]">
-                    {formatDeliveryTarget(quote.distanceKm, pricing.deliveryTargetTiers)}
+                    {formatCustomerDelivery(quote.distanceKm, pricing)}
                   </p>
-                  <p className="mt-1 text-xs text-[#8a7c52]">{DELIVERY_TARGET_DISCLAIMER}</p>
+                  {pricing.deliveryTargetsPublic ? null : (
+                    <p className="mt-1 text-xs text-[#8a7c52]">{PUBLIC_DELIVERY_DETAIL}</p>
+                  )}
                 </>
               ) : (
                 <p className="mt-4 text-sm text-[#8a7c52]">Alım ve teslim noktalarını seçince sürüş ücreti görünür.</p>
@@ -505,31 +536,35 @@ function CustomerHome() {
                 Fiyat yol (sürüş) mesafesine göredir, kuş uçuşu değildir. Görünen tutar {VAT_INCL_LABEL}dir.
                 Gerçek kart tahsilatı yok; yöntem ve durum kayıt edilir. {MAX_WEIGHT_KG} kg üzeri kabul edilmez.
               </p>
+              <div className="mt-4">
+                <DraftLegalBanner />
+              </div>
               <label className="mt-4 flex items-start gap-2 text-xs leading-5 text-[#b4a882]">
                 <input className="mt-0.5" type="checkbox" checked={preInfoOk} onChange={e => setPreInfoOk(e.target.checked)} />
                 <span>
-                  Ön bilgilendirme formunu ve{" "}
-                  <a href="/kosullar" className="font-bold text-[#D4AF37]" target="_blank" rel="noreferrer">
-                    Kullanım Koşulları
+                  {ORDER_CHECKBOX_LABELS.preInfo}{" "}
+                  <a href="/on-bilgilendirme" className="font-bold text-[#D4AF37]" target="_blank" rel="noreferrer">
+                    Ön Bilgilendirme
                   </a>
-                  ’nı okudum, onaylıyorum.
+                  {" · "}
+                  <a href="/mesafeli-sozlesme" className="font-bold text-[#D4AF37]" target="_blank" rel="noreferrer">
+                    Mesafeli Sözleşme
+                  </a>
                 </span>
               </label>
               <label className="mt-2 flex items-start gap-2 text-xs leading-5 text-[#b4a882]">
                 <input className="mt-0.5" type="checkbox" checked={withdrawOk} onChange={e => setWithdrawOk(e.target.checked)} />
-                <span>
-                  Hizmetin seçtiğim tarihte hemen başlamasını istiyorum; hizmet başladıktan sonra cayma hakkımın olmadığını biliyorum.
-                </span>
+                <span>{ORDER_CHECKBOX_LABELS.withdraw}</span>
               </label>
               <p className="mt-2 text-xs text-[#8a7c52]">
                 Kişisel verileriniz{" "}
                 <a href="/kvkk" className="font-bold text-[#D4AF37]" target="_blank" rel="noreferrer">
                   KVKK Aydınlatma Metni
                 </a>
-                ’ne göre işlenir.
+                ’ne göre işlenir. Onay kutuları işaretlenmeden sipariş verilmez.
               </p>
               <Button className={`mt-5 h-12 w-full whitespace-normal ${goldBtn}`} disabled={busy || !quote || !preInfoOk || !withdrawOk}>
-                {busy ? "Gönderiliyor…" : "Siparişi onayla – ödeme yükümlülüğü doğar"}
+                {busy ? "Gönderiliyor…" : ORDER_CONFIRM_BUTTON}
               </Button>
             </aside>
           </form>

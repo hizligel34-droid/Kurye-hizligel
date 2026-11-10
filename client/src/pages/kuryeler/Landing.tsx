@@ -24,6 +24,10 @@ import {
   DEFAULT_DELIVERY_TARGET_TIERS,
   DELIVERY_TARGET_DISCLAIMER,
   deliveryTargetTable,
+  isDeliveryTargetsPublic,
+  PUBLIC_DELIVERY_DETAIL,
+  PUBLIC_DELIVERY_PROMISE,
+  type PricingSettings,
 } from "@shared/kuryeler";
 import { PWA_APPS } from "@shared/kuryelerPwa";
 import { Clock3, LayoutDashboard, Package, Phone, ShieldCheck, Smartphone, Sparkles, UserRound } from "lucide-react";
@@ -60,7 +64,8 @@ const apps = [
 
 export default function Landing() {
   const { user } = useKuryelerAuth();
-  const [showcase, setShowcase] = useState(isShowcaseMode());
+  const [pricing, setPricing] = useState<PricingSettings>(DEFAULT_PRICING);
+  const showcase = isShowcaseMode(pricing);
   const samplePrice = calculateDeliveryPrice({ distanceKm: 10 });
   const sample3 = calculateDeliveryPrice({ distanceKm: 3 });
   const sample74 = calculateDeliveryPrice({ distanceKm: 7.4 });
@@ -69,8 +74,8 @@ export default function Landing() {
 
   useEffect(() => {
     void getPricing()
-      .then(pricing => setShowcase(isShowcaseMode(pricing)))
-      .catch(() => setShowcase(isShowcaseMode()));
+      .then(setPricing)
+      .catch(() => setPricing(DEFAULT_PRICING));
   }, []);
 
   const jsonLd = {
@@ -212,19 +217,28 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 py-6" aria-labelledby="hedef-teslim-baslik">
-          <h2 id="hedef-teslim-baslik" className="text-2xl font-black">
-            Hedef teslim
+        <section className="mx-auto max-w-6xl px-4 py-6" aria-labelledby="teslim-baslik">
+          <h2 id="teslim-baslik" className="text-2xl font-black">
+            Teslim
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-[#b4a882]">Yol mesafesine göre hedef süre. {DELIVERY_TARGET_DISCLAIMER}</p>
-          <ul className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-            {deliveryTargetTable(DEFAULT_DELIVERY_TARGET_TIERS).map(row => (
-              <li key={row.range} className={`${cardClass} p-4`}>
-                <p className="text-xs font-bold uppercase tracking-wide text-[#8a7c52]">{row.range}</p>
-                <p className="mt-2 text-lg font-black text-[#D4AF37]">{row.label}</p>
-              </li>
-            ))}
-          </ul>
+          {isDeliveryTargetsPublic(pricing) ? (
+            <>
+              <p className="mt-2 max-w-2xl text-sm text-[#b4a882]">Yol mesafesine göre hedef süre. {DELIVERY_TARGET_DISCLAIMER}</p>
+              <ul className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                {deliveryTargetTable(pricing.deliveryTargetTiers ?? DEFAULT_DELIVERY_TARGET_TIERS).map(row => (
+                  <li key={row.range} className={`${cardClass} p-4`}>
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#8a7c52]">{row.range}</p>
+                    <p className="mt-2 text-lg font-black text-[#D4AF37]">{row.label}</p>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 text-lg font-black text-[#D4AF37]">{PUBLIC_DELIVERY_PROMISE}</p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#b4a882]">{PUBLIC_DELIVERY_DETAIL}</p>
+            </>
+          )}
         </section>
 
         <section className="mx-auto max-w-6xl px-4 py-6">

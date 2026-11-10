@@ -88,6 +88,8 @@ import {
   COURIER_SERVICE_TYPES,
   getDeliveryEstimate,
   getWeightSurcharge,
+  PUBLIC_DELIVERY_PROMISE,
+  publicServiceTimingLabel,
   type CourierServiceType,
 } from "@shared/courierServices";
 
@@ -1276,23 +1278,10 @@ export default function Home() {
                     Tahmini süreç
                   </p>
                   <p className="mt-1 text-sm font-black text-slate-950">
-                    Kurye atama:{" "}
-                    {
-                      getDeliveryEstimate({
-                        serviceType: form.serviceType,
-                        routeDurationMinutes: orderSuccess.durationMinutes,
-                      }).assignmentMinutes
-                    }{" "}
-                    dk
-                  </p>
-                  <p className="mt-1 text-xs font-semibold text-slate-600">
-                    Teslimat hedefi:{" "}
-                    {
-                      getDeliveryEstimate({
-                        serviceType: form.serviceType,
-                        routeDurationMinutes: orderSuccess.durationMinutes,
-                      }).label
-                    }
+                    {getDeliveryEstimate({
+                      serviceType: form.serviceType,
+                      routeDurationMinutes: orderSuccess.durationMinutes,
+                    }).label}
                   </p>
                 </div>
               </div>
@@ -1840,9 +1829,7 @@ export default function Home() {
                             </p>
                           </div>
                           <Badge className="shrink-0 bg-[#e54725] text-white">
-                            {service.deliveryTargetMinutes === 60
-                              ? "60 dk"
-                              : "2–3 saat"}
+                            {publicServiceTimingLabel(service)}
                           </Badge>
                         </div>
                         <p className="mt-4 text-xs font-bold text-orange-200">
@@ -2459,9 +2446,7 @@ export default function Home() {
                         </p>
                       </div>
                       <Badge className="bg-orange-100 text-[#c9381b]">
-                        {deliveryCoverage.data?.isAvailable && deliveryCoverage.data.estimatedDeliveryMinutes
-                          ? `Tahmini ${deliveryCoverage.data.estimatedDeliveryMinutes} dk`
-                          : getDeliveryEstimate({ serviceType: form.serviceType, routeDurationMinutes: routeEstimate.data?.durationMinutes }).label}
+                        {PUBLIC_DELIVERY_PROMISE}
                       </Badge>
                     </div>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -2481,10 +2466,7 @@ export default function Home() {
                               {service.label}
                             </span>
                             <span className="mt-1 block text-xs opacity-80">
-                              {service.description} · hedef{" "}
-                              {service.deliveryTargetMinutes === 60
-                                ? "60 dk"
-                                : "2–3 saat"}
+                              {service.description} · {publicServiceTimingLabel(service)}
                             </span>
                           </button>
                         );

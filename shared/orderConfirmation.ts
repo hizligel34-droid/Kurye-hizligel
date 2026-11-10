@@ -28,6 +28,7 @@ export function buildOrderConfirmationMail(order: DeliveryOrder, toEmail: string
     ``,
     `Takip kodu: ${order.trackingCode}`,
     `Hizmet: İstanbul içi kurye ile ${order.product || "gönderi"} taşıma`,
+    `Teslim: Makul sürede, aktarmasız teslim`,
     `Alım: ${order.pickupAddress}`,
     `Teslim: ${order.dropoffAddress}`,
     `Sürüş: ${formatKm(order.distanceKm)}`,

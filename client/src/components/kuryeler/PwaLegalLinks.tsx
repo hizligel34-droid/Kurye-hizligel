@@ -22,7 +22,10 @@ export function PwaLegalLinks() {
       <a className="hover:text-[#D4AF37]" href="/kvkk">
         KVKK
       </a>
-      <a className="hover:text-[#D4AF37]" href="/kosullar">
+      <a className="hover:text-[#D4AF37]" href="/cerez">
+        Çerez
+      </a>
+      <a className="hover:text-[#D4AF37]" href="/kullanim-kosullari">
         Kullanım koşulları
       </a>
     </nav>

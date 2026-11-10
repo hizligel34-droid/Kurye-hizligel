@@ -100,6 +100,18 @@ type DemoState = {
   messages: SupportMessage[];
   notifications: AppNotification[];
   outboundMail: OutboundMail[];
+  legalAcceptances: LegalAcceptanceRecord[];
+};
+
+export type LegalAcceptanceRecord = {
+  id: string;
+  userId: string;
+  orderId: string | null;
+  docKey: string;
+  version: string;
+  contentSha256: string;
+  checkboxKey: string;
+  acceptedAt: string;
 };
 
 function nowIso() {
@@ -117,6 +129,7 @@ export function mergePricing(raw?: Partial<PricingSettings> | null): PricingSett
     routingProvider: (raw?.routingProvider ?? DEFAULT_PRICING.routingProvider) as RoutingProvider,
     geocoder: (raw?.geocoder ?? DEFAULT_PRICING.geocoder) as Geocoder,
     deliveryTargetTiers: normalizeDeliveryTargetTiers(raw?.deliveryTargetTiers ?? DEFAULT_PRICING.deliveryTargetTiers),
+    deliveryTargetsPublic: Boolean(raw?.deliveryTargetsPublic ?? DEFAULT_PRICING.deliveryTargetsPublic),
   };
 }
 
@@ -251,6 +264,7 @@ function seedDemo(): DemoState {
     messages: [],
     notifications: [],
     outboundMail: [],
+    legalAcceptances: [],
   };
 }
 
@@ -269,6 +283,7 @@ function loadDemo(): DemoState {
     parsed.messages = parsed.messages ?? [];
     parsed.notifications = parsed.notifications ?? [];
     parsed.outboundMail = parsed.outboundMail ?? [];
+    parsed.legalAcceptances = parsed.legalAcceptances ?? [];
     parsed.orders = (parsed.orders ?? []).map(order => ({
       ...emptyOrderExtras(),
       ...order,
@@ -569,6 +584,9 @@ function mapPricingRow(row: Record<string, unknown>): PricingSettings {
     deliveryTargetTiers: normalizeDeliveryTargetTiers(
       (row.delivery_target_tiers ?? row.deliveryTargetTiers) as PricingSettings["deliveryTargetTiers"] | undefined,
     ),
+    deliveryTargetsPublic: Boolean(
+      row.delivery_targets_public ?? row.deliveryTargetsPublic ?? DEFAULT_PRICING.deliveryTargetsPublic,
+    ),
   });
 }
 
@@ -667,6 +685,7 @@ export async function updatePricing(pricing: PricingSettings): Promise<PricingSe
       commission_rate: next.commissionRate,
       showcase_mode: next.showcaseMode,
       delivery_target_tiers: next.deliveryTargetTiers,
+      delivery_targets_public: next.deliveryTargetsPublic,
     })
     .eq("id", 1)
     .select("*")
@@ -787,6 +806,40 @@ export async function createOrder(customerId: string, input: CreateOrderInput): 
     mapped.companyRevenueTl = quote.companyRevenueTl;
   }
   return mapped;
+}
+
+export async function recordLegalAcceptance(input: {
+  docKey: string;
+  version: string;
+  contentSha256: string;
+  checkboxKey: string;
+  orderId?: string | null;
+}) {
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    state.legalAcceptances = state.legalAcceptances ?? [];
+    state.legalAcceptances.unshift({
+      id: crypto.randomUUID(),
+      userId: state.sessionId ?? "demo",
+      orderId: input.orderId ?? null,
+      docKey: input.docKey,
+      version: input.version,
+      contentSha256: input.contentSha256,
+      checkboxKey: input.checkboxKey,
+      acceptedAt: nowIso(),
+    });
+    saveDemo(state);
+    notifyDemo();
+    return;
+  }
+  const { error } = await getSupabase()!.rpc("record_legal_acceptance", {
+    p_doc_key: input.docKey,
+    p_version: input.version,
+    p_content_sha256: input.contentSha256,
+    p_checkbox_key: input.checkboxKey,
+    p_order_id: input.orderId ?? null,
+  });
+  if (error) throw new Error(error.message);
 }
 
 export async function queueOrderConfirmation(order: DeliveryOrder, toEmail: string) {

@@ -33,6 +33,9 @@ export function SiteFooter() {
           </div>
         </div>
         <nav aria-label="Yasal ve iletişim" className="flex flex-wrap gap-x-4 gap-y-2 font-semibold">
+          <Link href="/kunye" className="hover:text-[#D4AF37]">
+            Künye
+          </Link>
           <Link href="/iletisim" className="hover:text-[#D4AF37]">
             İletişim
           </Link>
@@ -49,11 +52,20 @@ export function SiteFooter() {
           <a className="hover:text-[#D4AF37]" href={tel}>
             {phone}
           </a>
+          <Link href="/on-bilgilendirme" className="hover:text-[#D4AF37]">
+            Ön bilgi
+          </Link>
           <Link href="/kvkk" className="hover:text-[#D4AF37]">
             KVKK
           </Link>
-          <Link href="/kosullar" className="hover:text-[#D4AF37]">
+          <Link href="/cerez" className="hover:text-[#D4AF37]">
+            Çerez
+          </Link>
+          <Link href="/kullanim-kosullari" className="hover:text-[#D4AF37]">
             Kullanım koşulları
+          </Link>
+          <Link href="/odeme-bilgisi" className="hover:text-[#D4AF37]">
+            Ödeme
           </Link>
         </nav>
       </div>

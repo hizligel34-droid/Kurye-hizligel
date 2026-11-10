@@ -214,6 +214,8 @@ export type PricingSettings = {
   commissionRate: number;
   showcaseMode: boolean;
   deliveryTargetTiers: DeliveryTargetTier[];
+  /** Müşteriye süre tablosu/taahhüdü. Varsayılan kapalı (KTY md.43/A-3). */
+  deliveryTargetsPublic: boolean;
 };
 
 export const DEFAULT_PRICING: PricingSettings = {
@@ -227,7 +229,26 @@ export const DEFAULT_PRICING: PricingSettings = {
   commissionRate: 0.2,
   showcaseMode: false,
   deliveryTargetTiers: DEFAULT_DELIVERY_TARGET_TIERS.map(tier => ({ ...tier })),
+  deliveryTargetsPublic: false,
 };
+
+export const PUBLIC_DELIVERY_PROMISE = "Makul sürede, aktarmasız teslim";
+export const PUBLIC_DELIVERY_DETAIL =
+  "Gönderiniz, kurye tarafından teslim alındıktan sonra aktarma ve depolama yapılmadan doğrudan alıcıya götürülür ve makul bir sürede teslim edilir. Mevzuat gereği teslim süresi taahhüdü verilmez. Gönderinizin nerede olduğunu uygulamadan canlı izleyebilirsiniz.";
+
+export function isDeliveryTargetsPublic(pricing?: Pick<PricingSettings, "deliveryTargetsPublic"> | null) {
+  return Boolean(pricing?.deliveryTargetsPublic);
+}
+
+export function formatCustomerDelivery(
+  distanceKm: number,
+  pricing: PricingSettings = DEFAULT_PRICING,
+) {
+  if (isDeliveryTargetsPublic(pricing)) {
+    return formatDeliveryTarget(distanceKm, pricing.deliveryTargetTiers);
+  }
+  return PUBLIC_DELIVERY_PROMISE;
+}
 
 function readViteFlag(name: string): string {
   try {

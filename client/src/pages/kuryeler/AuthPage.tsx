@@ -195,7 +195,7 @@ export default function AuthPage({
               {mode === "kayit" ? (
                 <p className="text-xs leading-5 text-[#8a7c52]">
                   Hesap oluşturarak{" "}
-                  <a href="/kosullar" className="font-bold text-[#D4AF37]">
+                  <a href="/kullanim-kosullari" className="font-bold text-[#D4AF37]">
                     Kullanım Koşulları
                   </a>
                   ’nı kabul etmiş olursunuz. Kişisel verilerinizin nasıl işlendiğini{" "}

@@ -12,6 +12,7 @@ import {
   DEFAULT_VAT_RATE,
   deliveryTargetForDistance,
   displayStatus,
+  formatCustomerDelivery,
   formatDeliveryTarget,
   formatPriceBreakdown,
   formatPriceHint,
@@ -135,6 +136,7 @@ describe("kuryeler.tr sürüş fiyatı", () => {
         "routingProvider",
         "routingUrl",
         "deliveryTargetTiers",
+        "deliveryTargetsPublic",
         "showcaseMode",
         "vatRate",
       ].sort(),
@@ -146,6 +148,7 @@ describe("kuryeler.tr sürüş fiyatı", () => {
         roundingDecimals: 2,
         vatRate: 0.2,
         showcaseMode: false,
+        deliveryTargetsPublic: false,
       }),
     );
   });
@@ -175,6 +178,15 @@ describe("kuryeler.tr hedef teslim kademeleri", () => {
     expect(deliveryTargetForDistance(8, custom).label).toBe("90 dakika");
     expect(deliveryTargetForDistance(8.1, custom).label).toBe("aynı gün");
     expect(DEFAULT_DELIVERY_TARGET_TIERS.map(tier => tier.maxKm)).toEqual([5, 20, 40, 100, null]);
+  });
+
+  it("müşteriye varsayılan olarak süre tablosu göstermez", () => {
+    expect(DEFAULT_PRICING.deliveryTargetsPublic).toBe(false);
+    expect(formatCustomerDelivery(5)).toBe("Makul sürede, aktarmasız teslim");
+    expect(formatCustomerDelivery(120)).toBe("Makul sürede, aktarmasız teslim");
+    expect(formatCustomerDelivery(5, { ...DEFAULT_PRICING, deliveryTargetsPublic: true })).toBe(
+      "Hedef teslim: 60 dakika",
+    );
   });
 });
 
@@ -340,5 +352,8 @@ describe("sipariş teyit e-postası", () => {
     expect(mail.body).toContain("KEP: ?");
     expect(mail.body).not.toMatch(/MERSİS/);
     expect(mail.body).not.toMatch(/TCKN|T\.C\. kimlik/i);
+    expect(mail.body).toContain("Makul sürede, aktarmasız teslim");
+    expect(mail.body).not.toContain("60 dakika");
+    expect(mail.body).not.toContain("aynı gün teslim");
   });
 });

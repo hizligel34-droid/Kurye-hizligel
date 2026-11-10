@@ -28,8 +28,17 @@ function Router() {
         <Route path="/takip/:code" component={TrackPage} />
         <Route path="/kvkk">{() => <LegalPage kind="kvkk" />}</Route>
         <Route path="/kosullar">{() => <LegalPage kind="kosullar" />}</Route>
+        <Route path="/kullanim-kosullari">{() => <LegalPage kind="kosullar" />}</Route>
         <Route path="/iletisim">{() => <LegalPage kind="iletisim" />}</Route>
+        <Route path="/kunye">{() => <LegalPage kind="kunye" />}</Route>
         <Route path="/islem-rehberi">{() => <LegalPage kind="islem-rehberi" />}</Route>
+        <Route path="/cerez">{() => <LegalPage kind="cerez" />}</Route>
+        <Route path="/on-bilgilendirme">{() => <LegalPage kind="on-bilgi" />}</Route>
+        <Route path="/mesafeli-sozlesme">{() => <LegalPage kind="mesafeli" />}</Route>
+        <Route path="/odeme-bilgisi">{() => <LegalPage kind="odeme-bilgisi" />}</Route>
+        <Route path="/aracilik-ve-sikayet">{() => <LegalPage kind="aracilik" />}</Route>
+        <Route path="/kurye-kullanici-sozlesmesi">{() => <LegalPage kind="kurye-soz" />}</Route>
+        <Route path="/gonderici-sozlesmesi">{() => <LegalPage kind="gonderici-soz" />}</Route>
         <Route path="/eski">{() => { window.location.replace("/"); return null; }}</Route>
         <Route path="/eski/order">{() => { window.location.replace("/musteri/"); return null; }}</Route>
         <Route path="/eski/track">{() => { window.location.replace("/takip"); return null; }}</Route>

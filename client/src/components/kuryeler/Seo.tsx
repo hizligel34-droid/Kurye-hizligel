@@ -7,7 +7,7 @@ const SITE_META: Record<string, { title: string; description: string }> = {
   "/": {
     title: "Hızlıgel — kuryeler.tr İstanbul kurye",
     description:
-      "Hızlıgel: İstanbul içi kurye. Üç ayrı uygulama — Müşteri, Kurye, Yönetici. Fiyatı TL görün, teslimatı takip edin.",
+      "Hızlıgel: İstanbul içi kurye. Makul sürede, aktarmasız teslim. Üç ayrı uygulama — Müşteri, Kurye, Yönetici. Fiyatı TL görün, teslimatı takip edin.",
   },
   "/takip": {
     title: "Sipariş takibi — Hızlıgel",
@@ -15,11 +15,43 @@ const SITE_META: Record<string, { title: string; description: string }> = {
   },
   "/kvkk": {
     title: "KVKK Aydınlatma Metni — Hızlıgel",
-    description: "Hızlıgel / kuryeler.tr kişisel verilerin korunması aydınlatma metni (taslak).",
+    description: "Hızlıgel / kuryeler.tr kişisel verilerin korunması aydınlatma metni. TASLAK – yayına alınmadı.",
   },
   "/kosullar": {
     title: "Kullanım koşulları — Hızlıgel",
-    description: "Hızlıgel hizmet ve kullanım koşulları (taslak).",
+    description: "Hızlıgel hizmet ve kullanım koşulları. TASLAK – yayına alınmadı.",
+  },
+  "/kullanim-kosullari": {
+    title: "Kullanım koşulları — Hızlıgel",
+    description: "Hızlıgel hizmet ve kullanım koşulları. TASLAK – yayına alınmadı.",
+  },
+  "/kunye": {
+    title: "Künye — Hızlıgel",
+    description: "Hızlıgel / kuryeler.tr künye ve bilgilendirme. TASLAK – yayına alınmadı.",
+  },
+  "/iletisim": {
+    title: "İletişim / Künye — Hızlıgel",
+    description: "Hızlıgel iletişim ve künye bilgileri. TASLAK – yayına alınmadı.",
+  },
+  "/cerez": {
+    title: "Çerez bilgisi — Hızlıgel",
+    description: "Hızlıgel çerez ve yerel depolama bilgisi. TASLAK – yayına alınmadı.",
+  },
+  "/on-bilgilendirme": {
+    title: "Ön bilgilendirme — Hızlıgel",
+    description: "Hızlıgel ön bilgilendirme formu. TASLAK – yayına alınmadı.",
+  },
+  "/mesafeli-sozlesme": {
+    title: "Mesafeli sözleşme — Hızlıgel",
+    description: "Hızlıgel mesafeli hizmet sözleşmesi. TASLAK – yayına alınmadı.",
+  },
+  "/odeme-bilgisi": {
+    title: "Ödeme bilgisi — Hızlıgel",
+    description: "Hızlıgel iyzico ödeme bilgisi. TASLAK – yayına alınmadı.",
+  },
+  "/aracilik-ve-sikayet": {
+    title: "Aracılık ve şikâyet — Hızlıgel",
+    description: "Pazar yeri aracılık ve şikâyet metni. TASLAK – yayına alınmadı.",
   },
 };
 
