@@ -171,6 +171,11 @@ describe("esnaf künye", () => {
     expect(DEFAULT_BUSINESS_PROFILE.traderKind).toBe("esnaf");
     expect(DEFAULT_BUSINESS_PROFILE.ownerName).toBe("Canan Tekin");
     expect(DEFAULT_BUSINESS_PROFILE.kep).toBe("?");
+    expect(DEFAULT_BUSINESS_PROFILE.taxOffice).toBe("Maslak Vergi Dairesi");
+    expect(DEFAULT_BUSINESS_PROFILE.taxId).toBe("?");
+    expect(kunyeDisplayLines().find(line => line.label === "Vergi dairesi")?.value).toBe(
+      "Maslak Vergi Dairesi",
+    );
     expect(DEFAULT_BUSINESS_PROFILE.email).toBe("serif.tekin@hotmail.com");
     expect(kunyeDisplayLines().find(line => line.label === "E-posta")?.value).toBe(
       "serif.tekin@hotmail.com",

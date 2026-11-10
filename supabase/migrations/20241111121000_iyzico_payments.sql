@@ -30,7 +30,7 @@ insert into public.business_profile (
   'Canan Tekin Organizasyon ve Kurye Hizmetleri',
   'Canan Tekin',
   'esnaf',
-  '?',
+  'Maslak Vergi Dairesi',
   '?',
   '?',
   'Büyük Beşiktaş Çarşısı, Ortabahçe Caddesi No: 10, Kat 1, No: 143, Beşiktaş/İstanbul',
@@ -45,7 +45,8 @@ on conflict (id) do update set
   trader_kind = excluded.trader_kind,
   address = excluded.address,
   phone = excluded.phone,
-  email = excluded.email;
+  email = excluded.email,
+  tax_office = excluded.tax_office;
 
 alter table public.business_profile enable row level security;
 

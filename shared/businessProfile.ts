@@ -2,6 +2,7 @@
 
 export const KUNYE_UNKNOWN = "?";
 export const BUSINESS_EMAIL = "serif.tekin@hotmail.com";
+export const BUSINESS_TAX_OFFICE = "Maslak Vergi Dairesi";
 
 export const TRADER_KINDS = ["esnaf", "tacir"] as const;
 export type TraderKind = (typeof TRADER_KINDS)[number];
@@ -29,7 +30,7 @@ export const DEFAULT_BUSINESS_PROFILE: BusinessProfile = {
   legalName: "Canan Tekin Organizasyon ve Kurye Hizmetleri",
   ownerName: "Canan Tekin",
   traderKind: "esnaf",
-  taxOffice: KUNYE_UNKNOWN,
+  taxOffice: BUSINESS_TAX_OFFICE,
   taxId: KUNYE_UNKNOWN,
   mersis: KUNYE_UNKNOWN,
   tradeRegistryNo: KUNYE_UNKNOWN,
@@ -114,7 +115,7 @@ export function mapBusinessProfileRow(row: Record<string, unknown> | null | unde
     legalName: String(src.legal_name ?? src.legalName ?? DEFAULT_BUSINESS_PROFILE.legalName),
     ownerName: String(src.owner_name ?? src.ownerName ?? DEFAULT_BUSINESS_PROFILE.ownerName),
     traderKind: src.trader_kind === "tacir" || src.traderKind === "tacir" ? "tacir" : "esnaf",
-    taxOffice: String(src.tax_office ?? src.taxOffice ?? KUNYE_UNKNOWN),
+    taxOffice: String(src.tax_office ?? src.taxOffice ?? BUSINESS_TAX_OFFICE),
     taxId: String(src.tax_id ?? src.taxId ?? KUNYE_UNKNOWN),
     mersis: String(src.mersis ?? KUNYE_UNKNOWN),
     tradeRegistryNo: String(src.trade_registry_no ?? src.tradeRegistryNo ?? KUNYE_UNKNOWN),
