@@ -5,6 +5,7 @@ import {
   calculateDeliveryPrice,
   canTransitionStatus,
   CONTACT_PHONE_DISPLAY,
+  CONTACT_PHONE_TEL,
   CONTACT_WHATSAPP_E164,
   DEFAULT_DELIVERY_TARGET_TIERS,
   DEFAULT_PRICING,
@@ -196,7 +197,24 @@ describe("kuryeler.tr iletişim", () => {
   it("işletme telefonu ve WhatsApp numarasını gösterir", () => {
     expect(CONTACT_PHONE_DISPLAY).toBe("0532 474 67 45");
     expect(CONTACT_WHATSAPP_E164).toBe("905324746745");
-    expect(BUSINESS.legalName).toBe("[AD SOYAD]");
+    expect(CONTACT_PHONE_TEL).toBe("tel:+905324746745");
+  });
+
+  it("künyede unvan, telefon ve Beşiktaş adresini doldurur; vergi ve e-posta ? kalır", () => {
+    expect(BUSINESS.legalName).toBe("Canan Tekin Organizasyon ve Kurye Hizmetleri");
+    expect(BUSINESS.ownerName).toBe("Canan Tekin");
+    expect(BUSINESS.traderKind).toBe("esnaf");
+    expect(BUSINESS.address).toBe(
+      "Büyük Beşiktaş Çarşısı, Ortabahçe Caddesi No: 10, Kat 1, No: 143, Beşiktaş/İstanbul",
+    );
+    expect(BUSINESS.taxOffice).toBe("?");
+    expect(BUSINESS.taxId).toBe("?");
+    expect(BUSINESS.kep).toBe("?");
+    expect(BUSINESS.email).toBe("?");
+    expect(BUSINESS).not.toHaveProperty("tckn");
+    expect(BUSINESS).not.toHaveProperty("tcKimlik");
+    expect(BUSINESS).not.toHaveProperty("identityNumber");
+    expect(JSON.stringify(BUSINESS)).not.toMatch(/T\.C\.|TCKN|kimlik no/i);
   });
 });
 
@@ -312,5 +330,14 @@ describe("sipariş teyit e-postası", () => {
     expect(mail.body).toContain("1.100 TL KDV hariç");
     expect(mail.body).toContain("KDV (%20): 220 TL");
     expect(mail.body).not.toContain("KDV ?");
+    expect(mail.body).toContain("Canan Tekin Organizasyon ve Kurye Hizmetleri");
+    expect(mail.body).toContain("İşletme sahibi: Canan Tekin");
+    expect(mail.body).toContain(
+      "Büyük Beşiktaş Çarşısı, Ortabahçe Caddesi No: 10, Kat 1, No: 143, Beşiktaş/İstanbul",
+    );
+    expect(mail.body).toContain("E-posta: ?");
+    expect(mail.body).toContain("KEP: ?");
+    expect(mail.body).not.toMatch(/MERSİS/);
+    expect(mail.body).not.toMatch(/TCKN|T\.C\. kimlik/i);
   });
 });

@@ -1,11 +1,12 @@
 import { BrandMark, DemoBanner } from "@/components/kuryeler/BrandShell";
+import { KunyeBlock } from "@/components/kuryeler/KunyeBlock";
 import { SiteFooter } from "@/components/kuryeler/SiteFooter";
 import { SkipLink } from "@/components/kuryeler/UiStates";
 import { cardClass } from "@/lib/kuryelerTheme";
 import {
   BUSINESS,
-  CONTACT_EMAIL,
   CONTACT_PHONE_DISPLAY,
+  CONTACT_PHONE_TEL,
   DEFAULT_PRICING,
   calculateDeliveryPrice,
   formatPriceBreakdown,
@@ -54,6 +55,14 @@ export default function LegalPage({ kind }: { kind: LegalKind }) {
   );
 }
 
+function PhoneLink() {
+  return (
+    <a className="font-semibold text-[#D4AF37]" href={CONTACT_PHONE_TEL}>
+      {CONTACT_PHONE_DISPLAY}
+    </a>
+  );
+}
+
 function ContactBody() {
   return (
     <>
@@ -62,17 +71,13 @@ function ContactBody() {
         <p className="mt-2">
           Hizmet sağlayıcı ve veri sorumlusu: {BUSINESS.legalName} – Hızlıgel / kuryeler.tr
         </p>
-        <p>Vergi dairesi / Vergi kimlik no: {BUSINESS.taxOffice} / {BUSINESS.taxId}</p>
-        <p>Merkez (iş yeri) adresi: {BUSINESS.address}</p>
-        <p>
-          Telefon: {CONTACT_PHONE_DISPLAY} · E-posta: {CONTACT_EMAIL} · KEP: {BUSINESS.kep}
-        </p>
-        <p>Bağlı olduğu meslek odası: {BUSINESS.chamber}</p>
-        <p>{BUSINESS.trademarkNote}</p>
+        <div className="mt-2 space-y-0">
+          <KunyeBlock />
+        </div>
       </section>
       <p className="text-xs text-[#8a7c52]">
-        Köşeli parantezli alanlar işletme kimliği tamamlanınca doldurulacaktır. Şirket kurulursa ilk satır
-        “[TİCARET UNVANI] – MERSİS: [NO] – Ticaret sicil no: [NO]” olur.
+        İşletme esnaftır; MERSİS satırı gösterilmez. Vergi dairesi, vergi kimlik no, e-posta ve KEP henüz yok;
+        yer tutucu olarak ? gösterilir.
       </p>
       <nav className="flex flex-wrap gap-3 font-semibold text-[#D4AF37]">
         <Link href="/islem-rehberi">İşlem rehberi</Link>
@@ -122,8 +127,9 @@ function KvkkBody() {
       <section>
         <h2 className="text-lg font-black text-[#f5edd6]">1. Veri sorumlusu</h2>
         <p className="mt-2">
-          {BUSINESS.legalName} (“Hızlıgel / kuryeler.tr”), {BUSINESS.address}, VKN/MERSİS: {BUSINESS.taxId},
-          e-posta: {CONTACT_EMAIL}, KEP: {BUSINESS.kep}, tel: {CONTACT_PHONE_DISPLAY}.
+          {BUSINESS.legalName} (“Hızlıgel / kuryeler.tr”), işletme sahibi {BUSINESS.ownerName}, {BUSINESS.address},
+          vergi dairesi: {BUSINESS.taxOffice}, VKN: {BUSINESS.taxId}, e-posta: {BUSINESS.email}, KEP: {BUSINESS.kep},
+          tel: <PhoneLink />.
         </p>
       </section>
       <section>
@@ -211,8 +217,8 @@ function KvkkBody() {
           kullanılmadığını öğrenme, aktarıldığı üçüncü kişileri bilme, düzeltme, silme veya yok etme isteme,
           bu işlemlerin aktarılan kişilere bildirilmesini isteme, otomatik analiz sonucu aleyhinize çıkan
           sonuca itiraz etme, kanuna aykırı işleme nedeniyle zararın giderilmesini isteme.
-          Başvuru: {BUSINESS.address}’e yazılı olarak, {BUSINESS.kep} adresine KEP ile veya kayıtlı e-postanızdan
-          {CONTACT_EMAIL} adresine. En geç 30 gün içinde ücretsiz yanıt verilir (md.13). Yanıttan
+          Başvuru: {BUSINESS.address} adresine yazılı olarak, {BUSINESS.kep} adresine KEP ile veya künyede
+          belirtilen e-posta ({BUSINESS.email}) üzerinden. En geç 30 gün içinde ücretsiz yanıt verilir (md.13). Yanıttan
           memnun kalmazsanız Kişisel Verileri Koruma Kurulu’na şikâyet edebilirsiniz (md.14).
         </p>
       </section>
@@ -255,8 +261,7 @@ function TermsBody() {
           Üzerine {formatVatPercent(DEFAULT_PRICING.vatRate)} KDV eklenir. Örnek 10 km: {formatPriceBreakdown(sample10)}.
           Mesafe haritadaki rota üzerinden hesaplanır, kuş uçuşu değildir. Siparişi onaylamadan önce {VAT_INCL_LABEL} toplam
           gösterilir; fatura satırında {VAT_EXCL_LABEL} tutar ve KDV ayrıca yazılır. Teslim adresini siz değiştirmedikçe bu tutar artmaz.
-          Ödeme yöntemleri: nakit, havale/EFT, kapıda kart. Gerçek kart tahsilatı bu sürümde yoktur; yöntem kayıt
-          edilir. Fiyat yalnızca Türk lirasıdır.
+          Ödeme yöntemleri: iyzico kart formu, nakit, kapıda kart. Kart bilgisi iyzico’da kalır. Fiyat yalnızca Türk lirasıdır.
         </p>
       </section>
       <section>
@@ -273,7 +278,8 @@ function TermsBody() {
         <p className="mt-2">
           Yasaklı, tehlikeli, beyan edilmeyen veya {MAX_WEIGHT_KG} kg’ı aşan içerikten gönderici sorumludur.
           Hizmet, paket/kapı fotoğrafı ve teslim alan imzası ile belgelenir. Hasar veya kayıp bildirimi
-          teslimden sonra makul sürede {CONTACT_EMAIL} adresine yapılmalıdır.
+          teslimden sonra makul sürede telefon (<PhoneLink />) veya künyede belirtilen e-posta
+          ({BUSINESS.email}) üzerinden yapılmalıdır.
         </p>
       </section>
       <section>
@@ -291,7 +297,7 @@ function TermsBody() {
         <p className="mt-2">
           Tüketici müşteriler, Tüketici Hakem Heyeti’ne veya arabuluculuğa başvurabilir. Tacirler yönünden
           İstanbul mahkemeleri ve icra daireleri yetkilidir (emredici kurallar saklıdır).
-          İletişim: {CONTACT_EMAIL}, {CONTACT_PHONE_DISPLAY}.
+          İletişim: {BUSINESS.email}, <PhoneLink />.
         </p>
       </section>
       <p>

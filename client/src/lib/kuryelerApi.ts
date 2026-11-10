@@ -32,6 +32,7 @@ import {
   type SupportTicketKind,
 } from "@shared/kuryelerSupport";
 import { buildOrderConfirmationMail, type OutboundMail } from "@shared/orderConfirmation";
+import { DEFAULT_BUSINESS_PROFILE, mapBusinessProfileRow, type BusinessProfile } from "@shared/businessProfile";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
@@ -211,7 +212,7 @@ function seedDemo(): DemoState {
         scheduledAt: laterIso(1),
         notes: "Daire 8",
         contactPhone: "05421110003",
-        paymentMethod: "havale",
+        paymentMethod: "iyzico",
         paymentStatus: "bekliyor",
         pickupPhoto: null,
         deliveryPhoto: null,
@@ -437,7 +438,7 @@ function dashboardFrom(orders: DeliveryOrder[], couriersOnline: number): Dashboa
     todayOrders: today.length,
     todayRevenueTl: today.reduce((sum, o) => sum + o.totalPriceTl, 0),
     activeCouriers: couriersOnline,
-    pendingOrders: orders.filter(o => o.status === "pending" || o.status === "assigned").length,
+    pendingOrders: orders.filter(o => o.status === "pending" || o.status === "confirmed" || o.status === "assigned").length,
     enRouteOrders: orders.filter(o => o.status === "en_route" || o.status === "picked_up").length,
   };
 }
@@ -576,6 +577,45 @@ export async function getPricing(): Promise<PricingSettings> {
   const { data, error } = await getSupabase()!.from("pricing_settings").select("*").eq("id", 1).single();
   if (error) throw new Error(error.message);
   return mapPricingRow(data as Record<string, unknown>);
+}
+
+export async function getBusinessProfile(): Promise<BusinessProfile> {
+  if (kuryelerMode === "demo") return { ...DEFAULT_BUSINESS_PROFILE };
+  const { data, error } = await getSupabase()!.from("business_profile").select("*").eq("id", 1).maybeSingle();
+  if (error || !data) return { ...DEFAULT_BUSINESS_PROFILE };
+  return mapBusinessProfileRow(data as Record<string, unknown>);
+}
+
+export type IyzicoCheckoutStart = {
+  paymentId: string;
+  token: string;
+  checkoutFormContent: string | null;
+  paymentPageUrl: string | null;
+  amountKurus: number;
+  currency: "TRY";
+};
+
+export async function startIyzicoCheckout(orderId: string): Promise<IyzicoCheckoutStart> {
+  if (kuryelerMode === "demo") {
+    throw new Error("Demo modunda iyzico yok; sandbox anahtarlarıyla Edge Function kullanın.");
+  }
+  const { data, error } = await getSupabase()!.functions.invoke("iyzico-checkout", {
+    body: { orderId },
+  });
+  if (error) throw new Error(error.message);
+  const payload = data as IyzicoCheckoutStart & { error?: string };
+  if (payload?.error) throw new Error(payload.error);
+  return payload;
+}
+
+export async function requestPaymentRefund(orderId: string) {
+  if (kuryelerMode === "demo") {
+    return { action: "cancel_or_refund", admin_required: false, accounting_correction_required: false };
+  }
+  const { data, error } = await getSupabase()!.rpc("request_payment_refund", { p_order_id: orderId });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  return row as { action: string; admin_required: boolean; accounting_correction_required: boolean };
 }
 
 export async function listDistrictPrices(): Promise<DistrictPrice[]> {

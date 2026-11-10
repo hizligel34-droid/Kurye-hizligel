@@ -79,6 +79,12 @@ Geliştirmede `localhost` de çalışır; canlıda SSL zorunludur.
    - `supabase/migrations/20241110140000_driving_distance_pricing.sql`
    - `supabase/migrations/20241110150000_tl_pricing_and_compliance.sql`
    - `supabase/migrations/20241110160000_vat_exclusive.sql`
+   - `supabase/migrations/20241110223000_rls_hardening.sql`
+   - `supabase/migrations/20241111090000_rls_grants_and_profile.sql`
+   - `supabase/migrations/20241111100000_support_cancel_claims.sql`
+   - `supabase/migrations/20241111110000_delivery_target_tiers.sql`
+   - `supabase/migrations/20241111120000_iyzico_enum_values.sql`
+   - `supabase/migrations/20241111121000_iyzico_payments.sql`
    - `supabase/seed.sql` (TL fiyat ayarları + KDV oranı + isteğe bağlı bölge referansı; demo hesap bloğunu canlıda çalıştırmayın)
 3. Authentication → Email açık. İlk kurulumda Confirm email kapatılabilir.
 4. Site URL: `https://kuryeler.tr`  
@@ -96,6 +102,29 @@ VITE_CONTACT_PHONE=0532 474 67 45
 # Vitrin: kayıt/sipariş kapalı
 # VITE_VITRIN_MODU=true
 ```
+
+İyzico ve `service_role` anahtarlarını **asla** `VITE_` önekiyle yazmayın.
+
+## iyzico (sandbox)
+
+Canlı başvuru, ücretli entegratör ve gerçek anahtar bu depoda yok. Yalnız sandbox.
+
+1. [iyzico sandbox](https://sandbox-merchant.iyzipay.com) hesabı açın (ücretsiz deneme; canlı POS bağlamayın).
+2. Supabase → Edge Functions → Secrets:
+
+```
+IYZICO_API_KEY=sandbox-...
+IYZICO_SECRET_KEY=sandbox-...
+IYZICO_BASE_URL=https://sandbox-api.iyzipay.com
+IYZICO_CALLBACK_URL=https://<proje>.supabase.co/functions/v1/iyzico-callback
+PUBLIC_SITE_URL=https://kuryeler.tr
+```
+
+3. Fonksiyonlar: `iyzico-checkout` (Checkout Form initialize, `paymentGroup=LISTING`), `iyzico-callback` (token retrieve), `iyzico-webhook` (imza doğrulama).
+4. Webhook URL: `https://<proje>.supabase.co/functions/v1/iyzico-webhook`
+5. Tutar sunucuda hesaplanır: `60000 + 5000 × km` kuruş + %20 KDV, para birimi yalnız TRY. Kart PAN/CVV bizim sunucuya gelmez.
+6. Fatura `delivered` anında `kesilecek` kaydı açar; e-Arşiv/e-Fatura sağlayıcı bağlı değildir (ücretli; TODO).
+7. Künye `business_profile` tablosundan okunur (esnaf: MERSİS satırı yok; VKN/vergi dairesi/KEP `?`; işletme sahibi Canan Tekin). TCKN sütunu yoktur.
 
 Sonra **yeniden** `pnpm build:static`. `service_role` anahtarını asla SPA’ya koymayın.
 
@@ -141,7 +170,7 @@ App Store / Play Store yayını Apple ve Google geliştirici hesapları ister; b
 - Anon key kamuya açıktır; koruma RLS ile yapılır.
 - Sipariş ücreti `distance_km` üzerinden SQL tetikleyicisiyle TL yazılır; 30 kg `CHECK` + tetikleyici ile kesilir. Takip kodu kriptografik rastgele üretilir. Kurye, kabul etmediği işte ad/telefon/tam adres görmez.
 - Yönetici kaydı Müşteri/Kurye formundan açılamaz.
-- Kart ödemesi yoktur; yalnızca nakit / havale / kapıda kart kaydı tutulur.
+- Kart ödemesi iyzico Checkout Form ile alınır; PAN/CVV saklanmaz. Havale/IBAN ile Hızlıgel hesabına aktarım yoktur.
 
 ## Ekran görüntüleri
 

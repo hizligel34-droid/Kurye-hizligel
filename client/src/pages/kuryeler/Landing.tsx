@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useKuryelerAuth, panelPathForRole } from "@/contexts/KuryelerAuth";
 import { getPricing } from "@/lib/kuryelerApi";
-import { contactEmail, contactPhoneDisplay } from "@/lib/contact";
+import { contactPhoneDisplay, contactPhoneTel } from "@/lib/contact";
 import { PriceLines } from "@/components/kuryeler/PriceLines";
 import { cardClass, goldBtn, ghostBtn } from "@/lib/kuryelerTheme";
 import {
@@ -78,18 +78,20 @@ export default function Landing() {
     "@type": "LocalBusiness",
     name: `${BRAND_PRODUCT} · ${BRAND_NAME}`,
     legalName: BUSINESS.legalName,
-    taxID: BUSINESS.taxId,
     url: BRAND_URL,
-    email: contactEmail(),
-    telephone: contactPhoneDisplay(),
+    telephone: "+905324746745",
     areaServed: "İstanbul",
     address: {
       "@type": "PostalAddress",
       streetAddress: BUSINESS.address,
-      addressLocality: "İstanbul",
+      addressLocality: "Beşiktaş",
+      addressRegion: "İstanbul",
       addressCountry: "TR",
     },
     description: "İstanbul içi kurye teslimat. Üç ayrı uygulama: Müşteri, Kurye, Yönetici.",
+    ...(BUSINESS.taxId !== "?" ? { taxID: BUSINESS.taxId } : {}),
+    ...(BUSINESS.email !== "?" ? { email: BUSINESS.email } : {}),
+    founder: BUSINESS.ownerName,
   };
 
   return (
@@ -273,9 +275,9 @@ export default function Landing() {
               </p>
               <p className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">
                 <Phone className="size-4 text-[#D4AF37]" aria-hidden />
-                <a href={`tel:+90${contactPhoneDisplay().replace(/\D/g, "").slice(-10)}`}>{contactPhoneDisplay()}</a>
+                <a href={contactPhoneTel()}>{contactPhoneDisplay()}</a>
               </p>
-              <p className="mt-2 text-xs text-[#8a7c52]">{contactEmail()}</p>
+              <p className="mt-2 text-xs text-[#8a7c52]">E-posta: {BUSINESS.email}</p>
               <Link href="/iletisim" className="mt-3 inline-block text-sm font-bold text-[#D4AF37]">
                 Tam iletişim / künye
               </Link>

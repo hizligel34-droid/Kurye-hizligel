@@ -70,8 +70,8 @@ describe("durum etiketleri ve uygulama içi bildirim", () => {
 
   it("ödeme etiketini yönteme göre ayırır", () => {
     expect(paymentStatusLabel("nakit", "bekliyor")).toBe("Kapıda ödenecek");
-    expect(paymentStatusLabel("havale", "bekliyor")).toBe("Havale bekleniyor");
-    expect(paymentHint("havale", "bekliyor")).toMatch(/onayda iletilir/);
+    expect(paymentStatusLabel("iyzico", "bekliyor")).toBe("Kart ödemesi bekleniyor");
+    expect(paymentHint("iyzico", "bekliyor")).toMatch(/iyzico/);
   });
 });
 

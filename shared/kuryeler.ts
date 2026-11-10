@@ -1,5 +1,7 @@
 /** kuryeler.tr — roller, durumlar, sürüş mesafesi fiyatı ve sipariş modeli. */
 
+import { DEFAULT_BUSINESS_PROFILE } from "./businessProfile";
+
 export { DISTRICT_NAMES, DISTRICT_PRICES, findDistrictPrice, type DistrictPrice } from "./fiyatListesi";
 
 export const BRAND_NAME = "kuryeler.tr";
@@ -12,21 +14,17 @@ export const DEFAULT_VAT_RATE = 0.2;
 export const BRAND_URL = "https://kuryeler.tr";
 export const CONTACT_EMAIL = "iletisim@kuryeler.tr";
 export const CONTACT_PHONE_DISPLAY = "0532 474 67 45";
+export const CONTACT_PHONE_TEL = "tel:+905324746745";
 export const CONTACT_WHATSAPP_E164 = "905324746745";
 
-/** Köşeli parantezli alanlar işletme kimliği doldurulunca değişir. */
-export const BUSINESS = {
-  legalName: "[AD SOYAD]",
-  taxOffice: "[VERGİ DAİRESİ]",
-  taxId: "[VKN]",
-  address: "[AÇIK ADRES], İstanbul",
-  kep: "[KEP ADRESİ]",
-  chamber: "[ODA ADI – varsa]",
-  trademarkNote: "Marka: kuryeler.tr (başvuru no 2026/088618 – tescil süreci devam ediyor)",
-  kvkkEffective: "[TARİH]",
-  retentionOrdersYears: "[X]",
-  retentionPhotoMonths: "[X]",
-} as const;
+export {
+  DEFAULT_BUSINESS_PROFILE,
+  kunyeDisplayLines,
+  type BusinessProfile,
+} from "./businessProfile";
+
+/** Künye varsayılanı (esnaf). MERSİS yok; TCKN alanı yok. */
+export const BUSINESS = DEFAULT_BUSINESS_PROFILE;
 
 export const MAX_WEIGHT_KG = 30;
 export const WEIGHT_LIMIT_MESSAGE = "Maksimum taşıma sınırı 30 kg";
@@ -36,6 +34,7 @@ export type UserRole = (typeof USER_ROLES)[number];
 
 export const ORDER_STATUSES = [
   "pending",
+  "confirmed",
   "assigned",
   "picked_up",
   "en_route",
@@ -48,8 +47,9 @@ export const PUBLIC_STATUSES = ["pending", "picked_up", "en_route", "delivered",
 export const TRACK_STEPS = ["pending", "assigned", "picked_up", "en_route", "delivered"] as const;
 export type TrackStep = (typeof TRACK_STEPS)[number];
 
-export const PAYMENT_METHODS = ["nakit", "havale", "kart_kapida"] as const;
+export const PAYMENT_METHODS = ["iyzico", "nakit", "kart_kapida", "havale"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+export const CUSTOMER_PAYMENT_METHODS = ["iyzico", "nakit", "kart_kapida"] as const;
 
 export const PAYMENT_STATUSES = ["bekliyor", "odendi"] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
@@ -68,6 +68,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "Bekliyor",
+  confirmed: "Ödendi",
   assigned: "Kurye atandı, alıma gidiyor",
   picked_up: "Alındı",
   en_route: "Yolda",
@@ -79,6 +80,7 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
 export const ALLOW_COURIER_SELF_SIGNUP = false;
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  iyzico: "Kart (iyzico)",
   nakit: "Nakit",
   havale: "Havale / EFT",
   kart_kapida: "Kapıda kart (POS henüz yok)",
@@ -98,6 +100,7 @@ export const ETA_DISCLAIMER = "tahmini, trafiğe göre değişebilir";
 
 export function paymentStatusLabel(method: PaymentMethod, status: PaymentStatus): string {
   if (status === "odendi") return PAYMENT_STATUS_LABELS.odendi;
+  if (method === "iyzico") return "Kart ödemesi bekleniyor";
   if (method === "nakit") return "Kapıda ödenecek";
   if (method === "havale") return "Havale bekleniyor";
   return "Kapıda tahsil edilecek";
@@ -110,7 +113,8 @@ export function formatEtaMinutes(durationMin: number | null | undefined): string
 
 export function trackStepReached(current: OrderStatus, step: TrackStep): boolean {
   if (current === "cancelled") return false;
-  const currentIndex = TRACK_STEPS.indexOf(current as TrackStep);
+  const normalized = current === "confirmed" ? "pending" : current;
+  const currentIndex = TRACK_STEPS.indexOf(normalized as TrackStep);
   const stepIndex = TRACK_STEPS.indexOf(step);
   if (currentIndex < 0 || stepIndex < 0) return false;
   return currentIndex >= stepIndex;
@@ -243,7 +247,8 @@ export function isShowcaseMode(pricing?: PricingSettings | null) {
 }
 
 const STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
-  pending: ["assigned", "cancelled"],
+  pending: ["confirmed", "assigned", "cancelled"],
+  confirmed: ["assigned", "cancelled"],
   assigned: ["picked_up", "cancelled"],
   picked_up: ["en_route", "cancelled"],
   en_route: ["delivered", "cancelled"],
@@ -271,7 +276,7 @@ export function courierStatusActionLabel(current: OrderStatus) {
 }
 
 export function displayStatus(status: OrderStatus): OrderStatus {
-  return status;
+  return status === "confirmed" ? "pending" : status;
 }
 
 export function roundMoney(value: number, decimals: number) {
@@ -424,13 +429,21 @@ export function redactPendingForCourier(order: DeliveryOrder): DeliveryOrder {
 }
 
 export function isActiveOrder(status: OrderStatus) {
-  return status === "pending" || status === "assigned" || status === "picked_up" || status === "en_route";
+  return (
+    status === "pending" ||
+    status === "confirmed" ||
+    status === "assigned" ||
+    status === "picked_up" ||
+    status === "en_route"
+  );
 }
 
 export function statusTone(status: OrderStatus) {
   switch (status) {
     case "pending":
       return "bg-[#2a2410] text-[#D4AF37]";
+    case "confirmed":
+      return "bg-[#14241a] text-[#d4af37]";
     case "assigned":
       return "bg-[#2a2410] text-[#D4AF37]";
     case "picked_up":

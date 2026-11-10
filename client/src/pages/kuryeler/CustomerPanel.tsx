@@ -12,6 +12,7 @@ import {
   createOrder,
   estimateOrder,
   getPricing,
+  startIyzicoCheckout,
   listNotifications,
   listOrdersFor,
   queueOrderConfirmation,
@@ -24,10 +25,9 @@ import { areaClass, cardClass, fieldClass, goldBtn, ghostBtn } from "@/lib/kurye
 import {
   BANNED_GOODS_HINT,
   BUSINESS,
-  CONTACT_EMAIL,
   CONTACT_PHONE_DISPLAY,
+  CUSTOMER_PAYMENT_METHODS,
   DEFAULT_PRICING,
-  HAVALE_HINT,
   MAX_WEIGHT_KG,
   VAT_INCL_LABEL,
   calculateDeliveryPrice,
@@ -40,7 +40,6 @@ import {
   isActiveOrder,
   isShowcaseMode,
   PAYMENT_METHOD_LABELS,
-  PAYMENT_METHODS,
   STATUS_LABELS,
   statusTone,
   WEIGHT_LIMIT_MESSAGE,
@@ -77,7 +76,8 @@ function CustomerHome() {
   const [cancelFor, setCancelFor] = useState<DeliveryOrder | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const seenNotes = useRef(new Set<string>());
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("nakit");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("iyzico");
+  const [checkoutHtml, setCheckoutHtml] = useState<string | null>(null);
   const [pricing, setPricing] = useState<PricingSettings>(DEFAULT_PRICING);
   const [orders, setOrders] = useState<DeliveryOrder[]>([]);
   const [busy, setBusy] = useState(false);
@@ -95,6 +95,13 @@ function CustomerHome() {
     setPricing(nextPricing);
     setOrders(nextOrders);
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const odeme = params.get("odeme");
+    if (odeme === "ok") toast.success("Kart ödemesi alındı.");
+    if (odeme === "fail") toast.error("Ödeme alınamadı; sipariş açık kaldı, yeniden deneyebilirsiniz.");
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -177,6 +184,24 @@ function CustomerHome() {
         contactPhone: normalizeTurkishMobilePhone(phone),
         recipientPhone: normalizeTurkishMobilePhone(recipientPhone),
       });
+      if (paymentMethod === "iyzico") {
+        try {
+          const checkout = await startIyzicoCheckout(order.id);
+          if (checkout.paymentPageUrl) {
+            window.location.assign(checkout.paymentPageUrl);
+            return;
+          }
+          if (checkout.checkoutFormContent) {
+            setCheckoutHtml(String(checkout.checkoutFormContent));
+            toast.success(`Sipariş alındı · ${order.trackingCode}. Kart formunu iyzico sayfasında doldurun.`);
+            setTab("aktif");
+            await load();
+            return;
+          }
+        } catch (payErr) {
+          toast.error(payErr instanceof Error ? payErr.message : "Ödeme formu açılamadı; sipariş açık kaldı.");
+        }
+      }
       toast.success(`Sipariş alındı · ${order.trackingCode}`, {
         action: {
           label: "Kopyala",
@@ -403,7 +428,7 @@ function CustomerHome() {
               <fieldset>
                 <legend className="mb-2 text-sm font-bold text-[#D4AF37]">Ödeme yöntemi</legend>
                 <div className="grid grid-cols-3 gap-2">
-                  {PAYMENT_METHODS.map(method => (
+                  {CUSTOMER_PAYMENT_METHODS.map(method => (
                     <button
                       key={method}
                       type="button"
@@ -420,7 +445,6 @@ function CustomerHome() {
                   ))}
                 </div>
                 <p className="mt-2 text-xs text-[#8a7c52]">{paymentHint(paymentMethod, "bekliyor")}</p>
-                {paymentMethod === "havale" ? <p className="mt-1 text-xs text-[#8a7c52]">{HAVALE_HINT}</p> : null}
               </fieldset>
               <label className="block" htmlFor="order-notes">
                 <span className="mb-1 block text-sm font-bold text-[#D4AF37]">Notlar (isteğe bağlı)</span>
@@ -459,7 +483,11 @@ function CustomerHome() {
                 <p className="mt-4 text-sm text-[#8a7c52]">Alım ve teslim noktalarını seçince sürüş ücreti görünür.</p>
               )}
               <p className="mt-3 text-xs leading-5 text-[#8a7c52]">
-                Hizmet sağlayıcı: {BUSINESS.legalName} · VKN/MERSİS: {BUSINESS.taxId} · {BUSINESS.address} · {CONTACT_PHONE_DISPLAY}
+                Hizmet sağlayıcı: {BUSINESS.legalName} · İşletme sahibi: {BUSINESS.ownerName} · Vergi dairesi:{" "}
+                {BUSINESS.taxOffice} · VKN: {BUSINESS.taxId} · KEP: {BUSINESS.kep} · {BUSINESS.address} ·{" "}
+                <a className="font-semibold text-[#D4AF37]" href="tel:+905324746745">
+                  {CONTACT_PHONE_DISPLAY}
+                </a>
               </p>
               <p className="mt-2 text-xs leading-5 text-[#8a7c52]">
                 Cayma: Bu hizmet seçtiğiniz tarih ve saatte yapılan bir eşya taşımasıdır ve onayınızla hemen
@@ -467,7 +495,11 @@ function CustomerHome() {
                 Kurye atanmadan önce ücretsiz iptal edebilirsiniz.
               </p>
               <p className="mt-2 text-xs text-[#8a7c52]">
-                Şikâyet: {CONTACT_EMAIL} · Tüketici hakem heyeti / arabuluculuk.
+                Şikâyet: {BUSINESS.email} ·{" "}
+                <a className="font-semibold text-[#D4AF37]" href="tel:+905324746745">
+                  {CONTACT_PHONE_DISPLAY}
+                </a>{" "}
+                · Tüketici hakem heyeti / arabuluculuk.
               </p>
               <p className="mt-2 text-xs text-[#8a7c52]">
                 Fiyat yol (sürüş) mesafesine göredir, kuş uçuşu değildir. Görünen tutar {VAT_INCL_LABEL}dir.
@@ -502,6 +534,13 @@ function CustomerHome() {
             </aside>
           </form>
         )}
+
+        {checkoutHtml ? (
+          <div className="mt-5 overflow-hidden rounded-2xl border border-[#3a3014] bg-white p-2">
+            <p className="mb-2 px-2 text-xs text-[#8a7c52]">Kart bilgisi iyzico formuna yazılır; sitemizde saklanmaz.</p>
+            <div dangerouslySetInnerHTML={{ __html: checkoutHtml }} />
+          </div>
+        ) : null}
 
         {!loading && !error && tab === "aktif" && (
           <div className="mt-5 grid gap-3">
