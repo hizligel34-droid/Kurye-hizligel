@@ -12,17 +12,24 @@ import {
   estimateOrder,
   getPricing,
   listOrdersFor,
+  queueOrderConfirmation,
   subscribeToOrders,
   type CreateOrderInput,
 } from "@/lib/kuryelerApi";
 import { areaClass, cardClass, fieldClass, goldBtn } from "@/lib/kuryelerTheme";
 import {
+  BUSINESS,
+  CONTACT_EMAIL,
+  CONTACT_PHONE_DISPLAY,
   DEFAULT_PRICING,
   MAX_WEIGHT_KG,
+  VAT_STATUS_NOTE,
+  formatDateTimeTr,
   formatKm,
-  formatTl,
-  formatUsd,
+  formatTariff,
+  formatTlWithVat,
   isActiveOrder,
+  isShowcaseMode,
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHODS,
   STATUS_LABELS,
@@ -62,6 +69,8 @@ function CustomerHome() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [tab, setTab] = useState<"yeni" | "aktif" | "gecmis">("yeni");
+  const [preInfoOk, setPreInfoOk] = useState(false);
+  const [withdrawOk, setWithdrawOk] = useState(false);
 
   const load = async () => {
     if (!user) return;
@@ -130,16 +139,27 @@ function CustomerHome() {
       toast.error(WEIGHT_LIMIT_MESSAGE);
       return;
     }
+    if (!preInfoOk || !withdrawOk) {
+      toast.error("Sipariş için iki onay kutusunu işaretleyin.");
+      return;
+    }
     setBusy(true);
     try {
       const order = await createOrder(user.id, {
         ...input,
         contactPhone: normalizeTurkishMobilePhone(phone),
       });
-      toast.success(`Sipariş alındı · ${order.trackingCode}`);
+      try {
+        await queueOrderConfirmation(order, user.email);
+      } catch {
+        toast.error("Sipariş alındı; onay e-postası kuyruğa alınamadı.");
+      }
+      toast.success(`Sipariş alındı · ${order.trackingCode}. Onay e-postası kuyruğa alındı.`);
       setProduct("");
       setNotes("");
       setWeightKg("1");
+      setPreInfoOk(false);
+      setWithdrawOk(false);
       setFieldErrors({});
       setTab("aktif");
       await load();
@@ -179,6 +199,13 @@ function CustomerHome() {
           ))}
         </div>
 
+        {isShowcaseMode(pricing) ? (
+          <div className="mt-5 rounded-2xl border border-[#3a3014] bg-[#1a1508] p-4 text-sm leading-6 text-[#D4AF37]">
+            Vitrin modu açık: sipariş formu kapalıdır. Tarifeyi görün ve {CONTACT_PHONE_DISPLAY} veya WhatsApp ile ulaşın.
+            <p className="mt-2 text-[#b4a882]">{formatTariff(pricing)}</p>
+          </div>
+        ) : null}
+
         {loading ? <div className="mt-5"><LoadingState label="Siparişler yükleniyor…" /></div> : null}
         {error ? (
           <div className="mt-5">
@@ -186,7 +213,11 @@ function CustomerHome() {
           </div>
         ) : null}
 
-        {!loading && !error && tab === "yeni" && (
+        {!loading && !error && tab === "yeni" && isShowcaseMode(pricing) ? (
+          <p className="mt-5 text-sm text-[#8a7c52]">Online sipariş bu yayında alınmıyor.</p>
+        ) : null}
+
+        {!loading && !error && tab === "yeni" && !isShowcaseMode(pricing) && (
           <form className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]" onSubmit={submit} noValidate>
             <div className={`${cardClass} min-w-0 space-y-4 p-4 sm:p-5`}>
               <div>
@@ -315,27 +346,64 @@ function CustomerHome() {
               </label>
             </div>
             <aside className={`${cardClass} h-fit min-w-0 p-4 sm:p-5 lg:sticky lg:top-24`}>
-              <p className="text-sm font-bold text-[#D4AF37]">Ücret</p>
-              {quote && quote.priceUsd > 0 ? (
+              <p className="text-sm font-bold text-[#D4AF37]">Sipariş özeti</p>
+              {quote && quote.totalTl > 0 ? (
                 <>
-                  <p className="mt-4 text-3xl font-black text-[#D4AF37]">{formatUsd(quote.priceUsd, pricing.roundingDecimals)}</p>
-                  {pricing.usdToTry > 0 ? (
-                    <p className="mt-1 text-sm text-[#b4a882]">≈ {formatTl(quote.priceTl)}</p>
-                  ) : null}
+                  <p className="mt-4 text-3xl font-black text-[#D4AF37]">{formatTlWithVat(quote.totalTl)}</p>
                   <p className="mt-2 text-xs text-[#8a7c52]">
-                    Sürüş {formatKm(quote.distanceKm)} · {formatUsd(pricing.baseUsd, pricing.roundingDecimals)} açılış +{" "}
-                    {formatUsd(pricing.perKmUsd, pricing.roundingDecimals)}/km
+                    Hizmet: İstanbul içi kurye ile {product || "gönderi"} taşıma · {formatKm(quote.distanceKm)} sürüş · en fazla {MAX_WEIGHT_KG} kg
+                  </p>
+                  <p className="mt-1 text-xs text-[#8a7c52]">Tarih/saat: {formatDateTimeTr(scheduledAt)}</p>
+                  <p className="mt-1 text-xs text-[#8a7c52]">
+                    Toplam: {formatTlWithVat(quote.totalTl)} · Ödeme: {PAYMENT_METHOD_LABELS[paymentMethod]}
+                  </p>
+                  <p className="mt-1 text-xs text-[#8a7c52]">
+                    Sürüş {formatKm(quote.distanceKm)} · {formatTariff(pricing)}
                   </p>
                 </>
               ) : (
                 <p className="mt-4 text-sm text-[#8a7c52]">Alım ve teslim noktalarını seçince sürüş ücreti görünür.</p>
               )}
+              <p className="mt-3 text-xs leading-5 text-[#8a7c52]">
+                Hizmet sağlayıcı: {BUSINESS.legalName} · VKN/MERSİS: {BUSINESS.taxId} · {BUSINESS.address} · {CONTACT_PHONE_DISPLAY}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-[#8a7c52]">
+                Cayma: Bu hizmet seçtiğiniz tarih ve saatte yapılan bir eşya taşımasıdır ve onayınızla hemen
+                başlar; bu nedenle cayma hakkı kullanılamaz (Mesafeli Sözleşmeler Yönetmeliği md.15/1-g, h).
+                Kurye atanmadan önce ücretsiz iptal edebilirsiniz.
+              </p>
+              <p className="mt-2 text-xs text-[#8a7c52]">
+                Şikâyet: {CONTACT_EMAIL} · Tüketici hakem heyeti / arabuluculuk.
+              </p>
               <p className="mt-2 text-xs text-[#8a7c52]">
                 Fiyat yol (sürüş) mesafesine göredir, kuş uçuşu değildir. Gerçek kart tahsilatı yok; yöntem ve durum kayıt
-                edilir. {MAX_WEIGHT_KG} kg üzeri kabul edilmez.
+                edilir. {MAX_WEIGHT_KG} kg üzeri kabul edilmez. KDV durumu henüz netleşmediği için {VAT_STATUS_NOTE} notu gösterilir.
               </p>
-              <Button className={`mt-5 h-12 w-full ${goldBtn}`} disabled={busy || !quote}>
-                {busy ? "Gönderiliyor…" : "Siparişi oluştur"}
+              <label className="mt-4 flex items-start gap-2 text-xs leading-5 text-[#b4a882]">
+                <input className="mt-0.5" type="checkbox" checked={preInfoOk} onChange={e => setPreInfoOk(e.target.checked)} />
+                <span>
+                  Ön bilgilendirme formunu ve{" "}
+                  <a href="/kosullar" className="font-bold text-[#D4AF37]" target="_blank" rel="noreferrer">
+                    Kullanım Koşulları
+                  </a>
+                  ’nı okudum, onaylıyorum.
+                </span>
+              </label>
+              <label className="mt-2 flex items-start gap-2 text-xs leading-5 text-[#b4a882]">
+                <input className="mt-0.5" type="checkbox" checked={withdrawOk} onChange={e => setWithdrawOk(e.target.checked)} />
+                <span>
+                  Hizmetin seçtiğim tarihte hemen başlamasını istiyorum; hizmet başladıktan sonra cayma hakkımın olmadığını biliyorum.
+                </span>
+              </label>
+              <p className="mt-2 text-xs text-[#8a7c52]">
+                Kişisel verileriniz{" "}
+                <a href="/kvkk" className="font-bold text-[#D4AF37]" target="_blank" rel="noreferrer">
+                  KVKK Aydınlatma Metni
+                </a>
+                ’ne göre işlenir.
+              </p>
+              <Button className={`mt-5 h-12 w-full whitespace-normal ${goldBtn}`} disabled={busy || !quote || !preInfoOk || !withdrawOk}>
+                {busy ? "Gönderiliyor…" : "Siparişi onayla – ödeme yükümlülüğü doğar"}
               </Button>
             </aside>
           </form>

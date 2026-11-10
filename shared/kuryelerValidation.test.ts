@@ -96,23 +96,21 @@ describe("kuryeler.tr form doğrulama", () => {
   it("yönetici fiyat formunu denetler", () => {
     expect(
       validatePricingForm({
-        baseUsd: 1,
-        perKmUsd: 1,
+        baseTry: 600,
+        perKmTry: 50,
         roundingDecimals: 2,
-        usdToTry: 34.5,
         routingProvider: "osrm",
         commissionRate: 0.2,
       }),
     ).toEqual({});
     expect(
       validatePricingForm({
-        baseUsd: -1,
-        perKmUsd: 1,
+        baseTry: -1,
+        perKmTry: 1,
         roundingDecimals: 9,
-        usdToTry: 0,
         routingProvider: "hayir",
         commissionRate: 2,
-      }).baseUsd,
+      }).baseTry,
     ).toBeTruthy();
   });
 

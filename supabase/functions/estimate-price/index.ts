@@ -1,5 +1,5 @@
 /**
- * Supabase Edge Function — sürüş mesafesi fiyat tahmini.
+ * Supabase Edge Function — sürüş mesafesi fiyat tahmini (TL).
  * SPA aynı formülü istemcide kullanır; bu fonksiyon sunucu tarafı doğrulama içindir.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     );
     const { data: settings, error } = await supabase
       .from("pricing_settings")
-      .select("base_usd, per_km_usd, rounding_decimals, usd_to_try, commission_rate")
+      .select("base_try, per_km_try, rounding_decimals, commission_rate")
       .eq("id", 1)
       .single();
     if (error) {
@@ -45,21 +45,18 @@ Deno.serve(async (req) => {
     }
     const distanceKm = Math.max(0, Number(body.distanceKm ?? 0));
     const decimals = Number(settings?.rounding_decimals ?? 2);
-    const priceUsd = roundMoney(
-      Number(settings?.base_usd ?? 1) + Number(settings?.per_km_usd ?? 1) * distanceKm,
+    const totalTl = roundMoney(
+      Number(settings?.base_try ?? 600) + Number(settings?.per_km_try ?? 50) * distanceKm,
       decimals,
     );
-    const usdToTry = Number(settings?.usd_to_try ?? 0);
-    const priceTl = usdToTry > 0 ? roundMoney(priceUsd * usdToTry, decimals) : 0;
     const commissionRate = Number(settings?.commission_rate ?? 0.2);
 
     return new Response(
       JSON.stringify({
         distanceKm,
-        priceUsd,
-        priceTl,
-        commissionUsd: roundMoney(priceUsd * commissionRate, decimals),
-        courierEarningUsd: roundMoney(priceUsd * (1 - commissionRate), decimals),
+        totalTl,
+        commissionTl: roundMoney(totalTl * commissionRate, decimals),
+        courierEarningTl: roundMoney(totalTl * (1 - commissionRate), decimals),
       }),
       { headers: { ...cors, "Content-Type": "application/json" } },
     );

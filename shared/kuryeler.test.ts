@@ -1,17 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { DISTRICT_PRICES } from "./fiyatListesi";
 import {
+  BUSINESS,
   calculateDeliveryPrice,
   canTransitionStatus,
   CONTACT_PHONE_DISPLAY,
   CONTACT_WHATSAPP_E164,
   DEFAULT_PRICING,
   displayStatus,
+  formatTariff,
+  formatTlWithVat,
   generateTrackingCode,
   MAX_WEIGHT_KG,
   nextCourierStatus,
+  redactPendingForCourier,
   STATUS_LABELS,
+  VAT_STATUS_NOTE,
   WEIGHT_LIMIT_MESSAGE,
+  type DeliveryOrder,
 } from "./kuryeler";
 
 describe("kuryeler.tr sipariş durumları", () => {
@@ -53,25 +59,46 @@ describe("kuryeler.tr sipariş durumları", () => {
 });
 
 describe("kuryeler.tr sürüş fiyatı", () => {
-  it("7,4 km sürüş için 8,4 USD üretir", () => {
+  it("7,4 km sürüş için 970 TL üretir (600 + 50×km)", () => {
     const result = calculateDeliveryPrice({ distanceKm: 7.4 });
-    expect(result.priceUsd).toBe(8.4);
-    expect(result.baseUsd).toBe(1);
-    expect(result.distanceFeeUsd).toBe(7.4);
+    expect(result.totalTl).toBe(970);
+    expect(result.baseTry).toBe(600);
+    expect(result.distanceFeeTry).toBe(370);
   });
 
   it("yönetici açılış ve km bedelini kullanır", () => {
     const result = calculateDeliveryPrice({
       distanceKm: 10,
-      pricing: { ...DEFAULT_PRICING, baseUsd: 2, perKmUsd: 0.5, commissionRate: 0.1 },
+      pricing: { ...DEFAULT_PRICING, baseTry: 90, perKmTry: 20, commissionRate: 0.1 },
     });
-    expect(result.priceUsd).toBe(7);
-    expect(result.commissionUsd).toBe(0.7);
+    expect(result.totalTl).toBe(290);
+    expect(result.commissionTl).toBe(29);
   });
 
   it("ağırlık üst sınırını 30 kg olarak tutar", () => {
     expect(MAX_WEIGHT_KG).toBe(30);
     expect(WEIGHT_LIMIT_MESSAGE).toBe("Maksimum taşıma sınırı 30 kg");
+  });
+
+  it("KDV durumunu yer tutucu olarak gösterir, KDV dahil demez", () => {
+    expect(VAT_STATUS_NOTE).toBe("KDV ?");
+    expect(formatTlWithVat(970)).toBe("970 TL (KDV ?)");
+    expect(formatTariff()).toMatch(/Açılış 600 TL \+ km başı 50 TL \(KDV \?\)/);
+    expect(formatTlWithVat(970)).not.toMatch(/dahil/i);
+  });
+
+  it("varsayılan tarifede döviz alanı bulundurmaz", () => {
+    expect(DEFAULT_PRICING).toEqual(
+      expect.objectContaining({
+        baseTry: 600,
+        perKmTry: 50,
+        roundingDecimals: 2,
+        showcaseMode: false,
+      }),
+    );
+    expect(DEFAULT_PRICING).not.toHaveProperty("baseUsd");
+    expect(DEFAULT_PRICING).not.toHaveProperty("usdToTry");
+    expect(DEFAULT_PRICING).not.toHaveProperty("perKmUsd");
   });
 });
 
@@ -83,8 +110,10 @@ describe("kuryeler.tr bölge referans listesi", () => {
 });
 
 describe("kuryeler.tr takip kodu", () => {
-  it("KY- önekiyle üretir", () => {
-    expect(generateTrackingCode()).toMatch(/^KY-[A-Z0-9]+$/);
+  it("KY- önekiyle uzun kriptografik kod üretir", () => {
+    const code = generateTrackingCode();
+    expect(code).toMatch(/^KY-[A-F0-9]{32}$/);
+    expect(generateTrackingCode()).not.toBe(code);
   });
 });
 
@@ -92,5 +121,56 @@ describe("kuryeler.tr iletişim", () => {
   it("işletme telefonu ve WhatsApp numarasını gösterir", () => {
     expect(CONTACT_PHONE_DISPLAY).toBe("0532 474 67 45");
     expect(CONTACT_WHATSAPP_E164).toBe("905324746745");
+    expect(BUSINESS.legalName).toBe("[AD SOYAD]");
+  });
+});
+
+describe("kurye pano redaksiyonu", () => {
+  it("bekleyen işte ad, telefon ve tam adresi gizler", () => {
+    const redacted = redactPendingForCourier({
+      id: "1",
+      trackingCode: "KY-TEST",
+      customerId: "c1",
+      courierId: null,
+      status: "pending",
+      product: "Gizli evrak",
+      pickupAddress: "Moda Cad. 12",
+      dropoffAddress: "Büyükdere 120",
+      bolge: "Beşiktaş",
+      recipientName: "Ayşe",
+      scheduledAt: null,
+      notes: "kapı kodu 12",
+      contactPhone: "05420000000",
+      paymentMethod: "nakit",
+      paymentStatus: "bekliyor",
+      pickupPhoto: null,
+      deliveryPhoto: null,
+      signatureData: null,
+      weightKg: 2,
+      distanceKm: 7.4,
+      totalPriceTl: 970,
+      courierEarningTl: 776,
+      companyRevenueTl: 194,
+      pickupLat: 41,
+      pickupLng: 29,
+      dropoffLat: 41.1,
+      dropoffLng: 29.1,
+      routeGeojson: "[]",
+      createdAt: "",
+      updatedAt: "",
+      assignedAt: null,
+      pickedUpAt: null,
+      deliveredAt: null,
+      cancelledAt: null,
+    } satisfies DeliveryOrder);
+    expect(redacted.boardOnly).toBe(true);
+    expect(redacted.product).toBe("Gönderi");
+    expect(redacted.pickupAddress).toBe("Beşiktaş");
+    expect(redacted.recipientName).toBe("");
+    expect(redacted.contactPhone).toBe("");
+    expect(redacted.notes).toBe("");
+    expect(redacted.pickupLat).toBeNull();
+    expect(redacted.totalPriceTl).toBe(970);
+    expect(redacted.distanceKm).toBe(7.4);
   });
 });

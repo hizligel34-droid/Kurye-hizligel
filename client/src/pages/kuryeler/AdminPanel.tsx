@@ -24,8 +24,9 @@ import {
   calculateDeliveryPrice,
   DEFAULT_PRICING,
   formatKm,
+  formatTariff,
   formatTl,
-  formatUsd,
+  formatTlWithVat,
   GEOCODERS,
   ROLE_LABELS,
   ROUTING_PROVIDER_LABELS,
@@ -134,16 +135,13 @@ function AdminHome() {
             <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
               {[
                 ["Bugünün siparişleri", String(stats?.todayOrders ?? "—")],
-                ["Bugün gelir", stats ? formatUsd(stats.todayRevenueUsd) : "—"],
+                ["Bugün gelir", stats ? formatTlWithVat(stats.todayRevenueTl) : "—"],
                 ["Aktif kurye", String(stats?.activeCouriers ?? "—")],
                 ["Bekleyen / yolda", `${stats?.pendingOrders ?? 0} / ${stats?.enRouteOrders ?? 0}`],
               ].map(([label, value]) => (
                 <div key={label} className={`${cardClass} min-w-0 p-3 sm:p-4`}>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#8a7c52] sm:text-xs">{label}</p>
                   <p className="mt-2 text-xl font-black text-[#D4AF37] sm:text-2xl">{value}</p>
-                  {label === "Bugün gelir" && stats && stats.todayRevenueTl > 0 ? (
-                    <p className="mt-1 text-[10px] text-[#8a7c52]">≈ {formatTl(stats.todayRevenueTl)} firma payı</p>
-                  ) : null}
                 </div>
               ))}
             </section>
@@ -252,33 +250,33 @@ function AdminHome() {
             {tab === "fiyat" ? (
               <section className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
                 <form className={`${cardClass} h-fit space-y-3 p-5`} onSubmit={savePricing}>
-                  <h2 className="text-lg font-black">Sürüş ücreti (USD)</h2>
+                  <h2 className="text-lg font-black">Sürüş ücreti (TL)</h2>
                   <p className="text-xs text-[#8a7c52]">
-                    Ana fiyat: açılış + km bedeli × yol mesafesi. Kuş uçuşu kullanılmaz.
+                    Ana fiyat: açılış + km bedeli × yol mesafesi. Kuş uçuşu kullanılmaz. Döviz veya kur yoktur.
                   </p>
                   <label className="block text-sm">
-                    Açılış ücreti (USD)
+                    Açılış ücreti (TL)
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
                       min={0}
                       step="0.01"
-                      value={pricing.baseUsd}
-                      onChange={e => setPricing({ ...pricing, baseUsd: Number(e.target.value) })}
+                      value={pricing.baseTry}
+                      onChange={e => setPricing({ ...pricing, baseTry: Number(e.target.value) })}
                     />
-                    <FieldError id="base-err" message={pricingErrors.baseUsd} />
+                    <FieldError id="base-err" message={pricingErrors.baseTry} />
                   </label>
                   <label className="block text-sm">
-                    Kilometre bedeli (USD / km)
+                    Kilometre bedeli (TL / km)
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
                       min={0}
                       step="0.01"
-                      value={pricing.perKmUsd}
-                      onChange={e => setPricing({ ...pricing, perKmUsd: Number(e.target.value) })}
+                      value={pricing.perKmTry}
+                      onChange={e => setPricing({ ...pricing, perKmTry: Number(e.target.value) })}
                     />
-                    <FieldError id="perkm-err" message={pricingErrors.perKmUsd} />
+                    <FieldError id="perkm-err" message={pricingErrors.perKmTry} />
                   </label>
                   <label className="block text-sm">
                     Yuvarlama (ondalık basamak)
@@ -293,17 +291,13 @@ function AdminHome() {
                     />
                     <FieldError id="round-err" message={pricingErrors.roundingDecimals} />
                   </label>
-                  <label className="block text-sm">
-                    USD → TL kuru (0 = TL gösterme)
-                    <Input
-                      className={`${fieldClass} mt-1`}
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={pricing.usdToTry}
-                      onChange={e => setPricing({ ...pricing, usdToTry: Number(e.target.value) })}
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={pricing.showcaseMode}
+                      onChange={e => setPricing({ ...pricing, showcaseMode: e.target.checked })}
                     />
-                    <FieldError id="fx-err" message={pricingErrors.usdToTry} />
+                    Vitrin modu (kayıt ve sipariş kapalı)
                   </label>
                   <label className="block text-sm">
                     Rota sağlayıcısı
@@ -359,10 +353,8 @@ function AdminHome() {
                   </label>
                   <div className="rounded-xl border border-[#3a3014] bg-black p-3 text-sm">
                     <p className="font-bold text-[#D4AF37]">Örnek: {formatKm(7.4)}</p>
-                    <p className="mt-1 text-[#f5edd6]">{formatUsd(sample.priceUsd, pricing.roundingDecimals)}</p>
-                    {pricing.usdToTry > 0 ? (
-                      <p className="text-xs text-[#8a7c52]">≈ {formatTl(sample.priceTl)}</p>
-                    ) : null}
+                    <p className="mt-1 text-[#f5edd6]">{formatTlWithVat(sample.totalTl)}</p>
+                    <p className="text-xs text-[#8a7c52]">{formatTariff(pricing)}</p>
                   </div>
                   <Button className={`h-11 w-full ${goldBtn}`} disabled={busy}>
                     {busy ? "Kaydediliyor…" : "Fiyat ayarlarını kaydet"}

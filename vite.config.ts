@@ -188,6 +188,16 @@ function hizligelAppFallback(): Plugin {
 }
 
 const clientRoot = path.resolve(import.meta.dirname, "client");
+function stripManusFromDist(): Plugin {
+  return {
+    name: "strip-manus-debug",
+    closeBundle() {
+      const dir = path.resolve(import.meta.dirname, "dist/public/__manus__");
+      fs.rmSync(dir, { recursive: true, force: true });
+    },
+  };
+}
+
 const plugins = [
   react(),
   tailwindcss(),
@@ -195,6 +205,7 @@ const plugins = [
   vitePluginManusRuntime(),
   vitePluginManusDebugCollector(),
   hizligelAppFallback(),
+  stripManusFromDist(),
 ];
 
 export default defineConfig({

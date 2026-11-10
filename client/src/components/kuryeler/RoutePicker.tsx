@@ -1,16 +1,16 @@
 import { RouteMap } from "@/components/kuryeler/RouteMap";
-import { fieldClass } from "@/lib/kuryelerTheme";
+import { fieldClass, ghostBtn } from "@/lib/kuryelerTheme";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DEFAULT_PRICING, type PricingSettings } from "@shared/kuryeler";
 import {
-  debounce,
   fetchDrivingRoute,
   reverseGeocode,
   searchAddress,
   type DrivingRoute,
   type GeoHit,
 } from "@shared/kuryelerRouting";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 export type RouteSelection = {
   pickupAddress: string;
@@ -56,28 +56,10 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
       : null,
   );
   const [busy, setBusy] = useState(false);
-  const [hint, setHint] = useState("Alım noktasını arayın veya haritaya dokunun.");
+  const [searching, setSearching] = useState<"pickup" | "dropoff" | null>(null);
+  const [hint, setHint] = useState("Adresi yazıp Ara’ya basın veya haritaya dokunun.");
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
-
-  const searchPickup = useMemo(
-    () =>
-      debounce((q: string) => {
-        void searchAddress(q, pricing.geocoder)
-          .then(setPickupHits)
-          .catch(() => setPickupHits([]));
-      }, 500),
-    [pricing.geocoder],
-  );
-  const searchDropoff = useMemo(
-    () =>
-      debounce((q: string) => {
-        void searchAddress(q, pricing.geocoder)
-          .then(setDropoffHits)
-          .catch(() => setDropoffHits([]));
-      }, 500),
-    [pricing.geocoder],
-  );
 
   useEffect(() => {
     if (!pickup || !dropoff) {
@@ -134,6 +116,31 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
     setDropoffHits([]);
   };
 
+  const runSearch = async (which: "pickup" | "dropoff") => {
+    const q = which === "pickup" ? pickupQ : dropoffQ;
+    setSearching(which);
+    try {
+      const hits = await searchAddress(q, pricing.geocoder);
+      if (which === "pickup") setPickupHits(hits);
+      else setDropoffHits(hits);
+      if (hits.length === 0) setHint("Adres bulunamadı. Haritaya dokunarak da seçebilirsiniz.");
+    } catch {
+      if (which === "pickup") setPickupHits([]);
+      else setDropoffHits([]);
+      setHint("Adres araması başarısız. Biraz sonra Ara’ya tekrar basın.");
+    } finally {
+      setSearching(null);
+    }
+  };
+
+  const onSearchKey = (which: "pickup" | "dropoff") => (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.stopPropagation();
+      void runSearch(which);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="grid gap-2 sm:grid-cols-2">
@@ -141,17 +148,20 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
           <label className="mb-1 block text-sm font-bold text-[#D4AF37]" htmlFor="pickup-search">
             Alım yeri
           </label>
-          <Input
-            id="pickup-search"
-            className={fieldClass}
-            placeholder="Adres ara veya haritaya dokun"
-            value={pickupQ}
-            onFocus={() => setActive("pickup")}
-            onChange={e => {
-              setPickupQ(e.target.value);
-              searchPickup(e.target.value);
-            }}
-          />
+          <div className="flex gap-2">
+            <Input
+              id="pickup-search"
+              className={fieldClass}
+              placeholder="Adres yazın, Ara’ya basın"
+              value={pickupQ}
+              onFocus={() => setActive("pickup")}
+              onChange={e => setPickupQ(e.target.value)}
+              onKeyDown={onSearchKey("pickup")}
+            />
+            <Button type="button" variant="outline" className={`${ghostBtn} shrink-0`} disabled={searching === "pickup"} onClick={() => void runSearch("pickup")}>
+              {searching === "pickup" ? "…" : "Ara"}
+            </Button>
+          </div>
           {pickupHits.length > 0 ? (
             <ul className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-xl border border-[#3a3014] bg-black text-sm">
               {pickupHits.map(hit => (
@@ -172,17 +182,20 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
           <label className="mb-1 block text-sm font-bold text-[#D4AF37]" htmlFor="dropoff-search">
             Gidecek yer
           </label>
-          <Input
-            id="dropoff-search"
-            className={fieldClass}
-            placeholder="Adres ara veya haritaya dokun"
-            value={dropoffQ}
-            onFocus={() => setActive("dropoff")}
-            onChange={e => {
-              setDropoffQ(e.target.value);
-              searchDropoff(e.target.value);
-            }}
-          />
+          <div className="flex gap-2">
+            <Input
+              id="dropoff-search"
+              className={fieldClass}
+              placeholder="Adres yazın, Ara’ya basın"
+              value={dropoffQ}
+              onFocus={() => setActive("dropoff")}
+              onChange={e => setDropoffQ(e.target.value)}
+              onKeyDown={onSearchKey("dropoff")}
+            />
+            <Button type="button" variant="outline" className={`${ghostBtn} shrink-0`} disabled={searching === "dropoff"} onClick={() => void runSearch("dropoff")}>
+              {searching === "dropoff" ? "…" : "Ara"}
+            </Button>
+          </div>
           {dropoffHits.length > 0 ? (
             <ul className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-xl border border-[#3a3014] bg-black text-sm">
               {dropoffHits.map(hit => (
@@ -230,8 +243,9 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
         onDropoff={(lat, lng) => void chooseDropoff(lat, lng)}
       />
       <p className="text-xs text-[#8a7c52]">
-        Harita: OpenStreetMap. Rota: {pricing.routingProvider === "ors" ? "OpenRouteService" : "OSRM"} sürüş
-        mesafesi (kuş uçuşu değil). {busy ? "Hesaplanıyor…" : hint}
+        Harita: OpenStreetMap. Adres araması Nominatim kullanım politikasına göre Ara düğmesiyledir (otomatik
+        tamamlama yok, saniyede en fazla 1 istek). Rota: {pricing.routingProvider === "ors" ? "OpenRouteService" : "OSRM"}{" "}
+        sürüş mesafesi (kuş uçuşu değil). {busy ? "Hesaplanıyor…" : hint}
       </p>
     </div>
   );

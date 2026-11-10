@@ -10,7 +10,18 @@ export const OSM_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 export const NOMINATIM_POLICY =
-  "Nominatim: aramalar 500 ms gecikmeli; kimlik e-posta parametresi ile gönderilir.";
+  "Nominatim: otomatik tamamlama yok; Ara düğmesi ve en fazla saniyede 1 istek.";
+
+const NOMINATIM_MIN_INTERVAL_MS = 1000;
+let lastNominatimAt = 0;
+
+async function throttleNominatim() {
+  const wait = NOMINATIM_MIN_INTERVAL_MS - (Date.now() - lastNominatimAt);
+  if (wait > 0) {
+    await new Promise(resolve => setTimeout(resolve, wait));
+  }
+  lastNominatimAt = Date.now();
+}
 
 export type GeoHit = LatLng & { label: string };
 
@@ -64,6 +75,7 @@ export async function searchAddress(
         .join(", "),
     }));
   }
+  await throttleNominatim();
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("q", q);
   url.searchParams.set("format", "jsonv2");
@@ -95,6 +107,7 @@ export async function reverseGeocode(point: LatLng, geocoder: Geocoder = "nomina
     return [props?.name, props?.street, props?.district, props?.city].filter(Boolean).join(", ")
       || `${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}`;
   }
+  await throttleNominatim();
   const url = new URL("https://nominatim.openstreetmap.org/reverse");
   url.searchParams.set("lat", String(point.lat));
   url.searchParams.set("lon", String(point.lng));
