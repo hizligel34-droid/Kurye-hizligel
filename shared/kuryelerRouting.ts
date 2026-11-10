@@ -31,7 +31,7 @@ export type DrivingRoute = {
   geometry: [number, number][];
 };
 
-const CONTACT = "iletisim@kuryeler.tr";
+const CONTACT = "serif.tekin@hotmail.com";
 const APP_REF = "https://kuryeler.tr";
 
 function headers(): HeadersInit {

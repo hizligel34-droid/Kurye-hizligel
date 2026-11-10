@@ -95,7 +95,7 @@ Geliştirmede `localhost` de çalışır; canlıda SSL zorunludur.
 VITE_SUPABASE_URL=https://xxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
 VITE_WHATSAPP_NUMBER=905324746745
-VITE_CONTACT_EMAIL=iletisim@kuryeler.tr
+VITE_CONTACT_EMAIL=serif.tekin@hotmail.com
 VITE_CONTACT_PHONE=0532 474 67 45
 # isteğe bağlı OpenRouteService (yoksa OSRM kullanılır)
 # VITE_ORS_API_KEY=
@@ -124,7 +124,7 @@ PUBLIC_SITE_URL=https://kuryeler.tr
 4. Webhook URL: `https://<proje>.supabase.co/functions/v1/iyzico-webhook`
 5. Tutar sunucuda hesaplanır: `60000 + 5000 × km` kuruş + %20 KDV, para birimi yalnız TRY. Kart PAN/CVV bizim sunucuya gelmez.
 6. Fatura `delivered` anında `kesilecek` kaydı açar; e-Arşiv/e-Fatura sağlayıcı bağlı değildir (ücretli; TODO).
-7. Künye `business_profile` tablosundan okunur (esnaf: MERSİS satırı yok; VKN/vergi dairesi/KEP `?`; işletme sahibi Canan Tekin). TCKN sütunu yoktur.
+7. Künye `business_profile` tablosundan okunur (esnaf: MERSİS satırı yok; VKN/vergi dairesi/KEP `?`; e-posta `serif.tekin@hotmail.com`; işletme sahibi Canan Tekin). TCKN sütunu yoktur.
 
 Sonra **yeniden** `pnpm build:static`. `service_role` anahtarını asla SPA’ya koymayın.
 

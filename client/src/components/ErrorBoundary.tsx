@@ -29,7 +29,7 @@ class ErrorBoundary extends Component<Props, State> {
             <AlertTriangle size={48} className="mb-6 flex-shrink-0 text-[#D4AF37]" aria-hidden />
             <h2 className="mb-4 text-xl font-black">Beklenmeyen bir hata oluştu.</h2>
             <p className="mb-6 text-sm leading-6 text-[#8a7c52]">
-              Sayfayı yenilemeyi deneyin. Sorun sürerse iletisim@kuryeler.tr adresine yazın.
+              Sayfayı yenilemeyi deneyin. Sorun sürerse serif.tekin@hotmail.com adresine yazın.
             </p>
             <button
               onClick={() => window.location.reload()}

@@ -76,7 +76,7 @@ function ContactBody() {
         </div>
       </section>
       <p className="text-xs text-[#8a7c52]">
-        İşletme esnaftır; MERSİS satırı gösterilmez. Vergi dairesi, vergi kimlik no, e-posta ve KEP henüz yok;
+        İşletme esnaftır; MERSİS satırı gösterilmez. Vergi dairesi, vergi kimlik no ve KEP henüz yok;
         yer tutucu olarak ? gösterilir.
       </p>
       <nav className="flex flex-wrap gap-3 font-semibold text-[#D4AF37]">

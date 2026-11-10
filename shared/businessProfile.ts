@@ -1,6 +1,7 @@
 /** Künye / fatura üst bilgisi. T.C. kimlik numarası alanı yoktur ve eklenmez. */
 
 export const KUNYE_UNKNOWN = "?";
+export const BUSINESS_EMAIL = "serif.tekin@hotmail.com";
 
 export const TRADER_KINDS = ["esnaf", "tacir"] as const;
 export type TraderKind = (typeof TRADER_KINDS)[number];
@@ -34,7 +35,7 @@ export const DEFAULT_BUSINESS_PROFILE: BusinessProfile = {
   tradeRegistryNo: KUNYE_UNKNOWN,
   address: "Büyük Beşiktaş Çarşısı, Ortabahçe Caddesi No: 10, Kat 1, No: 143, Beşiktaş/İstanbul",
   phone: "0532 474 67 45",
-  email: KUNYE_UNKNOWN,
+  email: BUSINESS_EMAIL,
   kep: KUNYE_UNKNOWN,
   chamber: KUNYE_UNKNOWN,
   trademarkNote: "Marka: kuryeler.tr (başvuru no 2026/088618 – tescil süreci devam ediyor)",
@@ -119,7 +120,7 @@ export function mapBusinessProfileRow(row: Record<string, unknown> | null | unde
     tradeRegistryNo: String(src.trade_registry_no ?? src.tradeRegistryNo ?? KUNYE_UNKNOWN),
     address: String(src.address ?? DEFAULT_BUSINESS_PROFILE.address),
     phone: String(src.phone ?? DEFAULT_BUSINESS_PROFILE.phone),
-    email: String(src.email ?? KUNYE_UNKNOWN),
+    email: String(src.email ?? BUSINESS_EMAIL),
     kep: String(src.kep ?? KUNYE_UNKNOWN),
     chamber: String(src.chamber ?? KUNYE_UNKNOWN),
     trademarkNote: String(src.trademark_note ?? src.trademarkNote ?? DEFAULT_BUSINESS_PROFILE.trademarkNote),

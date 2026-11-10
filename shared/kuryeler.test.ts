@@ -210,7 +210,7 @@ describe("kuryeler.tr iletişim", () => {
     expect(BUSINESS.taxOffice).toBe("?");
     expect(BUSINESS.taxId).toBe("?");
     expect(BUSINESS.kep).toBe("?");
-    expect(BUSINESS.email).toBe("?");
+    expect(BUSINESS.email).toBe("serif.tekin@hotmail.com");
     expect(BUSINESS).not.toHaveProperty("tckn");
     expect(BUSINESS).not.toHaveProperty("tcKimlik");
     expect(BUSINESS).not.toHaveProperty("identityNumber");
@@ -335,7 +335,7 @@ describe("sipariş teyit e-postası", () => {
     expect(mail.body).toContain(
       "Büyük Beşiktaş Çarşısı, Ortabahçe Caddesi No: 10, Kat 1, No: 143, Beşiktaş/İstanbul",
     );
-    expect(mail.body).toContain("E-posta: ?");
+    expect(mail.body).toContain("E-posta: serif.tekin@hotmail.com");
     expect(mail.body).toContain("KEP: ?");
     expect(mail.body).not.toMatch(/MERSİS/);
     expect(mail.body).not.toMatch(/TCKN|T\.C\. kimlik/i);

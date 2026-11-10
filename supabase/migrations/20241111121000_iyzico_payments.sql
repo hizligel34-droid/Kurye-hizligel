@@ -35,7 +35,7 @@ insert into public.business_profile (
   '?',
   'Büyük Beşiktaş Çarşısı, Ortabahçe Caddesi No: 10, Kat 1, No: 143, Beşiktaş/İstanbul',
   '0532 474 67 45',
-  '?',
+  'serif.tekin@hotmail.com',
   '?',
   '?'
 )
@@ -44,7 +44,8 @@ on conflict (id) do update set
   owner_name = excluded.owner_name,
   trader_kind = excluded.trader_kind,
   address = excluded.address,
-  phone = excluded.phone;
+  phone = excluded.phone,
+  email = excluded.email;
 
 alter table public.business_profile enable row level security;
 
