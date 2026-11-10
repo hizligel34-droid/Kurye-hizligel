@@ -64,7 +64,7 @@ export const PWA_APPS: Record<PwaPanel, PwaApp> = {
     id: "https://kuryeler.tr/yonetici/",
     name: "Hızlıgel Yönetici",
     shortName: "Hızlıgel Yönetici",
-    description: "Sipariş, kurye, müşteri ve sürüş USD fiyatını yönetin.",
+    description: "Sipariş, kurye, müşteri ve sürüş TL tarifesini yönetin.",
     startUrl: "/yonetici/",
     scope: "/yonetici/",
     manifestPath: "/yonetici/manifest.webmanifest",

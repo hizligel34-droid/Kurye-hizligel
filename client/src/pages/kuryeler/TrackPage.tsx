@@ -3,17 +3,21 @@ import { SiteFooter } from "@/components/kuryeler/SiteFooter";
 import { EmptyState, ErrorState, SkipLink } from "@/components/kuryeler/UiStates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { trackPublic, type PublicTrack } from "@/lib/kuryelerApi";
+import { PriceLines } from "@/components/kuryeler/PriceLines";
+import { getPricing, trackPublic, type PublicTrack } from "@/lib/kuryelerApi";
 import { copyTrackingLink, shareTrackingLink } from "@/lib/kuryelerShare";
 import { cardClass, fieldClass, goldBtn, ghostBtn } from "@/lib/kuryelerTheme";
 import { safeMediaUrl } from "@shared/kuryelerSecurity";
 import {
   TRACK_STEPS,
   STATUS_LABELS,
+  calculateDeliveryPrice,
+  DEFAULT_PRICING,
   formatEtaMinutes,
   formatKm,
   statusTone,
   trackStepReached,
+  type PricingSettings,
 } from "@shared/kuryeler";
 import { validateTrackingCode } from "@shared/kuryelerValidation";
 import { useEffect, useState } from "react";
@@ -27,7 +31,14 @@ export default function TrackPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [pricing, setPricing] = useState<PricingSettings>(DEFAULT_PRICING);
   const inMusteriApp = typeof window !== "undefined" && window.location.pathname.startsWith("/musteri");
+
+  useEffect(() => {
+    void getPricing()
+      .then(setPricing)
+      .catch(() => setPricing(DEFAULT_PRICING));
+  }, []);
 
   const search = async (value: string) => {
     const invalid = validateTrackingCode(value);
@@ -123,9 +134,17 @@ export default function TrackPage() {
               <StatusBadge label={STATUS_LABELS[result.status]} className={statusTone(result.status)} />
             </div>
             <p className="mt-3 text-sm text-[#b4a882]">
-              {result.distanceKm > 0 ? formatKm(result.distanceKm) : result.bolge}
+              {result.distanceKm > 0 ? formatKm(result.distanceKm) : result.bolge || "İstanbul"}
             </p>
             {eta ? <p className="mt-1 text-xs text-[#8a7c52]">{eta}</p> : null}
+            {result.distanceKm > 0 ? (
+              <div className="mt-3">
+                <PriceLines
+                  price={calculateDeliveryPrice({ distanceKm: result.distanceKm, pricing })}
+                  audience="consumer"
+                />
+              </div>
+            ) : null}
             <p className="mt-2 text-xs leading-5 text-[#8a7c52]">
               Alım: {result.pickupAddress}
               <br />

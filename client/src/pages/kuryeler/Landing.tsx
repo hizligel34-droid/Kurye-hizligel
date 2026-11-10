@@ -5,16 +5,34 @@ import { WhatsAppButton, WhatsAppFab } from "@/components/kuryeler/WhatsAppButto
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useKuryelerAuth, panelPathForRole } from "@/contexts/KuryelerAuth";
+import { getPricing } from "@/lib/kuryelerApi";
 import { contactEmail, contactPhoneDisplay } from "@/lib/contact";
+import { PriceLines } from "@/components/kuryeler/PriceLines";
 import { cardClass, goldBtn, ghostBtn } from "@/lib/kuryelerTheme";
-import { BRAND_NAME, BRAND_PRODUCT, BRAND_URL, calculateDeliveryPrice, formatKm, formatTl, formatUsd } from "@shared/kuryeler";
+import {
+  BRAND_NAME,
+  BRAND_PRODUCT,
+  BRAND_URL,
+  BUSINESS,
+  calculateDeliveryPrice,
+  DEFAULT_PRICING,
+  formatKm,
+  formatPriceHint,
+  formatPriceInclusive,
+  formatTariffInclusive,
+  isShowcaseMode,
+  DEFAULT_DELIVERY_TARGET_TIERS,
+  DELIVERY_TARGET_DISCLAIMER,
+  deliveryTargetTable,
+} from "@shared/kuryeler";
 import { PWA_APPS } from "@shared/kuryelerPwa";
-import { LayoutDashboard, Package, Phone, ShieldCheck, Smartphone, Sparkles, UserRound } from "lucide-react";
+import { Clock3, LayoutDashboard, Package, Phone, ShieldCheck, Smartphone, Sparkles, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 
 const steps = [
   { title: "Noktaları seçin", body: "Alım ve teslim yerini haritadan veya adres aramasından işaretleyin." },
-  { title: "Sürüş ücretini görün", body: "1 USD açılış + 1 USD/km yol mesafesi. Kuş uçuşu değil, gerçek rota." },
+  { title: "Sürüş ücretini görün", body: `${formatTariffInclusive()}. Kuş uçuşu değil, gerçek rota.` },
   { title: "Kurye alsın", body: "Hızlıgel Kurye uygulamasındaki kurye işi, rotayı ve km’yi görür." },
   { title: "Teslim", body: "Alındı fotoğrafı, yolda, teslim fotoğrafı ve imza. En fazla 30 kg." },
 ];
@@ -24,7 +42,7 @@ const apps = [
     href: "/musteri/",
     icon: Package,
     title: PWA_APPS.musteri.name,
-    body: "Haritada alım/teslim seçin, sürüş km ve USD fiyatı görün, geçmişi izleyin.",
+    body: "Haritada alım/teslim seçin, sürüş km ve TL fiyatı görün, geçmişi izleyin.",
   },
   {
     href: "/kurye/",
@@ -36,25 +54,41 @@ const apps = [
     href: "/yonetici/",
     icon: LayoutDashboard,
     title: PWA_APPS.yonetici.name,
-    body: "Siparişler, kurye atama, açılış/km USD fiyatı ve isteğe bağlı bölge referansı.",
+    body: "Siparişler, kurye atama, açılış/km TL tarifesi ve isteğe bağlı bölge referansı.",
   },
 ];
 
-const samplePrice = calculateDeliveryPrice({ distanceKm: 7.4 });
-
 export default function Landing() {
   const { user } = useKuryelerAuth();
-  const ctaHref = user ? panelPathForRole(user.role) : "/musteri/";
+  const [showcase, setShowcase] = useState(isShowcaseMode());
+  const samplePrice = calculateDeliveryPrice({ distanceKm: 10 });
+  const sample3 = calculateDeliveryPrice({ distanceKm: 3 });
+  const sample74 = calculateDeliveryPrice({ distanceKm: 7.4 });
+  const sample12 = calculateDeliveryPrice({ distanceKm: 12 });
+  const ctaHref = showcase ? "/iletisim" : user ? panelPathForRole(user.role) : "/musteri/";
+
+  useEffect(() => {
+    void getPricing()
+      .then(pricing => setShowcase(isShowcaseMode(pricing)))
+      .catch(() => setShowcase(isShowcaseMode()));
+  }, []);
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: `${BRAND_PRODUCT} · ${BRAND_NAME}`,
+    legalName: BUSINESS.legalName,
+    taxID: BUSINESS.taxId,
     url: BRAND_URL,
     email: contactEmail(),
     telephone: contactPhoneDisplay(),
     areaServed: "İstanbul",
-    address: { "@type": "PostalAddress", addressLocality: "İstanbul", addressCountry: "TR" },
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: BUSINESS.address,
+      addressLocality: "İstanbul",
+      addressCountry: "TR",
+    },
     description: "İstanbul içi kurye teslimat. Üç ayrı uygulama: Müşteri, Kurye, Yönetici.",
   };
 
@@ -68,10 +102,13 @@ export default function Landing() {
           <BrandMark />
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <Button variant="ghost" size="sm" className="px-2 text-[#f5edd6] sm:px-3" asChild>
+              <Link href="/iletisim">İletişim</Link>
+            </Button>
+            <Button variant="ghost" size="sm" className="px-2 text-[#f5edd6] sm:px-3" asChild>
               <Link href="/takip">Takip</Link>
             </Button>
             <Button size="sm" className={goldBtn} asChild>
-              <a href={ctaHref}>{user ? "Uygulamam" : "Sipariş ver"}</a>
+              <a href={ctaHref}>{showcase ? "Ara" : user ? "Uygulamam" : "Sipariş ver"}</a>
             </Button>
           </div>
         </div>
@@ -86,16 +123,25 @@ export default function Landing() {
                 İstanbul · {BRAND_PRODUCT} · {BRAND_NAME}
               </p>
               <h1 className="mt-3 max-w-xl text-[2rem] font-black leading-tight tracking-tight text-[#f5edd6] sm:text-5xl">
-                Şehrin kuryesi, üç ayrı uygulama.
+                {showcase ? "İstanbul kuryesi. Vitrin yayını." : "Şehrin kuryesi, üç ayrı uygulama."}
               </h1>
               <p className="mt-4 max-w-lg text-base leading-7 text-[#b4a882]">
-                Müşteri, kurye ve yönetici birbirinden bağımsız yüklenir. iPhone’da üç ayrı ana ekran ikonu:
-                Hızlıgel Müşteri, Hızlıgel Kurye, Hızlıgel Yönetici.
+                {showcase
+                  ? `Sipariş formu kapalıdır. Tarifeyi görün, telefon veya WhatsApp ile ulaşın. ${formatTariffInclusive(DEFAULT_PRICING)}.`
+                  : "Müşteri, kurye ve yönetici birbirinden bağımsız yüklenir. iPhone’da üç ayrı ana ekran ikonu: Hızlıgel Müşteri, Hızlıgel Kurye, Hızlıgel Yönetici."}
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Button size="lg" className={`h-12 px-6 text-base ${goldBtn}`} asChild>
-                  <a href={ctaHref}>Hızlıgel Müşteri</a>
-                </Button>
+                {showcase ? (
+                  <Button size="lg" className={`h-12 px-6 text-base ${goldBtn}`} asChild>
+                    <a href={`tel:+90${contactPhoneDisplay().replace(/\D/g, "").slice(-10)}`}>
+                      {contactPhoneDisplay()}
+                    </a>
+                  </Button>
+                ) : (
+                  <Button size="lg" className={`h-12 px-6 text-base ${goldBtn}`} asChild>
+                    <a href={ctaHref}>Hızlıgel Müşteri</a>
+                  </Button>
+                )}
                 <Button size="lg" variant="outline" className={`h-12 px-6 text-base ${ghostBtn}`} asChild>
                   <Link href="/takip">Siparişimi takip et</Link>
                 </Button>
@@ -104,6 +150,9 @@ export default function Landing() {
                 Sipariş vermek için e-posta ve şifre ile üye olmanız gerekir. Takip koduyla giriş yapmadan bakabilirsiniz.
               </p>
               <div className="mt-8 flex flex-wrap gap-4 text-sm font-semibold text-[#b4a882]">
+                <span className="inline-flex items-center gap-2">
+                  <Clock3 className="size-4 text-[#D4AF37]" /> Aynı gün teslimat
+                </span>
                 <span className="inline-flex items-center gap-2">
                   <Smartphone className="size-4 text-[#D4AF37]" /> iPhone ana ekrana ekle
                 </span>
@@ -117,19 +166,26 @@ export default function Landing() {
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-bold">Örnek sürüş ücreti</p>
                   <span className="rounded-full border border-[#3a3014] bg-[#1a1508] px-3 py-1 text-xs font-bold text-[#D4AF37]">
-                    {formatKm(7.4)}
+                    {formatKm(10)}
                   </span>
                 </div>
                 <div className="rounded-2xl border border-[#3a3014] bg-black p-4">
-                  <p className="text-3xl font-black text-[#D4AF37]">{formatUsd(samplePrice.priceUsd)}</p>
-                  <p className="mt-1 text-sm text-[#8a7c52]">
-                    1 USD açılış + 1 USD/km · ≈ {formatTl(samplePrice.priceTl)}
-                  </p>
+                  <PriceLines price={samplePrice} size="large" audience="consumer" />
+                  <p className="mt-2 text-sm text-[#8a7c52]">{formatTariffInclusive()}</p>
                 </div>
                 <ul className="space-y-2 text-sm text-[#b4a882]">
-                  <li>3 km → {formatUsd(4)}</li>
-                  <li>7,4 km → {formatUsd(8.4)}</li>
-                  <li>12 km → {formatUsd(13)}</li>
+                  <li>
+                    3 km → {formatPriceInclusive(sample3)}
+                    <span className="block text-xs text-[#8a7c52]">{formatPriceHint(sample3)}</span>
+                  </li>
+                  <li>
+                    7,4 km → {formatPriceInclusive(sample74)}
+                    <span className="block text-xs text-[#8a7c52]">{formatPriceHint(sample74)}</span>
+                  </li>
+                  <li>
+                    12 km → {formatPriceInclusive(sample12)}
+                    <span className="block text-xs text-[#8a7c52]">{formatPriceHint(sample12)}</span>
+                  </li>
                 </ul>
               </CardContent>
             </Card>
@@ -152,6 +208,21 @@ export default function Landing() {
               </a>
             ))}
           </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 py-6" aria-labelledby="hedef-teslim-baslik">
+          <h2 id="hedef-teslim-baslik" className="text-2xl font-black">
+            Hedef teslim
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-[#b4a882]">Yol mesafesine göre hedef süre. {DELIVERY_TARGET_DISCLAIMER}</p>
+          <ul className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            {deliveryTargetTable(DEFAULT_DELIVERY_TARGET_TIERS).map(row => (
+              <li key={row.range} className={`${cardClass} p-4`}>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#8a7c52]">{row.range}</p>
+                <p className="mt-2 text-lg font-black text-[#D4AF37]">{row.label}</p>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section className="mx-auto max-w-6xl px-4 py-6">
@@ -184,7 +255,7 @@ export default function Landing() {
                 </p>
               </div>
               <Button size="lg" className={`h-12 w-full sm:w-auto ${goldBtn}`} asChild>
-                <a href="/musteri/">Müşteri uygulamasını aç</a>
+                <a href={showcase ? "/iletisim" : "/musteri/"}>{showcase ? "İletişim" : "Müşteri uygulamasını aç"}</a>
               </Button>
             </div>
           </div>
@@ -194,14 +265,20 @@ export default function Landing() {
           <div className={`${cardClass} grid gap-6 p-5 md:grid-cols-[1.2fr_0.8fr] md:items-center md:p-8`}>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4AF37]">İletişim</p>
-              <h2 id="iletisim-baslik" className="mt-2 text-2xl font-black">Siparişi konuşalım.</h2>
+              <h2 id="iletisim-baslik" className="mt-2 text-2xl font-black">
+                Künye ve ulaşım.
+              </h2>
               <p className="mt-2 text-sm leading-6 text-[#8a7c52]">
-                WhatsApp veya telefon ile ulaşın. Haritadaki sürüş mesafesiyle fiyat hemen netleşir.
+                {BUSINESS.legalName} – Hızlıgel / kuryeler.tr · {BUSINESS.address}
               </p>
               <p className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">
                 <Phone className="size-4 text-[#D4AF37]" aria-hidden />
                 <a href={`tel:+90${contactPhoneDisplay().replace(/\D/g, "").slice(-10)}`}>{contactPhoneDisplay()}</a>
               </p>
+              <p className="mt-2 text-xs text-[#8a7c52]">{contactEmail()}</p>
+              <Link href="/iletisim" className="mt-3 inline-block text-sm font-bold text-[#D4AF37]">
+                Tam iletişim / künye
+              </Link>
             </div>
             <WhatsAppButton className="w-full md:justify-self-end md:w-auto" />
           </div>

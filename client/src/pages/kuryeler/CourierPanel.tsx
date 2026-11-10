@@ -18,8 +18,11 @@ import {
 import { cardClass, goldBtn, ghostBtn } from "@/lib/kuryelerTheme";
 import {
   courierStatusActionLabel,
+  breakdownFromOrder,
   formatKm,
+  formatPriceBreakdown,
   formatTl,
+  VAT_EXCL_LABEL,
   nextCourierStatus,
   type DeliveryOrder,
   type OrderStatus,
@@ -60,7 +63,7 @@ function CourierHome() {
   const available = orders.filter(o => o.status === "pending" && !o.courierId);
   const mine = orders.filter(o => o.courierId === user?.id);
   const stats = useMemo(
-    () => (user ? dailyEarnings(mine, user.id) : { deliveredCount: 0, earningTl: 0, earningUsd: 0, activeCount: 0 }),
+    () => (user ? dailyEarnings(mine, user.id) : { deliveredCount: 0, earningTl: 0, activeCount: 0 }),
     [mine, user?.id],
   );
 
@@ -137,7 +140,7 @@ function CourierHome() {
             <section className="grid grid-cols-3 gap-2 sm:gap-3">
               {[
                 ["Bugün teslim", String(stats.deliveredCount)],
-                ["Bugün kazanç", formatTl(stats.earningTl)],
+                ["Bugün kazanç", `${formatTl(stats.earningTl)} ${VAT_EXCL_LABEL}`],
                 ["Aktif iş", String(stats.activeCount)],
               ].map(([label, value]) => (
                 <div key={label} className={`${cardClass} min-w-0 p-3 sm:p-4`}>
@@ -159,13 +162,13 @@ function CourierHome() {
                     <OrderCard
                       key={order.id}
                       order={order}
+                      audience="business"
                       showMap
                       extra={
-                          <p className="mt-2 text-xs text-[#8a7c52]">
-                            Sürüş {formatKm(order.distanceKm)}
-                            {order.totalPriceTl > 0 ? ` · ${formatTl(order.totalPriceTl)}` : ""}
-                            {order.courierEarningTl > 0 ? ` · kurye payı ${formatTl(order.courierEarningTl)}` : ""}
-                          </p>
+                        <p className="mt-2 text-xs text-[#8a7c52]">
+                          Sürüş {formatKm(order.distanceKm)} · {formatPriceBreakdown(breakdownFromOrder(order))}
+                          {order.boardOnly ? " · ilçe / km / ücret" : order.courierEarningTl > 0 ? ` · kurye payı ${formatTl(order.courierEarningTl)} ${VAT_EXCL_LABEL}` : ""}
+                        </p>
                       }
                       actions={
                         <Button
@@ -194,6 +197,7 @@ function CourierHome() {
                       <OrderCard
                         key={order.id}
                         order={order}
+                        audience="business"
                         showMap
                         extra={
                           <p className="mt-2 text-xs text-[#8a7c52]">

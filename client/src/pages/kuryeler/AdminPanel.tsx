@@ -23,13 +23,17 @@ import {
   updatePricing,
   updateUserRole,
 } from "@/lib/kuryelerApi";
+import { PriceLines } from "@/components/kuryeler/PriceLines";
 import { areaClass, cardClass, fieldClass, goldBtn, ghostBtn, selectClass } from "@/lib/kuryelerTheme";
 import {
   calculateDeliveryPrice,
   DEFAULT_PRICING,
   formatKm,
+  formatTariff,
   formatTl,
-  formatUsd,
+  roundMoney,
+  VAT_EXCL_LABEL,
+  VAT_INCL_LABEL,
   GEOCODERS,
   ROLE_LABELS,
   ROUTING_PROVIDER_LABELS,
@@ -101,7 +105,7 @@ function AdminHome() {
 
   const couriers = users.filter(item => item.role === "courier");
   const customers = users.filter(item => item.role === "customer");
-  const sample = calculateDeliveryPrice({ distanceKm: 7.4, pricing });
+  const sample = calculateDeliveryPrice({ distanceKm: 10, pricing });
 
   const savePricing = async (event: FormEvent) => {
     event.preventDefault();
@@ -148,16 +152,13 @@ function AdminHome() {
             <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
               {[
                 ["Bugünün siparişleri", String(stats?.todayOrders ?? "—")],
-                ["Bugün gelir", stats ? formatUsd(stats.todayRevenueUsd) : "—"],
+                ["Bugün gelir", stats ? `${formatTl(stats.todayRevenueTl)} ${VAT_INCL_LABEL}` : "—"],
                 ["Aktif kurye", String(stats?.activeCouriers ?? "—")],
                 ["Bekleyen / yolda", `${stats?.pendingOrders ?? 0} / ${stats?.enRouteOrders ?? 0}`],
               ].map(([label, value]) => (
                 <div key={label} className={`${cardClass} min-w-0 p-3 sm:p-4`}>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#8a7c52] sm:text-xs">{label}</p>
                   <p className="mt-2 text-xl font-black text-[#D4AF37] sm:text-2xl">{value}</p>
-                  {label === "Bugün gelir" && stats && stats.todayRevenueTl > 0 ? (
-                    <p className="mt-1 text-[10px] text-[#8a7c52]">≈ {formatTl(stats.todayRevenueTl)} firma payı</p>
-                  ) : null}
                 </div>
               ))}
             </section>
@@ -193,10 +194,11 @@ function AdminHome() {
                       <OrderCard
                         key={order.id}
                         order={order}
+                        audience="business"
                         showMap
                         extra={
                           <p className="mt-2 text-xs text-[#8a7c52]">
-                            Firma payı {formatTl(order.companyRevenueTl)} · Kurye {formatTl(order.courierEarningTl)}
+                            Firma payı {formatTl(order.companyRevenueTl)} {VAT_EXCL_LABEL} · Kurye {formatTl(order.courierEarningTl)} {VAT_EXCL_LABEL}
                           </p>
                         }
                         actions={
@@ -350,33 +352,33 @@ function AdminHome() {
             {tab === "fiyat" ? (
               <section className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
                 <form className={`${cardClass} h-fit space-y-3 p-5`} onSubmit={savePricing}>
-                  <h2 className="text-lg font-black">Sürüş ücreti (USD)</h2>
+                  <h2 className="text-lg font-black">Sürüş ücreti (TL)</h2>
                   <p className="text-xs text-[#8a7c52]">
-                    Ana fiyat: açılış + km bedeli × yol mesafesi. Kuş uçuşu kullanılmaz.
+                    Ana fiyat KDV hariçtir: açılış + km bedeli × yol mesafesi. Üstüne KDV eklenir. Kuş uçuşu kullanılmaz. Fiyat yalnızca Türk lirasıdır.
                   </p>
                   <label className="block text-sm">
-                    Açılış ücreti (USD)
+                    Açılış ücreti (TL, KDV hariç)
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
                       min={0}
                       step="0.01"
-                      value={pricing.baseUsd}
-                      onChange={e => setPricing({ ...pricing, baseUsd: Number(e.target.value) })}
+                      value={pricing.baseTry}
+                      onChange={e => setPricing({ ...pricing, baseTry: Number(e.target.value) })}
                     />
-                    <FieldError id="base-err" message={pricingErrors.baseUsd} />
+                    <FieldError id="base-err" message={pricingErrors.baseTry} />
                   </label>
                   <label className="block text-sm">
-                    Kilometre bedeli (USD / km)
+                    Kilometre bedeli (TL / km, KDV hariç)
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
                       min={0}
                       step="0.01"
-                      value={pricing.perKmUsd}
-                      onChange={e => setPricing({ ...pricing, perKmUsd: Number(e.target.value) })}
+                      value={pricing.perKmTry}
+                      onChange={e => setPricing({ ...pricing, perKmTry: Number(e.target.value) })}
                     />
-                    <FieldError id="perkm-err" message={pricingErrors.perKmUsd} />
+                    <FieldError id="perkm-err" message={pricingErrors.perKmTry} />
                   </label>
                   <label className="block text-sm">
                     Yuvarlama (ondalık basamak)
@@ -392,17 +394,62 @@ function AdminHome() {
                     <FieldError id="round-err" message={pricingErrors.roundingDecimals} />
                   </label>
                   <label className="block text-sm">
-                    USD → TL kuru (0 = TL gösterme)
+                    KDV oranı (%)
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
                       min={0}
+                      max={100}
                       step="0.01"
-                      value={pricing.usdToTry}
-                      onChange={e => setPricing({ ...pricing, usdToTry: Number(e.target.value) })}
+                      value={roundMoney(pricing.vatRate * 100, 2)}
+                      onChange={e => setPricing({ ...pricing, vatRate: Number(e.target.value) / 100 })}
                     />
-                    <FieldError id="fx-err" message={pricingErrors.usdToTry} />
+                    <FieldError id="vat-err" message={pricingErrors.vatRate} />
                   </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={pricing.showcaseMode}
+                      onChange={e => setPricing({ ...pricing, showcaseMode: e.target.checked })}
+                    />
+                    Vitrin modu (kayıt ve sipariş kapalı)
+                  </label>
+                  <fieldset className="space-y-2">
+                    <legend className="text-sm font-bold">Hedef teslim kademeleri (yol km)</legend>
+                    <p className="text-xs text-[#8a7c52]">Boş km = son kademe (aynı gün). Garanti veya iade sözü yazılmaz.</p>
+                    {pricing.deliveryTargetTiers.map((tier, index) => (
+                      <div key={`${index}-${tier.label}`} className="grid grid-cols-[7rem_1fr] gap-2">
+                        <Input
+                          className={fieldClass}
+                          type="number"
+                          min={0}
+                          step="0.1"
+                          placeholder="km"
+                          aria-label={`${index + 1}. kademe km eşiği`}
+                          value={tier.maxKm ?? ""}
+                          onChange={e => {
+                            const raw = e.target.value.trim();
+                            const next = [...pricing.deliveryTargetTiers];
+                            next[index] = {
+                              ...tier,
+                              maxKm: raw === "" ? null : Number(raw),
+                            };
+                            setPricing({ ...pricing, deliveryTargetTiers: next });
+                          }}
+                        />
+                        <Input
+                          className={fieldClass}
+                          aria-label={`${index + 1}. kademe etiket`}
+                          value={tier.label}
+                          onChange={e => {
+                            const next = [...pricing.deliveryTargetTiers];
+                            next[index] = { ...tier, label: e.target.value };
+                            setPricing({ ...pricing, deliveryTargetTiers: next });
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </fieldset>
                   <label className="block text-sm">
                     Rota sağlayıcısı
                     <select
@@ -443,7 +490,7 @@ function AdminHome() {
                     </select>
                   </label>
                   <label className="block text-sm">
-                    Kurye kesintisi (0–1)
+                    Kurye kesintisi (0–1, KDV hariç net üzerinden)
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
@@ -456,11 +503,11 @@ function AdminHome() {
                     <FieldError id="commission-err" message={pricingErrors.commissionRate} />
                   </label>
                   <div className="rounded-xl border border-[#3a3014] bg-black p-3 text-sm">
-                    <p className="font-bold text-[#D4AF37]">Örnek: {formatKm(7.4)}</p>
-                    <p className="mt-1 text-[#f5edd6]">{formatUsd(sample.priceUsd, pricing.roundingDecimals)}</p>
-                    {pricing.usdToTry > 0 ? (
-                      <p className="text-xs text-[#8a7c52]">≈ {formatTl(sample.priceTl)}</p>
-                    ) : null}
+                    <p className="font-bold text-[#D4AF37]">Örnek: {formatKm(10)}</p>
+                    <div className="mt-2">
+                      <PriceLines price={sample} audience="business" />
+                    </div>
+                    <p className="mt-2 text-xs text-[#8a7c52]">{formatTariff(pricing)}</p>
                   </div>
                   <Button className={`h-11 w-full ${goldBtn}`} disabled={busy}>
                     {busy ? "Kaydediliyor…" : "Fiyat ayarlarını kaydet"}
@@ -469,7 +516,8 @@ function AdminHome() {
                 <div className={`${cardClass} p-5`}>
                   <h2 className="text-lg font-black">Bölge listesi (isteğe bağlı referans)</h2>
                   <p className="mt-1 text-xs text-[#8a7c52]">
-                    Sipariş ücreti bu tablodan hesaplanmaz. Eski İstanbul CSV’si yalnızca yönetici notu olarak durur.
+                    Sipariş ücreti bu tablodan hesaplanmaz. Eski İstanbul CSV’si yalnızca yönetici notu olarak durur
+                    (gösterilen rakamlar KDV hariç referanstır).
                   </p>
                   <Button
                     type="button"
@@ -492,13 +540,13 @@ function AdminHome() {
                             type="number"
                             min={0}
                             defaultValue={row.fiyatTl}
-                            aria-label={`${row.bolge} referans fiyat`}
+                            aria-label={`${row.bolge} referans fiyat, KDV hariç`}
                             onBlur={event => {
                               const next = Number(event.target.value);
                               if (next !== row.fiyatTl) void saveZone(row.bolge, next);
                             }}
                           />
-                          <span className="text-xs text-[#8a7c52]">TL</span>
+                          <span className="text-xs text-[#8a7c52]">TL {VAT_EXCL_LABEL}</span>
                         </li>
                       ))}
                     </ul>

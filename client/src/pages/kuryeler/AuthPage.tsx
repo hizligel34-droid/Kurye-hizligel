@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useKuryelerAuth } from "@/contexts/KuryelerAuth";
-import { requestPasswordReset } from "@/lib/kuryelerApi";
+import { getPricing, requestPasswordReset } from "@/lib/kuryelerApi";
 import { cardClass, fieldClass, goldBtn } from "@/lib/kuryelerTheme";
 import { FieldError, SkipLink } from "@/components/kuryeler/UiStates";
 import { firstError, validateAuthForm, type FieldErrors } from "@shared/kuryelerValidation";
 import { normalizeTurkishMobilePhone } from "@shared/orderValidation";
-import { ALLOW_COURIER_SELF_SIGNUP, ROLE_LABELS, type UserRole } from "@shared/kuryeler";
+import { ALLOW_COURIER_SELF_SIGNUP, CONTACT_PHONE_DISPLAY, isShowcaseMode, ROLE_LABELS, type UserRole } from "@shared/kuryeler";
 import { PANEL_ROLE, PWA_APPS, type PwaPanel } from "@shared/kuryelerPwa";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
@@ -32,7 +32,14 @@ export default function AuthPage({
   const [busy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [resetOpen, setResetOpen] = useState(false);
+  const [showcase, setShowcase] = useState(isShowcaseMode());
   const courierSignupClosed = mode === "kayit" && panel === "kurye" && !ALLOW_COURIER_SELF_SIGNUP;
+
+  useEffect(() => {
+    void getPricing()
+      .then(pricing => setShowcase(isShowcaseMode(pricing)))
+      .catch(() => setShowcase(isShowcaseMode()));
+  }, []);
 
   useEffect(() => {
     if (user) navigate("/");
@@ -49,6 +56,9 @@ export default function AuthPage({
     });
     if (mode === "kayit" && panel === "yonetici") {
       nextErrors.email = "Yönetici hesabı bu uygulamadan açılamaz.";
+    }
+    if (mode === "kayit" && showcase) {
+      nextErrors.email = "Vitrin modunda kayıt alınmaz.";
     }
     setFieldErrors(nextErrors);
     const message = firstError(nextErrors);
@@ -182,9 +192,29 @@ export default function AuthPage({
                 />
                 <FieldError id="password-err" message={fieldErrors.password} />
               </div>
-              <Button className={`h-11 w-full ${goldBtn}`} disabled={busy || courierSignupClosed}>
-                {busy ? "Lütfen bekleyin…" : mode === "giris" ? "Giriş yap" : "Hesap oluştur"}
-              </Button>
+              {mode === "kayit" ? (
+                <p className="text-xs leading-5 text-[#8a7c52]">
+                  Hesap oluşturarak{" "}
+                  <a href="/kosullar" className="font-bold text-[#D4AF37]">
+                    Kullanım Koşulları
+                  </a>
+                  ’nı kabul etmiş olursunuz. Kişisel verilerinizin nasıl işlendiğini{" "}
+                  <a href="/kvkk" className="font-bold text-[#D4AF37]">
+                    KVKK Aydınlatma Metni
+                  </a>
+                  {panel === "kurye" ? " (kurye adayları için aynı metin, kurye bölümü)" : ""}
+                  ’nde okuyabilirsiniz.
+                </p>
+              ) : null}
+              {mode === "kayit" && showcase ? (
+                <p className="rounded-xl border border-[#3a3014] bg-[#1a1508] p-3 text-xs text-[#D4AF37]">
+                  Vitrin modu: yeni kayıt kapalıdır. {CONTACT_PHONE_DISPLAY}
+                </p>
+              ) : (
+                <Button className={`h-11 w-full ${goldBtn}`} disabled={busy || courierSignupClosed || (mode === "kayit" && showcase)}>
+                  {busy ? "Lütfen bekleyin…" : mode === "giris" ? "Giriş yap" : "Hesap oluştur"}
+                </Button>
+              )}
             </form>
             {mode === "giris" ? (
               <div className="mt-3 text-center">
@@ -212,7 +242,7 @@ export default function AuthPage({
               </div>
             ) : null}
             <p className="mt-4 text-center text-sm text-[#8a7c52]">
-              {mode === "giris" && panel !== "yonetici" ? (
+              {mode === "giris" && panel !== "yonetici" && !showcase ? (
                 <>
                   Hesabınız yok mu?{" "}
                   <Link href="/kayit" className="font-bold text-[#D4AF37]">

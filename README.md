@@ -17,11 +17,11 @@ Pazarlama sitesi: `/` (üç uygulamaya bağlantı verir, kendi başına bir pane
 - Üç ayrı HTML girişi, üç manifest (`name` / `short_name` / `icon` / `start_url` / `scope`)
 - iPhone 13 Safari: her uygulama kendi `apple-touch-icon` (180px) ve `apple-mobile-web-app-title` ile Ana Ekrana Ekle
 - Çevrimdışı kabuk (`offline.html` + uygulama kapsamlı service worker)
-- Sipariş: ürün, haritada alım/teslim, sürüş km, USD ücret, ağırlık (en fazla 30 kg), teslim alan kişi, gün ve saat, notlar, durum (Bekliyor / Alındı / Yolda / Teslim edildi / İptal), ödeme yöntemi/durumu
-- Ana fiyat: **1 USD açılış + 1 USD × sürüş km** (kuş uçuşu değil). Örnek: 7,4 km → 8,4 USD. Açılış, km bedeli, yuvarlama ve USD/TL kuru Yönetici uygulamasından değişir
-- Harita: Leaflet + OpenStreetMap karoları, Nominatim/Photon adres araması, OSRM (veya OpenRouteService) sürüş rotası
-- Kurye: iş kabul, rota ve km, alım fotoğrafı, teslim fotoğrafı + imza, günlük kazanç
-- Yönetici: tüm siparişler, kurye atama, USD fiyat ayarları; eski 55 bölgelik CSV yalnızca isteğe bağlı referans
+- Sipariş: ürün, haritada alım/teslim, sürüş km, TL ücret, ağırlık (en fazla 30 kg), teslim alan kişi, gün ve saat, notlar, durum (Bekliyor / Alındı / Yolda / Teslim edildi / İptal), ödeme yöntemi/durumu
+- Ana fiyat **KDV hariç 600 TL açılış + 50 TL × sürüş km**, üstüne varsayılan **%20 KDV**. Tüketici ekranlarında büyük fiyat **KDV dahil**dir: **720 TL açılış + 60 TL/km**, örnek 10 km = **1.320 TL (KDV dahil)** (isteğe bağlı kırılım: 1.100 TL + 220 TL KDV). Yönetici / fatura metinlerinde KDV hariç + KDV kırılımı kalır. Fiyat yalnızca Türk lirasıdır.
+- Harita: Leaflet + OpenStreetMap karoları, Nominatim/Photon adres araması (Ara düğmesi, otomatik tamamlama yok), OSRM (veya OpenRouteService) sürüş rotası
+- Kurye: iş kabul (kabul öncesi yalnızca ilçe/km/ücret), rota ve km, alım fotoğrafı, teslim fotoğrafı + imza, günlük kazanç
+- Yönetici: tüm siparişler, kurye atama, TL fiyat ayarları ve vitrin modu; eski 55 bölgelik CSV yalnızca isteğe bağlı referans
 - Supabase Auth + RLS + Realtime; env yoksa **yerel demo**
 - Capacitor sarmalayıcı: üç ayrı `capacitor.config.ts` (ücretli Apple/Google hesabı gerekmez)
 - Turhost statik yayın (`pnpm build:static` → `dist/public` + `.htaccess`)
@@ -29,14 +29,16 @@ Pazarlama sitesi: `/` (üç uygulamaya bağlantı verir, kendi başına bir pane
 ## Fiyat nasıl hesaplanır?
 
 ```
-ücret_usd = yuvarla(açılış_usd + km_usd × sürüş_km)
+net_tl   = yuvarla(açılış_tl + km_tl × sürüş_km)   # KDV hariç
+kdv_tl   = yuvarla(net_tl × kdv_orani)             # varsayılan 0,20
+brüt_tl  = net_tl + kdv_tl                         # KDV dahil
 ```
 
-Varsayılan: açılış 1 USD, km 1 USD, 2 ondalık. 7,4 km → **8,4 USD**. İsteğe bağlı TL karşılığı yönetici kurundan üretilir (kur 0 ise TL gösterilmez). Mesafe haritadaki **yol/sürüş** rotasıdır; kuş uçuşu kullanılmaz.
+Varsayılan: açılış **600 TL**, km **50 TL**, KDV **%20**, 2 ondalık. Tüketiciye: **Açılış 720 TL + km başı 60 TL (KDV dahil)**; 10 km = **1.320 TL (KDV dahil)**. 7,4 km → 1.164 TL (KDV dahil). Kurye payı ve komisyon **net** üzerinden hesaplanır. Fatura ve sözleşme metinlerinde 1.100 TL + 220 TL KDV kırılımı durur. Fiyat yalnızca Türk lirasıdır. Mesafe haritadaki **yol/sürüş** rotasıdır; kuş uçuşu kullanılmaz.
 
 Paket ağırlığı zorunludur. **30 kg üzeri** sipariş hem uygulamada hem veritabanında (`CHECK` + tetikleyici) şu mesajla reddedilir: `Maksimum taşıma sınırı 30 kg`.
 
-Ücretsiz araçlar (kullanım politikasına uyulur: 500 ms arama gecikmesi, Nominatim `email`, OSM atıfı):
+Ücretsiz araçlar (Nominatim: Ara düğmesi + saniyede en fazla 1 istek, `email` parametresi, OSM atıfı):
 
 - Harita: Leaflet + OpenStreetMap karoları
 - Adres: Nominatim (varsayılan) veya Photon
@@ -56,6 +58,8 @@ pnpm dev:spa           # http://localhost:4173
 
 Yerel demoda hazır şifre yoktur; e-posta ve şifre ile kayıt olun. Yanlış rol ile giriş reddedilir (ör. kurye hesabı Müşteri uygulamasına giremez). Kurye hesabı canlıda yalnızca yönetici tarafından atanır.
 
+Vitrin yayını için `.env` içinde `VITE_VITRIN_MODU=true` veya Yönetici panelinden vitrin anahtarı: kayıt ve sipariş kapalı, tarife ve telefon görünür.
+
 ## iPhone 13 Safari — ana ekrana üç ayrı ikon
 
 1. Safari ile **https** üzerinden sırayla açın: `/musteri/`, `/kurye/`, `/yonetici/`.
@@ -73,7 +77,9 @@ Geliştirmede `localhost` de çalışır; canlıda SSL zorunludur.
    - `supabase/migrations/20241109120000_kuryeler_init.sql`
    - `supabase/migrations/20241110120000_district_prices_and_order_fields.sql`
    - `supabase/migrations/20241110140000_driving_distance_pricing.sql`
-   - `supabase/seed.sql` (USD fiyat ayarları + isteğe bağlı bölge referansı + demo hesaplar)
+   - `supabase/migrations/20241110150000_tl_pricing_and_compliance.sql`
+   - `supabase/migrations/20241110160000_vat_exclusive.sql`
+   - `supabase/seed.sql` (TL fiyat ayarları + KDV oranı + isteğe bağlı bölge referansı; demo hesap bloğunu canlıda çalıştırmayın)
 3. Authentication → Email açık. İlk kurulumda Confirm email kapatılabilir.
 4. Site URL: `https://kuryeler.tr`  
    Redirect: `https://kuryeler.tr/**`, `https://kuryeler.tr/musteri/**`, `https://kuryeler.tr/kurye/**`, `https://kuryeler.tr/yonetici/**` ve yerel `http://localhost:4173/**`
@@ -87,6 +93,8 @@ VITE_CONTACT_EMAIL=iletisim@kuryeler.tr
 VITE_CONTACT_PHONE=0532 474 67 45
 # isteğe bağlı OpenRouteService (yoksa OSRM kullanılır)
 # VITE_ORS_API_KEY=
+# Vitrin: kayıt/sipariş kapalı
+# VITE_VITRIN_MODU=true
 ```
 
 Sonra **yeniden** `pnpm build:static`. `service_role` anahtarını asla SPA’ya koymayın.
@@ -131,13 +139,13 @@ App Store / Play Store yayını Apple ve Google geliştirici hesapları ister; b
 ## Güvenlik
 
 - Anon key kamuya açıktır; koruma RLS ile yapılır.
-- Sipariş ücreti `distance_km` üzerinden SQL tetikleyicisiyle USD yazılır; 30 kg `CHECK` + tetikleyici ile kesilir.
+- Sipariş ücreti `distance_km` üzerinden SQL tetikleyicisiyle TL yazılır; 30 kg `CHECK` + tetikleyici ile kesilir. Takip kodu kriptografik rastgele üretilir. Kurye, kabul etmediği işte ad/telefon/tam adres görmez.
 - Yönetici kaydı Müşteri/Kurye formundan açılamaz.
 - Kart ödemesi yoktur; yalnızca nakit / havale / kapıda kart kaydı tutulur.
 
 ## Ekran görüntüleri
 
-`docs/ekran-goruntuleri/` — iPhone 13 genişliği (390px) ve masaüstü.
+`docs/ekran-goruntuleri/` — iPhone 13 genişliği (390px) ve masaüstü. Eski tarife görselleri kaldırıldı; güncel arayüz Türk lirası ve KDV ayrımıdır.
 
 ## Geliştirici komutları
 

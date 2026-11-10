@@ -6,6 +6,8 @@ import {
   generateTrackingCode,
   isActiveOrder,
   nextCourierStatus,
+  normalizeDeliveryTargetTiers,
+  redactPendingForCourier,
   WEIGHT_LIMIT_MESSAGE,
   type DashboardStats,
   type DeliveryOrder,
@@ -29,10 +31,11 @@ import {
   type SupportTicket,
   type SupportTicketKind,
 } from "@shared/kuryelerSupport";
+import { buildOrderConfirmationMail, type OutboundMail } from "@shared/orderConfirmation";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
-const DEMO_KEY = "kuryeler.tr.demo.v4";
+const DEMO_KEY = "kuryeler.tr.demo.v7";
 
 export type SessionUser = Profile;
 
@@ -95,6 +98,7 @@ type DemoState = {
   tickets: SupportTicket[];
   messages: SupportMessage[];
   notifications: AppNotification[];
+  outboundMail: OutboundMail[];
 };
 
 function nowIso() {
@@ -111,6 +115,7 @@ export function mergePricing(raw?: Partial<PricingSettings> | null): PricingSett
     ...raw,
     routingProvider: (raw?.routingProvider ?? DEFAULT_PRICING.routingProvider) as RoutingProvider,
     geocoder: (raw?.geocoder ?? DEFAULT_PRICING.geocoder) as Geocoder,
+    deliveryTargetTiers: normalizeDeliveryTargetTiers(raw?.deliveryTargetTiers ?? DEFAULT_PRICING.deliveryTargetTiers),
   };
 }
 
@@ -119,18 +124,16 @@ function quoteFor(distanceKm: number, pricing: PricingSettings) {
 }
 
 function withQuote(
-  order: Omit<
-    DeliveryOrder,
-    "priceUsd" | "totalPriceTl" | "courierEarningTl" | "companyRevenueTl"
-  > &
-    Partial<Pick<DeliveryOrder, "priceUsd" | "totalPriceTl" | "courierEarningTl" | "companyRevenueTl">>,
+  order: Omit<DeliveryOrder, "netPriceTl" | "vatTl" | "totalPriceTl" | "courierEarningTl" | "companyRevenueTl"> &
+    Partial<Pick<DeliveryOrder, "netPriceTl" | "vatTl" | "totalPriceTl" | "courierEarningTl" | "companyRevenueTl">>,
   pricing: PricingSettings,
 ): DeliveryOrder {
   const quote = quoteFor(order.distanceKm, pricing);
   return {
     ...order,
-    priceUsd: quote.priceUsd,
-    totalPriceTl: quote.totalTl,
+    netPriceTl: quote.netTl,
+    vatTl: quote.vatTl,
+    totalPriceTl: quote.grossTl,
     courierEarningTl: quote.courierEarningTl,
     companyRevenueTl: quote.companyRevenueTl,
   };
@@ -246,6 +249,7 @@ function seedDemo(): DemoState {
     tickets: [],
     messages: [],
     notifications: [],
+    outboundMail: [],
   };
 }
 
@@ -263,6 +267,7 @@ function loadDemo(): DemoState {
     parsed.tickets = parsed.tickets ?? [];
     parsed.messages = parsed.messages ?? [];
     parsed.notifications = parsed.notifications ?? [];
+    parsed.outboundMail = parsed.outboundMail ?? [];
     parsed.orders = (parsed.orders ?? []).map(order => ({
       ...emptyOrderExtras(),
       ...order,
@@ -324,7 +329,8 @@ function mapOrder(row: Record<string, unknown>): DeliveryOrder {
     weightKg: Number(row.weight_kg ?? row.weightKg ?? 1),
     distanceKm: Number(row.distance_km ?? row.distanceKm ?? 0),
     durationMin: Number(row.duration_min ?? row.durationMin ?? 0),
-    priceUsd: Number(row.price_usd ?? row.priceUsd ?? 0),
+    netPriceTl: Number(row.net_price_tl ?? row.netPriceTl ?? 0),
+    vatTl: Number(row.vat_tl ?? row.vatTl ?? 0),
     totalPriceTl: Number(row.total_price_tl ?? row.totalPriceTl ?? 0),
     courierEarningTl: Number(row.courier_earning_tl ?? row.courierEarningTl ?? 0),
     companyRevenueTl: Number(row.company_revenue_tl ?? row.companyRevenueTl ?? 0),
@@ -429,8 +435,7 @@ function dashboardFrom(orders: DeliveryOrder[], couriersOnline: number): Dashboa
   const today = orders.filter(o => o.createdAt >= start && o.status !== "cancelled");
   return {
     todayOrders: today.length,
-    todayRevenueUsd: today.reduce((sum, o) => sum + o.priceUsd, 0),
-    todayRevenueTl: today.reduce((sum, o) => sum + o.companyRevenueTl, 0),
+    todayRevenueTl: today.reduce((sum, o) => sum + o.totalPriceTl, 0),
     activeCouriers: couriersOnline,
     pendingOrders: orders.filter(o => o.status === "pending" || o.status === "assigned").length,
     enRouteOrders: orders.filter(o => o.status === "en_route" || o.status === "picked_up").length,
@@ -551,14 +556,18 @@ export async function signOut() {
 
 function mapPricingRow(row: Record<string, unknown>): PricingSettings {
   return mergePricing({
-    baseUsd: Number(row.base_usd ?? row.baseUsd ?? DEFAULT_PRICING.baseUsd),
-    perKmUsd: Number(row.per_km_usd ?? row.perKmUsd ?? DEFAULT_PRICING.perKmUsd),
+    baseTry: Number(row.base_try ?? row.baseTry ?? DEFAULT_PRICING.baseTry),
+    perKmTry: Number(row.per_km_try ?? row.perKmTry ?? DEFAULT_PRICING.perKmTry),
     roundingDecimals: Number(row.rounding_decimals ?? row.roundingDecimals ?? DEFAULT_PRICING.roundingDecimals),
-    usdToTry: Number(row.usd_to_try ?? row.usdToTry ?? DEFAULT_PRICING.usdToTry),
+    vatRate: Number(row.vat_rate ?? row.vatRate ?? DEFAULT_PRICING.vatRate),
     routingProvider: (row.routing_provider ?? row.routingProvider ?? DEFAULT_PRICING.routingProvider) as RoutingProvider,
     routingUrl: String(row.routing_url ?? row.routingUrl ?? DEFAULT_PRICING.routingUrl),
     geocoder: (row.geocoder ?? DEFAULT_PRICING.geocoder) as Geocoder,
     commissionRate: Number(row.commission_rate ?? row.commissionRate ?? DEFAULT_PRICING.commissionRate),
+    showcaseMode: Boolean(row.showcase_mode ?? row.showcaseMode ?? DEFAULT_PRICING.showcaseMode),
+    deliveryTargetTiers: normalizeDeliveryTargetTiers(
+      (row.delivery_target_tiers ?? row.deliveryTargetTiers) as PricingSettings["deliveryTargetTiers"] | undefined,
+    ),
   });
 }
 
@@ -608,14 +617,16 @@ export async function updatePricing(pricing: PricingSettings): Promise<PricingSe
   const { data, error } = await getSupabase()!
     .from("pricing_settings")
     .update({
-      base_usd: next.baseUsd,
-      per_km_usd: next.perKmUsd,
+      base_try: next.baseTry,
+      per_km_try: next.perKmTry,
       rounding_decimals: next.roundingDecimals,
-      usd_to_try: next.usdToTry,
+      vat_rate: next.vatRate,
       routing_provider: next.routingProvider,
       routing_url: next.routingUrl,
       geocoder: next.geocoder,
       commission_rate: next.commissionRate,
+      showcase_mode: next.showcaseMode,
+      delivery_target_tiers: next.deliveryTargetTiers,
     })
     .eq("id", 1)
     .select("*")
@@ -728,16 +739,32 @@ export async function createOrder(customerId: string, input: CreateOrderInput): 
     throw new Error(message);
   }
   const mapped = mapOrder(data as Record<string, unknown>);
-  if (!mapped.priceUsd) {
-    mapped.priceUsd = quote.priceUsd;
-    mapped.totalPriceTl = quote.totalTl;
-  }
-  try {
-    await getSupabase()!.rpc("queue_order_confirmation", { p_order_id: mapped.id });
-  } catch {
-    /* kuyruk isteğe bağlı; sipariş oluştu */
+  if (!mapped.totalPriceTl) {
+    mapped.netPriceTl = quote.netTl;
+    mapped.vatTl = quote.vatTl;
+    mapped.totalPriceTl = quote.grossTl;
+    mapped.courierEarningTl = quote.courierEarningTl;
+    mapped.companyRevenueTl = quote.companyRevenueTl;
   }
   return mapped;
+}
+
+export async function queueOrderConfirmation(order: DeliveryOrder, toEmail: string) {
+  const mail = buildOrderConfirmationMail(order, toEmail);
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    state.outboundMail = state.outboundMail ?? [];
+    state.outboundMail.unshift({
+      id: crypto.randomUUID(),
+      createdAt: nowIso(),
+      ...mail,
+    });
+    saveDemo(state);
+    notifyDemo();
+    return;
+  }
+  const { error } = await getSupabase()!.rpc("queue_order_confirmation", { p_order_id: order.id });
+  if (error) throw new Error(error.message);
 }
 
 export async function listOrdersFor(user: SessionUser): Promise<DeliveryOrder[]> {
@@ -745,9 +772,11 @@ export async function listOrdersFor(user: SessionUser): Promise<DeliveryOrder[]>
     const { orders } = loadDemo();
     if (user.role === "admin") return [...orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     if (user.role === "courier") {
-      return orders
-        .filter(o => o.courierId === user.id || o.status === "pending")
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      const mine = orders.filter(o => o.courierId === user.id);
+      const open = orders
+        .filter(o => o.status === "pending" && !o.courierId)
+        .map(redactPendingForCourier);
+      return [...open, ...mine].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     }
     return orders.filter(o => o.customerId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
@@ -988,10 +1017,6 @@ export function dailyEarnings(orders: DeliveryOrder[], courierId: string) {
   return {
     deliveredCount: deliveredToday.length,
     earningTl: deliveredToday.reduce((sum, o) => sum + o.courierEarningTl, 0),
-    earningUsd: deliveredToday.reduce((sum, o) => {
-      if (o.totalPriceTl > 0) return sum + o.priceUsd * (o.courierEarningTl / o.totalPriceTl);
-      return sum + o.priceUsd * 0.8;
-    }, 0),
     activeCount: mine.filter(o => isActiveOrder(o.status)).length,
   };
 }

@@ -1,10 +1,10 @@
--- Sürüş (yol) mesafesine göre USD fiyat + 30 kg üst sınırı
+-- Sürüş (yol) mesafesine göre TL fiyat + 30 kg üst sınırı
 -- Kuş uçuşu kullanılmaz; distance_km OSRM/ORS sürüş rotasından gelir.
+-- Ücret yalnızca Türk lirasıdır.
 
-alter table public.pricing_settings add column if not exists base_usd numeric(10, 4) not null default 1;
-alter table public.pricing_settings add column if not exists per_km_usd numeric(10, 4) not null default 1;
+alter table public.pricing_settings add column if not exists base_try numeric(10, 2) not null default 600;
+alter table public.pricing_settings add column if not exists per_km_try numeric(10, 2) not null default 50;
 alter table public.pricing_settings add column if not exists rounding_decimals int not null default 2;
-alter table public.pricing_settings add column if not exists usd_to_try numeric(12, 4) not null default 34.5;
 alter table public.pricing_settings add column if not exists routing_provider text not null default 'osrm';
 alter table public.pricing_settings add column if not exists routing_url text not null default 'https://router.project-osrm.org';
 alter table public.pricing_settings add column if not exists geocoder text not null default 'nominatim';
@@ -14,7 +14,6 @@ alter table public.pricing_settings
   add constraint pricing_rounding_check check (rounding_decimals between 0 and 6);
 
 alter table public.orders add column if not exists weight_kg numeric(6, 2) not null default 1;
-alter table public.orders add column if not exists price_usd numeric(10, 4) not null default 0;
 alter table public.orders add column if not exists pickup_lat numeric(10, 7);
 alter table public.orders add column if not exists pickup_lng numeric(10, 7);
 alter table public.orders add column if not exists dropoff_lat numeric(10, 7);
@@ -61,9 +60,8 @@ declare
 begin
   select * into settings from public.pricing_settings where id = 1;
   digits := coalesce(settings.rounding_decimals, 2);
-  raw := coalesce(settings.base_usd, 1) + coalesce(settings.per_km_usd, 1) * greatest(coalesce(new.distance_km, 0), 0);
-  new.price_usd := round(raw, digits);
-  new.total_price_tl := round(new.price_usd * coalesce(settings.usd_to_try, 0), digits);
+  raw := coalesce(settings.base_try, 600) + coalesce(settings.per_km_try, 50) * greatest(coalesce(new.distance_km, 0), 0);
+  new.total_price_tl := round(raw, digits);
   new.company_revenue_tl := round(new.total_price_tl * coalesce(settings.commission_rate, 0.2), 2);
   new.courier_earning_tl := round(new.total_price_tl - new.company_revenue_tl, 2);
   return new;

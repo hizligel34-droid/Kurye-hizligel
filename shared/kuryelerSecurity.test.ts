@@ -7,11 +7,11 @@ import {
 } from "./kuryelerSecurity";
 
 describe("kuryeler güvenlik yardımcıları", () => {
-  it("takip kodunu KY- ve 8 rastgele karakterle üretir", () => {
+  it("takip kodunu KY- ve 32 hex karakterle üretir", () => {
     const codes = new Set(Array.from({ length: 40 }, () => randomTrackingCode()));
     expect(codes.size).toBe(40);
     for (const code of codes) {
-      expect(code).toMatch(/^KY-[A-Z0-9]{8}$/);
+      expect(code).toMatch(/^KY-[A-F0-9]{32}$/);
     }
   });
 

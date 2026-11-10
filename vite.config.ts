@@ -7,7 +7,7 @@ import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
 // =============================================================================
-// Manus Debug Collector - Vite Plugin
+// Tarayıcı günlük toplayıcı — Vite eklentisi
 // Writes browser logs directly to files, trimmed when exceeding size limit
 // =============================================================================
 
@@ -74,7 +74,7 @@ function writeToLogFile(source: LogSource, entries: unknown[]) {
  * - Files: browserConsole.log, networkRequests.log, sessionReplay.log
  * - Auto-trimmed when exceeding 1MB (keeps newest entries)
  */
-function vitePluginManusDebugCollector(): Plugin {
+function vitePluginBrowserLogCollector(): Plugin {
   return {
     name: "manus-debug-collector",
 
@@ -199,13 +199,24 @@ function hizligelAppFallback(): Plugin {
 }
 
 const clientRoot = path.resolve(import.meta.dirname, "client");
+function stripManusFromDist(): Plugin {
+  return {
+    name: "strip-manus-debug",
+    closeBundle() {
+      const dir = path.resolve(import.meta.dirname, "dist/public/__manus__");
+      fs.rmSync(dir, { recursive: true, force: true });
+    },
+  };
+}
+
 const plugins = [
   react(),
   tailwindcss(),
   jsxLocPlugin(),
   vitePluginManusRuntime(),
-  vitePluginManusDebugCollector(),
+  vitePluginBrowserLogCollector(),
   hizligelAppFallback(),
+  stripManusFromDist(),
 ];
 
 export default defineConfig({

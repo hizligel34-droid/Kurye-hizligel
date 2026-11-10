@@ -148,28 +148,37 @@ $$;
 revoke all on function public.track_order_public(text) from public;
 grant execute on function public.track_order_public(text) to anon, authenticated;
 
-create or replace function public.list_courier_open_jobs()
-returns setof public.orders
+drop function if exists public.list_courier_open_jobs();
+create function public.list_courier_open_jobs()
+returns table (
+  id uuid,
+  tracking_code text,
+  status public.order_status,
+  pickup_district text,
+  dropoff_district text,
+  bolge text,
+  distance_km numeric,
+  duration_min numeric,
+  net_price_tl numeric,
+  vat_tl numeric,
+  total_price_tl numeric,
+  weight_kg numeric,
+  created_at timestamptz
+)
 language plpgsql
 stable
 security definer
 set search_path = public
 as $$
-declare
-  my_role public.user_role;
 begin
-  if auth.uid() is null then
-    raise exception 'Giriş yapmalısınız';
-  end if;
-  select role into my_role from public.profiles where id = auth.uid();
-  if my_role is distinct from 'courier' and my_role is distinct from 'admin' then
+  if public.current_role() not in ('courier', 'admin') then
     raise exception 'Yetkisiz';
   end if;
   return query
-    select o.*
+    select o.id, o.tracking_code, o.status, o.pickup_district, o.dropoff_district, o.bolge,
+           o.distance_km, o.duration_min, o.net_price_tl, o.vat_tl, o.total_price_tl, o.weight_kg, o.created_at
     from public.orders o
-    where o.status = 'pending'
-      and o.courier_id is null
+    where o.status = 'pending' and o.courier_id is null
     order by o.created_at desc;
 end;
 $$;
@@ -198,7 +207,9 @@ create policy outbound_mail_select_own on public.outbound_mail_queue
 revoke all on table public.outbound_mail_queue from anon, authenticated;
 grant select on table public.outbound_mail_queue to authenticated;
 
-create or replace function public.queue_order_confirmation(p_order_id uuid)
+drop function if exists public.queue_order_confirmation(text, text, text, jsonb);
+drop function if exists public.queue_order_confirmation(uuid);
+create function public.queue_order_confirmation(p_order_id uuid)
 returns public.outbound_mail_queue
 language plpgsql
 security definer

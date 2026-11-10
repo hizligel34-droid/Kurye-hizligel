@@ -142,20 +142,22 @@ export function validateCommissionRate(rate: number): string | null {
 }
 
 export function validatePricingForm(input: {
-  baseUsd: number;
-  perKmUsd: number;
+  baseTry: number;
+  perKmTry: number;
   roundingDecimals: number;
-  usdToTry: number;
+  vatRate: number;
   routingProvider: string;
   commissionRate: number;
 }): FieldErrors {
   const errors: FieldErrors = {};
-  if (!(input.baseUsd >= 0)) errors.baseUsd = "Açılış ücreti 0 veya daha büyük olmalıdır.";
-  if (!(input.perKmUsd >= 0)) errors.perKmUsd = "Km bedeli 0 veya daha büyük olmalıdır.";
+  if (!(input.baseTry >= 0)) errors.baseTry = "Açılış ücreti 0 veya daha büyük olmalıdır.";
+  if (!(input.perKmTry >= 0)) errors.perKmTry = "Km bedeli 0 veya daha büyük olmalıdır.";
   if (!(input.roundingDecimals >= 0 && input.roundingDecimals <= 6)) {
     errors.roundingDecimals = "Yuvarlama 0–6 basamak olmalıdır.";
   }
-  if (!(input.usdToTry >= 0)) errors.usdToTry = "Kur 0 veya daha büyük olmalıdır (0 = TL gösterme).";
+  if (!(input.vatRate >= 0 && input.vatRate <= 1)) {
+    errors.vatRate = "KDV oranı 0 ile 1 arasında olmalıdır (ör. %20 için 0,20).";
+  }
   if (!["osrm", "ors", "custom"].includes(input.routingProvider as RoutingProvider)) {
     errors.routingProvider = "Rota sağlayıcısını seçin.";
   }

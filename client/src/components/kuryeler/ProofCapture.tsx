@@ -63,6 +63,10 @@ export function ProofCapture({
         <h2 id="proof-title" className="text-lg font-black text-[#D4AF37]">
           {title}
         </h2>
+        <p className="mt-2 text-xs leading-5 text-[#8a7c52]">
+          Yalnızca paketi veya teslim noktasını çekin; kişilerin yüzünü çekmeyin. Fotoğraf ve imza teslimin
+          ispatı için [X] ay saklanır.
+        </p>
         {needPhoto ? (
           <label className="mt-4 block">
             <span className="text-sm font-bold">Fotoğraf</span>
