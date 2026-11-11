@@ -95,7 +95,7 @@ Geliştirmede `localhost` de çalışır; canlıda SSL zorunludur.
 VITE_SUPABASE_URL=https://xxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
 VITE_CONTACT_EMAIL=serif.tekin@hotmail.com
-# Telefon/WhatsApp: shared/contactConfig.ts — 0553 255 67 45 / wa.me/905532556745
+# Telefon/WhatsApp: shared/contactConfig.ts — 0532 474 67 45 / wa.me/905324746745
 # isteğe bağlı OpenRouteService (yoksa OSRM kullanılır)
 # VITE_ORS_API_KEY=
 # Vitrin: kayıt/sipariş kapalı

@@ -227,12 +227,12 @@ describe("kuryeler.tr takip kodu", () => {
 
 describe("kuryeler.tr iletişim", () => {
   it("işletme telefonu ve WhatsApp numarasını gösterir", () => {
-    expect(CONTACT_PHONE_DISPLAY).toBe("0553 255 67 45");
-    expect(CONTACT_PHONE_INTERNATIONAL).toBe("+90 553 255 67 45");
-    expect(CONTACT_PHONE_E164).toBe("905532556745");
-    expect(CONTACT_WHATSAPP_E164).toBe("905532556745");
-    expect(CONTACT_PHONE_TEL).toBe("tel:+905532556745");
-    expect(CONTACT_WHATSAPP_HREF).toBe("https://wa.me/905532556745");
+    expect(CONTACT_PHONE_DISPLAY).toBe("0532 474 67 45");
+    expect(CONTACT_PHONE_INTERNATIONAL).toBe("+90 532 474 67 45");
+    expect(CONTACT_PHONE_E164).toBe("905324746745");
+    expect(CONTACT_WHATSAPP_E164).toBe("905324746745");
+    expect(CONTACT_PHONE_TEL).toBe("tel:+905324746745");
+    expect(CONTACT_WHATSAPP_HREF).toBe("https://wa.me/905324746745");
     expect(BUSINESS.phone).toBe(CONTACT_PHONE_DISPLAY);
   });
 
@@ -363,8 +363,8 @@ describe("sipariş teyit e-postası", () => {
     );
     expect(mail.body).toContain("1.320 TL (KDV dahil)");
     expect(mail.body).toContain("Net 1.100 TL + KDV %20 220 TL");
-    expect(mail.body).toContain("0553 255 67 45");
-    expect(mail.body).not.toMatch(/0532\s*474|905324746745/);
+    expect(mail.body).toContain("0532 474 67 45");
+    expect(mail.body).not.toMatch(/0553\s*255|905532556745/);
     expect(mail.body).toContain("1.100 TL KDV hariç");
     expect(mail.body).toContain("KDV (%20): 220 TL");
     expect(mail.body).not.toContain("KDV ?");

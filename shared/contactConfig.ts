@@ -1,6 +1,6 @@
 /** Müşteri hattı — tek kaynak. Başka dosyaya numara yazma. */
 
-export const CUSTOMER_PHONE_NATIONAL = "05532556745";
+export const CUSTOMER_PHONE_NATIONAL = "05324746745";
 
 const ten = CUSTOMER_PHONE_NATIONAL.slice(-10);
 
