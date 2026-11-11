@@ -88,7 +88,6 @@ import {
   COURIER_SERVICE_TYPES,
   getDeliveryEstimate,
   getWeightSurcharge,
-  PUBLIC_DELIVERY_PROMISE,
   publicServiceTimingLabel,
   type CourierServiceType,
 } from "@shared/courierServices";
@@ -2446,7 +2445,10 @@ export default function Home() {
                         </p>
                       </div>
                       <Badge className="bg-orange-100 text-[#c9381b]">
-                        {PUBLIC_DELIVERY_PROMISE}
+                        {getDeliveryEstimate({
+                          serviceType: form.serviceType,
+                          routeDurationMinutes: routeEstimate.data?.durationMinutes,
+                        }).label}
                       </Badge>
                     </div>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">

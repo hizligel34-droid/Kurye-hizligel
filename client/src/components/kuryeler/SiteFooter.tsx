@@ -42,6 +42,9 @@ export function SiteFooter() {
           <Link href="/islem-rehberi" className="hover:text-[#D4AF37]">
             İşlem rehberi
           </Link>
+          <Link href="/sss" className="hover:text-[#D4AF37]">
+            SSS
+          </Link>
           {profile.email === "?" ? (
             <span>E-posta: ?</span>
           ) : (

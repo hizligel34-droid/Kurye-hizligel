@@ -34,10 +34,10 @@ import {
   calculateDeliveryPrice,
   formatDateTimeTr,
   formatKm,
+  DELIVERY_TARGET_DISCLAIMER,
   formatCustomerDelivery,
   formatPriceInclusive,
   formatTariffInclusive,
-  PUBLIC_DELIVERY_DETAIL,
   isActiveOrder,
   isShowcaseMode,
   PAYMENT_METHOD_LABELS,
@@ -48,6 +48,7 @@ import {
   type PaymentMethod,
   type PricingSettings,
 } from "@shared/kuryeler";
+import { DeliveryTargetsBlock } from "@/components/kuryeler/DeliveryTargetsBlock";
 import { DraftLegalBanner } from "@/components/kuryeler/DraftLegalBanner";
 import { LEGAL_DOCUMENTS, LEGAL_VERSION, ORDER_CHECKBOX_LABELS, ORDER_CONFIRM_BUTTON, sha256Hex } from "@shared/legalTexts";
 import { canCustomerCancel, cancelCopy, paymentHint } from "@shared/kuryelerSupport";
@@ -336,12 +337,12 @@ function CustomerHome() {
               />
               <FieldError id="route-err" message={fieldErrors.route} />
               {route && route.distanceKm > 0 ? (
-                <p className="text-sm text-[#b4a882]">
-                  {formatCustomerDelivery(route.distanceKm, pricing)}
-                  {pricing.deliveryTargetsPublic ? null : (
-                    <span className="mt-1 block text-xs text-[#8a7c52]">{PUBLIC_DELIVERY_DETAIL}</span>
-                  )}
-                </p>
+                <div className="text-sm text-[#b4a882]">
+                  <p>{formatCustomerDelivery(route.distanceKm, pricing)}</p>
+                  {pricing.deliveryTargetsPublic ? (
+                    <p className="mt-1 text-xs text-[#8a7c52]">{DELIVERY_TARGET_DISCLAIMER}</p>
+                  ) : null}
+                </div>
               ) : null}
               <div>
                 <label className="mb-1 block text-sm font-bold text-[#D4AF37]" htmlFor="weight">
@@ -506,9 +507,9 @@ function CustomerHome() {
                   <p className="mt-3 text-sm font-semibold text-[#f5edd6]">
                     {formatCustomerDelivery(quote.distanceKm, pricing)}
                   </p>
-                  {pricing.deliveryTargetsPublic ? null : (
-                    <p className="mt-1 text-xs text-[#8a7c52]">{PUBLIC_DELIVERY_DETAIL}</p>
-                  )}
+                  <div className="mt-3">
+                    <DeliveryTargetsBlock pricing={pricing} variant="compact" />
+                  </div>
                 </>
               ) : (
                 <p className="mt-4 text-sm text-[#8a7c52]">Alım ve teslim noktalarını seçince sürüş ücreti görünür.</p>

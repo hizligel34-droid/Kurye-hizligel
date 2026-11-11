@@ -19,6 +19,9 @@ export function PwaLegalLinks() {
           {email}
         </a>
       )}
+      <a className="hover:text-[#D4AF37]" href="/sss">
+        SSS
+      </a>
       <a className="hover:text-[#D4AF37]" href="/kvkk">
         KVKK
       </a>

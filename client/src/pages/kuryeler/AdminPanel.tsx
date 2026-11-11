@@ -420,13 +420,13 @@ function AdminHome() {
                       checked={pricing.deliveryTargetsPublic}
                       onChange={e => setPricing({ ...pricing, deliveryTargetsPublic: e.target.checked })}
                     />
-                    Teslim süresi tablosunu müşteriye göster (`delivery_targets_public`)
+                    Teslim süresi tablosunu müşteriye göster (`delivery_targets_public`, varsayılan açık)
                   </label>
                   <fieldset className="space-y-2">
-                    <legend className="text-sm font-bold">Hedef teslim kademeleri (iç bilgi, yol km)</legend>
+                    <legend className="text-sm font-bold">Hedef teslim kademeleri (yol km)</legend>
                     <p className="text-xs text-[#8a7c52]">
-                      Yönetici iç bilgi. Varsayılan kapalı (KTY md.43/A-3). Müşteriye “Makul sürede, aktarmasız teslim”
-                      gösterilir. Boş km = son kademe (aynı gün). Garanti veya iade sözü yazılmaz.
+                      Müşteriye açık (varsayılan). Kapalıysa yedek metin: “Makul sürede, aktarmasız teslim”. Boş km =
+                      son kademe (aynı gün). Garanti veya iade sözü yazılmaz.
                     </p>
                     {pricing.deliveryTargetTiers.map((tier, index) => (
                       <div key={`${index}-${tier.label}`} className="grid grid-cols-[7rem_1fr] gap-2">

@@ -7,11 +7,16 @@ const SITE_META: Record<string, { title: string; description: string }> = {
   "/": {
     title: "Hızlıgel — kuryeler.tr İstanbul kurye",
     description:
-      "Hızlıgel: İstanbul içi kurye. Makul sürede, aktarmasız teslim. Üç ayrı uygulama — Müşteri, Kurye, Yönetici. Fiyatı TL görün, teslimatı takip edin.",
+      "Hızlıgel: İstanbul içi kurye. İl içi aynı gün teslimat. Üç ayrı uygulama — Müşteri, Kurye, Yönetici. Fiyatı TL görün, teslimatı takip edin.",
   },
   "/takip": {
     title: "Sipariş takibi — Hızlıgel",
     description: "Takip kodunuzla Hızlıgel siparişinizin durumunu görün.",
+  },
+  "/sss": {
+    title: "SSS — Hızlıgel",
+    description:
+      "Hızlıgel teslim süreleri: İl içi aynı gün teslimat. Hedef süredir; trafik ve hava koşullarına göre değişebilir.",
   },
   "/kvkk": {
     title: "KVKK Aydınlatma Metni — Hızlıgel",

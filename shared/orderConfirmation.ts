@@ -1,13 +1,17 @@
 import {
   BUSINESS,
   CONTACT_PHONE_DISPLAY,
+  DELIVERY_TARGET_DISCLAIMER,
+  SAME_DAY_CITY_DELIVERY,
   breakdownFromOrder,
+  formatCustomerDelivery,
   formatDateTimeTr,
   formatKm,
   formatPriceBreakdown,
   formatPriceHint,
   formatPriceInclusive,
   formatTariff,
+  isDeliveryTargetsPublic,
   type DeliveryOrder,
 } from "./kuryeler";
 
@@ -28,7 +32,10 @@ export function buildOrderConfirmationMail(order: DeliveryOrder, toEmail: string
     ``,
     `Takip kodu: ${order.trackingCode}`,
     `Hizmet: İstanbul içi kurye ile ${order.product || "gönderi"} taşıma`,
-    `Teslim: Makul sürede, aktarmasız teslim`,
+    `Teslim: ${formatCustomerDelivery(order.distanceKm)}`,
+    ...(isDeliveryTargetsPublic()
+      ? [`${SAME_DAY_CITY_DELIVERY}. ${DELIVERY_TARGET_DISCLAIMER}`]
+      : []),
     `Alım: ${order.pickupAddress}`,
     `Teslim: ${order.dropoffAddress}`,
     `Sürüş: ${formatKm(order.distanceKm)}`,

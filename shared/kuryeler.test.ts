@@ -10,10 +10,14 @@ import {
   DEFAULT_DELIVERY_TARGET_TIERS,
   DEFAULT_PRICING,
   DEFAULT_VAT_RATE,
+  DELIVERY_TARGET_DISCLAIMER,
   deliveryTargetForDistance,
+  deliveryTargetTable,
   displayStatus,
   formatCustomerDelivery,
   formatDeliveryTarget,
+  PUBLIC_DELIVERY_PROMISE,
+  SAME_DAY_CITY_DELIVERY,
   formatPriceBreakdown,
   formatPriceHint,
   formatPriceInclusive,
@@ -148,7 +152,7 @@ describe("kuryeler.tr sürüş fiyatı", () => {
         roundingDecimals: 2,
         vatRate: 0.2,
         showcaseMode: false,
-        deliveryTargetsPublic: false,
+        deliveryTargetsPublic: true,
       }),
     );
   });
@@ -180,13 +184,22 @@ describe("kuryeler.tr hedef teslim kademeleri", () => {
     expect(DEFAULT_DELIVERY_TARGET_TIERS.map(tier => tier.maxKm)).toEqual([5, 20, 40, 100, null]);
   });
 
-  it("müşteriye varsayılan olarak süre tablosu göstermez", () => {
-    expect(DEFAULT_PRICING.deliveryTargetsPublic).toBe(false);
-    expect(formatCustomerDelivery(5)).toBe("Makul sürede, aktarmasız teslim");
-    expect(formatCustomerDelivery(120)).toBe("Makul sürede, aktarmasız teslim");
-    expect(formatCustomerDelivery(5, { ...DEFAULT_PRICING, deliveryTargetsPublic: true })).toBe(
-      "Hedef teslim: 60 dakika",
-    );
+  it("müşteriye varsayılan olarak kademe tablosunu açar", () => {
+    expect(DEFAULT_PRICING.deliveryTargetsPublic).toBe(true);
+    expect(formatCustomerDelivery(5)).toBe("Hedef teslim: 60 dakika");
+    expect(formatCustomerDelivery(120)).toBe("Hedef teslim: aynı gün");
+    expect(SAME_DAY_CITY_DELIVERY).toBe("İl içi aynı gün teslimat");
+    expect(DELIVERY_TARGET_DISCLAIMER).toBe("Hedef süredir; trafik ve hava koşullarına göre değişebilir.");
+    expect(deliveryTargetTable()).toEqual([
+      { range: "≤5 km", label: "60 dakika" },
+      { range: "≤20 km", label: "2 saat" },
+      { range: "≤40 km", label: "3 saat" },
+      { range: "≤100 km", label: "4 saat" },
+      { range: ">100 km", label: "aynı gün" },
+    ]);
+    expect(
+      formatCustomerDelivery(5, { ...DEFAULT_PRICING, deliveryTargetsPublic: false }),
+    ).toBe(PUBLIC_DELIVERY_PROMISE);
   });
 });
 
@@ -352,8 +365,8 @@ describe("sipariş teyit e-postası", () => {
     expect(mail.body).toContain("KEP: ?");
     expect(mail.body).not.toMatch(/MERSİS/);
     expect(mail.body).not.toMatch(/TCKN|T\.C\. kimlik/i);
-    expect(mail.body).toContain("Makul sürede, aktarmasız teslim");
-    expect(mail.body).not.toContain("60 dakika");
-    expect(mail.body).not.toContain("aynı gün teslim");
+    expect(mail.body).toContain("Hedef teslim: 2 saat");
+    expect(mail.body).toContain("İl içi aynı gün teslimat");
+    expect(mail.body).toContain("Hedef süredir; trafik ve hava koşullarına göre değişebilir.");
   });
 });

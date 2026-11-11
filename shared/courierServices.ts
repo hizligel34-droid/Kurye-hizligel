@@ -14,7 +14,7 @@ export const PUBLIC_DELIVERY_PROMISE = "Makul sürede, aktarmasız teslim";
 
 export function publicServiceTimingLabel(
   service: { deliveryTargetMinutes: number },
-  deliveryTargetsPublic = false,
+  deliveryTargetsPublic = true,
 ) {
   if (!deliveryTargetsPublic) return PUBLIC_DELIVERY_PROMISE;
   return service.deliveryTargetMinutes === 60 ? "60 dk" : "2–3 saat";
@@ -28,7 +28,7 @@ export function getDeliveryEstimate(input: {
   const service = COURIER_SERVICES[input.serviceType ?? "standard"];
   const routeMinutes = Math.max(0, Number(input.routeDurationMinutes) || 0);
   const calculatedMinutes = Math.ceil(routeMinutes + service.assignmentMinutes);
-  const publicTargets = Boolean(input.deliveryTargetsPublic);
+  const publicTargets = input.deliveryTargetsPublic ?? true;
   return {
     assignmentMinutes: service.assignmentMinutes,
     calculatedMinutes,

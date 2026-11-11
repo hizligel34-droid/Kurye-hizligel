@@ -182,9 +182,9 @@ export function formatDeliveryTarget(
 
 export function deliveryTargetRangeLabel(tier: DeliveryTargetTier, previousMaxKm: number | null) {
   if (tier.maxKm == null) {
-    return previousMaxKm == null ? "üst kademe" : `${previousMaxKm} km üstü`;
+    return previousMaxKm == null ? "üst kademe" : `>${previousMaxKm} km`;
   }
-  return `${tier.maxKm} km ve altı`;
+  return `≤${tier.maxKm} km`;
 }
 
 export function deliveryTargetTable(tiers: DeliveryTargetTier[] = DEFAULT_DELIVERY_TARGET_TIERS) {
@@ -214,7 +214,7 @@ export type PricingSettings = {
   commissionRate: number;
   showcaseMode: boolean;
   deliveryTargetTiers: DeliveryTargetTier[];
-  /** Müşteriye süre tablosu/taahhüdü. Varsayılan kapalı (KTY md.43/A-3). */
+  /** Müşteriye süre tablosu. Varsayılan açık; false ise yedek metin. */
   deliveryTargetsPublic: boolean;
 };
 
@@ -229,15 +229,16 @@ export const DEFAULT_PRICING: PricingSettings = {
   commissionRate: 0.2,
   showcaseMode: false,
   deliveryTargetTiers: DEFAULT_DELIVERY_TARGET_TIERS.map(tier => ({ ...tier })),
-  deliveryTargetsPublic: false,
+  deliveryTargetsPublic: true,
 };
 
+export const SAME_DAY_CITY_DELIVERY = "İl içi aynı gün teslimat";
 export const PUBLIC_DELIVERY_PROMISE = "Makul sürede, aktarmasız teslim";
 export const PUBLIC_DELIVERY_DETAIL =
   "Gönderiniz, kurye tarafından teslim alındıktan sonra aktarma ve depolama yapılmadan doğrudan alıcıya götürülür ve makul bir sürede teslim edilir. Mevzuat gereği teslim süresi taahhüdü verilmez. Gönderinizin nerede olduğunu uygulamadan canlı izleyebilirsiniz.";
 
 export function isDeliveryTargetsPublic(pricing?: Pick<PricingSettings, "deliveryTargetsPublic"> | null) {
-  return Boolean(pricing?.deliveryTargetsPublic);
+  return Boolean(pricing?.deliveryTargetsPublic ?? DEFAULT_PRICING.deliveryTargetsPublic);
 }
 
 export function formatCustomerDelivery(

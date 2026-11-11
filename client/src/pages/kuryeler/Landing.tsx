@@ -1,4 +1,5 @@
 import { BrandMark, DemoBanner } from "@/components/kuryeler/BrandShell";
+import { DeliveryTargetsBlock } from "@/components/kuryeler/DeliveryTargetsBlock";
 import { SiteFooter } from "@/components/kuryeler/SiteFooter";
 import { SkipLink } from "@/components/kuryeler/UiStates";
 import { WhatsAppButton, WhatsAppFab } from "@/components/kuryeler/WhatsAppButton";
@@ -21,12 +22,7 @@ import {
   formatPriceInclusive,
   formatTariffInclusive,
   isShowcaseMode,
-  DEFAULT_DELIVERY_TARGET_TIERS,
-  DELIVERY_TARGET_DISCLAIMER,
-  deliveryTargetTable,
-  isDeliveryTargetsPublic,
-  PUBLIC_DELIVERY_DETAIL,
-  PUBLIC_DELIVERY_PROMISE,
+  SAME_DAY_CITY_DELIVERY,
   type PricingSettings,
 } from "@shared/kuryeler";
 import { PWA_APPS } from "@shared/kuryelerPwa";
@@ -93,7 +89,7 @@ export default function Landing() {
       addressRegion: "İstanbul",
       addressCountry: "TR",
     },
-    description: "İstanbul içi kurye teslimat. Üç ayrı uygulama: Müşteri, Kurye, Yönetici.",
+    description: `İstanbul içi kurye teslimat. ${SAME_DAY_CITY_DELIVERY}. Üç ayrı uygulama: Müşteri, Kurye, Yönetici.`,
     ...(BUSINESS.taxId !== "?" ? { taxID: BUSINESS.taxId } : {}),
     ...(BUSINESS.email !== "?" ? { email: BUSINESS.email } : {}),
     founder: BUSINESS.ownerName,
@@ -221,24 +217,25 @@ export default function Landing() {
           <h2 id="teslim-baslik" className="text-2xl font-black">
             Teslim
           </h2>
-          {isDeliveryTargetsPublic(pricing) ? (
-            <>
-              <p className="mt-2 max-w-2xl text-sm text-[#b4a882]">Yol mesafesine göre hedef süre. {DELIVERY_TARGET_DISCLAIMER}</p>
-              <ul className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                {deliveryTargetTable(pricing.deliveryTargetTiers ?? DEFAULT_DELIVERY_TARGET_TIERS).map(row => (
-                  <li key={row.range} className={`${cardClass} p-4`}>
-                    <p className="text-xs font-bold uppercase tracking-wide text-[#8a7c52]">{row.range}</p>
-                    <p className="mt-2 text-lg font-black text-[#D4AF37]">{row.label}</p>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <>
-              <p className="mt-3 text-lg font-black text-[#D4AF37]">{PUBLIC_DELIVERY_PROMISE}</p>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#b4a882]">{PUBLIC_DELIVERY_DETAIL}</p>
-            </>
-          )}
+          <p className="mt-2 max-w-2xl text-sm text-[#b4a882]">Yol mesafesine göre hedef süre.</p>
+          <div className="mt-4">
+            <DeliveryTargetsBlock pricing={pricing} />
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 py-6" aria-labelledby="sss-baslik" id="sss">
+          <h2 id="sss-baslik" className="text-2xl font-black">
+            Sıkça sorulanlar
+          </h2>
+          <div className={`${cardClass} mt-6 p-5`}>
+            <h3 className="font-extrabold">Teslim ne kadar sürer?</h3>
+            <div className="mt-3">
+              <DeliveryTargetsBlock pricing={pricing} />
+            </div>
+            <Link href="/sss" className="mt-4 inline-block text-sm font-bold text-[#D4AF37]">
+              Tüm SSS
+            </Link>
+          </div>
         </section>
 
         <section className="mx-auto max-w-6xl px-4 py-6">
