@@ -22,7 +22,7 @@ import {
 } from "@/lib/kuryelerApi";
 import { copyText } from "@/lib/kuryelerShare";
 import { PriceLines } from "@/components/kuryeler/PriceLines";
-import { areaClass, cardClass, fieldClass, goldBtn, ghostBtn } from "@/lib/kuryelerTheme";
+import { areaClass, cardClass, checkLabelClass, fieldClass, goldBtn, ghostBtn } from "@/lib/kuryelerTheme";
 import {
   BANNED_GOODS_HINT,
   BUSINESS,
@@ -264,7 +264,7 @@ function CustomerHome() {
         <div
           role="tablist"
           aria-label="Sipariş görünümü"
-          className="mt-4 grid grid-cols-3 gap-1 rounded-2xl border border-[#3a3014] bg-black p-1 sm:gap-2"
+          className="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-[#3a3014] bg-black p-1"
         >
           {([
             ["yeni", "Yeni"],
@@ -324,7 +324,7 @@ function CustomerHome() {
                   onChange={e => setProduct(e.target.value)}
                 />
                 <FieldError id="product-err" message={fieldErrors.product} />
-                <p className="mt-1 text-xs text-[#8a7c52]">{BANNED_GOODS_HINT}</p>
+                <p className="mt-1 text-sm text-[#8a7c52]">{BANNED_GOODS_HINT}</p>
               </div>
               <RoutePicker
                 pricing={pricing}
@@ -341,7 +341,7 @@ function CustomerHome() {
                 <div className="text-sm text-[#b4a882]">
                   <p>{formatCustomerDelivery(route.distanceKm, pricing)}</p>
                   {pricing.deliveryTargetsPublic ? (
-                    <p className="mt-1 text-xs text-[#8a7c52]">{DELIVERY_TARGET_DISCLAIMER}</p>
+                    <p className="mt-1 text-sm text-[#8a7c52]">{DELIVERY_TARGET_DISCLAIMER}</p>
                   ) : null}
                 </div>
               ) : null}
@@ -375,6 +375,7 @@ function CustomerHome() {
                   id="recipient"
                   className={fieldClass}
                   placeholder="Ad soyad"
+                  autoComplete="name"
                   value={recipientName}
                   aria-invalid={Boolean(fieldErrors.recipientName)}
                   aria-describedby={fieldErrors.recipientName ? "recipient-err" : undefined}
@@ -394,7 +395,9 @@ function CustomerHome() {
                   aria-invalid={Boolean(fieldErrors.recipientPhone)}
                   aria-describedby={fieldErrors.recipientPhone ? "recipient-phone-err" : undefined}
                   onChange={e => setRecipientPhone(e.target.value)}
+                  type="tel"
                   inputMode="tel"
+                  autoComplete="tel"
                 />
                 <FieldError id="recipient-phone-err" message={fieldErrors.recipientPhone} />
               </div>
@@ -423,7 +426,7 @@ function CustomerHome() {
                   </button>
                 </div>
                 {asap ? (
-                  <p className="text-xs text-[#8a7c52]">En kısa sürede alım talebi — süre garantisi değildir.</p>
+                  <p className="text-sm text-[#8a7c52]">En kısa sürede alım talebi — süre garantisi değildir.</p>
                 ) : (
                   <>
                     <Input
@@ -451,6 +454,7 @@ function CustomerHome() {
                   aria-invalid={Boolean(fieldErrors.contactPhone)}
                   aria-describedby={fieldErrors.contactPhone ? "contact-phone-err" : undefined}
                   onChange={e => setPhone(e.target.value)}
+                  type="tel"
                   inputMode="tel"
                   autoComplete="tel"
                 />
@@ -475,7 +479,7 @@ function CustomerHome() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-[#8a7c52]">{paymentHint(paymentMethod, "bekliyor")}</p>
+                <p className="mt-2 text-sm text-[#8a7c52]">{paymentHint(paymentMethod, "bekliyor")}</p>
               </fieldset>
               <label className="block" htmlFor="order-notes">
                 <span className="mb-1 block text-sm font-bold text-[#D4AF37]">Notlar (isteğe bağlı)</span>
@@ -495,14 +499,14 @@ function CustomerHome() {
                   <div className="mt-4">
                     <PriceLines price={quote} size="large" audience="consumer" />
                   </div>
-                  <p className="mt-2 text-xs text-[#8a7c52]">
+                  <p className="mt-2 text-sm text-[#8a7c52]">
                     Hizmet: İstanbul içi kurye ile {product || "gönderi"} taşıma · {formatKm(quote.distanceKm)} sürüş · en fazla {MAX_WEIGHT_KG} kg
                   </p>
-                  <p className="mt-1 text-xs text-[#8a7c52]">Tarih/saat: {formatDateTimeTr(scheduledAt)}</p>
-                  <p className="mt-1 text-xs text-[#8a7c52]">
+                  <p className="mt-1 text-sm text-[#8a7c52]">Tarih/saat: {formatDateTimeTr(scheduledAt)}</p>
+                  <p className="mt-1 text-sm text-[#8a7c52]">
                     Toplam: {formatPriceInclusive(quote)} · Ödeme: {PAYMENT_METHOD_LABELS[paymentMethod]}
                   </p>
-                  <p className="mt-1 text-xs text-[#8a7c52]">
+                  <p className="mt-1 text-sm text-[#8a7c52]">
                     Sürüş {formatKm(quote.distanceKm)} · {formatTariffInclusive(pricing)}
                   </p>
                   <p className="mt-3 text-sm font-semibold text-[#f5edd6]">
@@ -515,52 +519,52 @@ function CustomerHome() {
               ) : (
                 <p className="mt-4 text-sm text-[#8a7c52]">Alım ve teslim noktalarını seçince sürüş ücreti görünür.</p>
               )}
-              <p className="mt-3 text-xs leading-5 text-[#8a7c52]">
+              <p className="mt-3 text-sm leading-6 text-[#8a7c52]">
                 Hizmet sağlayıcı: {BUSINESS.legalName} · İşletme sahibi: {BUSINESS.ownerName} · Vergi dairesi:{" "}
                 {BUSINESS.taxOffice} · VKN: {BUSINESS.taxId} · KEP: {BUSINESS.kep} · {BUSINESS.address} ·{" "}
                 <a className="font-semibold text-[#D4AF37]" href={CONTACT_PHONE_TEL}>
                   {CONTACT_PHONE_DISPLAY}
                 </a>
               </p>
-              <p className="mt-2 text-xs leading-5 text-[#8a7c52]">
+              <p className="mt-2 text-sm leading-6 text-[#8a7c52]">
                 Cayma: Bu hizmet seçtiğiniz tarih ve saatte yapılan bir eşya taşımasıdır ve onayınızla hemen
                 başlar; bu nedenle cayma hakkı kullanılamaz (Mesafeli Sözleşmeler Yönetmeliği md.15/1-g, h).
                 Kurye atanmadan önce ücretsiz iptal edebilirsiniz.
               </p>
-              <p className="mt-2 text-xs text-[#8a7c52]">
+              <p className="mt-2 text-sm text-[#8a7c52]">
                 Şikâyet: {BUSINESS.email} ·{" "}
                 <a className="font-semibold text-[#D4AF37]" href={CONTACT_PHONE_TEL}>
                   {CONTACT_PHONE_DISPLAY}
                 </a>{" "}
                 · Tüketici hakem heyeti / arabuluculuk.
               </p>
-              <p className="mt-2 text-xs text-[#8a7c52]">
+              <p className="mt-2 text-sm text-[#8a7c52]">
                 Fiyat yol (sürüş) mesafesine göredir, kuş uçuşu değildir. Görünen tutar {VAT_INCL_LABEL}dir.
                 Gerçek kart tahsilatı yok; yöntem ve durum kayıt edilir. {MAX_WEIGHT_KG} kg üzeri kabul edilmez.
               </p>
               <div className="mt-4">
                 <DraftLegalBanner />
               </div>
-              <label className="mt-4 flex items-start gap-2 text-xs leading-5 text-[#b4a882]">
-                <input className="mt-0.5" type="checkbox" checked={preInfoOk} onChange={e => setPreInfoOk(e.target.checked)} />
+              <label className={`mt-4 ${checkLabelClass}`}>
+                <input className="mt-1 size-5 shrink-0" type="checkbox" checked={preInfoOk} onChange={e => setPreInfoOk(e.target.checked)} />
                 <span>
                   {ORDER_CHECKBOX_LABELS.preInfo}{" "}
-                  <a href="/on-bilgilendirme" className="font-bold text-[#D4AF37]" target="_blank" rel="noreferrer">
+                  <a href="/on-bilgilendirme" className="inline-flex min-h-11 items-center font-bold text-[#D4AF37]" target="_blank" rel="noreferrer">
                     Ön Bilgilendirme
                   </a>
                   {" · "}
-                  <a href="/mesafeli-sozlesme" className="font-bold text-[#D4AF37]" target="_blank" rel="noreferrer">
+                  <a href="/mesafeli-sozlesme" className="inline-flex min-h-11 items-center font-bold text-[#D4AF37]" target="_blank" rel="noreferrer">
                     Mesafeli Sözleşme
                   </a>
                 </span>
               </label>
-              <label className="mt-2 flex items-start gap-2 text-xs leading-5 text-[#b4a882]">
-                <input className="mt-0.5" type="checkbox" checked={withdrawOk} onChange={e => setWithdrawOk(e.target.checked)} />
+              <label className={checkLabelClass}>
+                <input className="mt-1 size-5 shrink-0" type="checkbox" checked={withdrawOk} onChange={e => setWithdrawOk(e.target.checked)} />
                 <span>{ORDER_CHECKBOX_LABELS.withdraw}</span>
               </label>
-              <p className="mt-2 text-xs text-[#8a7c52]">
+              <p className="mt-2 text-sm text-[#8a7c52]">
                 Kişisel verileriniz{" "}
-                <a href="/kvkk" className="font-bold text-[#D4AF37]" target="_blank" rel="noreferrer">
+                <a href="/kvkk" className="inline-flex min-h-11 items-center font-bold text-[#D4AF37]" target="_blank" rel="noreferrer">
                   KVKK Aydınlatma Metni
                 </a>
                 ’ne göre işlenir. Onay kutuları işaretlenmeden sipariş verilmez.
@@ -574,7 +578,7 @@ function CustomerHome() {
 
         {checkoutHtml ? (
           <div className="mt-5 overflow-hidden rounded-2xl border border-[#3a3014] bg-white p-2">
-            <p className="mb-2 px-2 text-xs text-[#8a7c52]">Kart bilgisi iyzico formuna yazılır; sitemizde saklanmaz.</p>
+            <p className="mb-2 px-2 text-sm text-[#8a7c52]">Kart bilgisi iyzico formuna yazılır; sitemizde saklanmaz.</p>
             <div dangerouslySetInnerHTML={{ __html: checkoutHtml }} />
           </div>
         ) : null}
@@ -600,7 +604,7 @@ function CustomerHome() {
                   showMap
                   showProof
                   extra={
-                    <p className="mt-2 text-xs text-[#8a7c52]">
+                    <p className="mt-2 text-sm text-[#8a7c52]">
                       Durum: {STATUS_LABELS[order.status]}
                     </p>
                   }
@@ -654,7 +658,7 @@ function CustomerHome() {
         )}
 
         {orders[0] ? (
-          <p className="mt-6 text-xs text-[#8a7c52]">
+          <p className="mt-6 text-sm text-[#8a7c52]">
             Son sipariş{" "}
             <StatusBadge label={STATUS_LABELS[orders[0].status]} className={statusTone(orders[0].status)} />
           </p>

@@ -1,12 +1,12 @@
-import { BrandMark, DemoBanner } from "@/components/kuryeler/BrandShell";
+import { DemoBanner } from "@/components/kuryeler/BrandShell";
 import { MobileCallBar } from "@/components/kuryeler/MobileCallBar";
 import { PriceCalculator } from "@/components/kuryeler/PriceCalculator";
 import { SiteFooter } from "@/components/kuryeler/SiteFooter";
+import { SiteHeader } from "@/components/kuryeler/SiteMenu";
 import { SkipLink } from "@/components/kuryeler/UiStates";
 import { getPricing } from "@/lib/kuryelerApi";
 import { DEFAULT_PRICING, formatTariff, formatTariffInclusive, type PricingSettings } from "@shared/kuryeler";
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
 
 export default function UcretHesapla() {
   const [pricing, setPricing] = useState<PricingSettings>(DEFAULT_PRICING);
@@ -17,17 +17,10 @@ export default function UcretHesapla() {
   }, []);
 
   return (
-    <div className="min-h-dvh bg-[var(--ink)] text-[#f5edd6]">
+    <div className="has-call-bar touch-scope min-h-dvh overflow-x-clip bg-[var(--ink)] pb-[var(--mobile-bottom-bar)] text-base leading-[1.5] text-[#f5edd6] md:pb-0">
       <SkipLink />
       <DemoBanner />
-      <header className="border-b border-[#3a3014] bg-black">
-        <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-4">
-          <BrandMark compact />
-          <Link href="/" className="text-sm font-bold text-[var(--gold)]">
-            Ana sayfa
-          </Link>
-        </div>
-      </header>
+      <SiteHeader compact />
       <main id="icerik" className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Tarife</p>
         <h1 className="mt-2 text-3xl font-black">Ücret hesapla</h1>
@@ -39,7 +32,6 @@ export default function UcretHesapla() {
         </div>
       </main>
       <SiteFooter />
-      <div className="h-16 md:hidden" aria-hidden />
       <MobileCallBar />
     </div>
   );

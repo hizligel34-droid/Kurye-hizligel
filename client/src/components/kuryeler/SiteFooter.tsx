@@ -32,42 +32,42 @@ export function SiteFooter() {
             <KunyeBlock profile={profile} compact />
           </div>
         </div>
-        <nav aria-label="Yasal ve iletişim" className="flex flex-wrap gap-x-4 gap-y-2 font-semibold">
-          <Link href="/kunye" className="hover:text-[#D4AF37]">
+        <nav aria-label="Yasal ve iletişim" className="flex flex-wrap gap-2 font-semibold">
+          <Link href="/kunye" className="inline-flex min-h-11 min-w-11 items-center px-2 hover:text-[#D4AF37]">
             Künye
           </Link>
-          <Link href="/iletisim" className="hover:text-[#D4AF37]">
+          <Link href="/iletisim" className="inline-flex min-h-11 min-w-11 items-center px-2 hover:text-[#D4AF37]">
             İletişim
           </Link>
-          <Link href="/islem-rehberi" className="hover:text-[#D4AF37]">
+          <Link href="/islem-rehberi" className="inline-flex min-h-11 min-w-11 items-center px-2 hover:text-[#D4AF37]">
             İşlem rehberi
           </Link>
-          <Link href="/sss" className="hover:text-[#D4AF37]">
+          <Link href="/sss" className="inline-flex min-h-11 min-w-11 items-center px-2 hover:text-[#D4AF37]">
             SSS
           </Link>
           {profile.email === "?" ? (
-            <span>E-posta: ?</span>
+            <span className="inline-flex min-h-11 items-center px-2">E-posta: ?</span>
           ) : (
-            <a className="hover:text-[#D4AF37]" href={`mailto:${profile.email}`}>
+            <a className="inline-flex min-h-11 min-w-11 items-center px-2 hover:text-[#D4AF37]" href={`mailto:${profile.email}`}>
               {profile.email}
             </a>
           )}
-          <a className="hover:text-[#D4AF37]" href={tel}>
+          <a className="inline-flex min-h-11 min-w-11 items-center px-2 hover:text-[#D4AF37]" href={tel}>
             {phone}
           </a>
-          <Link href="/on-bilgilendirme" className="hover:text-[#D4AF37]">
+          <Link href="/on-bilgilendirme" className="inline-flex min-h-11 min-w-11 items-center px-2 hover:text-[#D4AF37]">
             Ön bilgi
           </Link>
-          <Link href="/kvkk" className="hover:text-[#D4AF37]">
+          <Link href="/kvkk" className="inline-flex min-h-11 min-w-11 items-center px-2 hover:text-[#D4AF37]">
             KVKK
           </Link>
-          <Link href="/cerez" className="hover:text-[#D4AF37]">
+          <Link href="/cerez" className="inline-flex min-h-11 min-w-11 items-center px-2 hover:text-[#D4AF37]">
             Çerez
           </Link>
-          <Link href="/kullanim-kosullari" className="hover:text-[#D4AF37]">
+          <Link href="/kullanim-kosullari" className="inline-flex min-h-11 min-w-11 items-center px-2 hover:text-[#D4AF37]">
             Kullanım koşulları
           </Link>
-          <Link href="/odeme-bilgisi" className="hover:text-[#D4AF37]">
+          <Link href="/odeme-bilgisi" className="inline-flex min-h-11 min-w-11 items-center px-2 hover:text-[#D4AF37]">
             Ödeme
           </Link>
         </nav>

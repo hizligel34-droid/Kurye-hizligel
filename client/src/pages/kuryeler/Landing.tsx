@@ -1,8 +1,9 @@
-import { BrandMark, DemoBanner } from "@/components/kuryeler/BrandShell";
+import { DemoBanner } from "@/components/kuryeler/BrandShell";
 import { DeliveryTargetsBlock } from "@/components/kuryeler/DeliveryTargetsBlock";
 import { MobileCallBar } from "@/components/kuryeler/MobileCallBar";
 import { PriceCalculator } from "@/components/kuryeler/PriceCalculator";
 import { SiteFooter } from "@/components/kuryeler/SiteFooter";
+import { SiteHeader } from "@/components/kuryeler/SiteMenu";
 import { SkipLink } from "@/components/kuryeler/UiStates";
 import { WhatsAppButton } from "@/components/kuryeler/WhatsAppButton";
 import { Button } from "@/components/ui/button";
@@ -116,28 +117,13 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-[var(--ink)] text-[#f5edd6]">
+    <div className="has-call-bar touch-scope min-h-dvh overflow-x-clip bg-[var(--ink)] pb-[var(--mobile-bottom-bar)] text-base leading-[1.5] text-[#f5edd6] md:pb-0">
       <SkipLink />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <DemoBanner />
-      <header className="sticky top-0 z-20 border-b border-[#3a3014] bg-black/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4">
-          <BrandMark />
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            <Button variant="ghost" size="sm" className="px-2 text-[#f5edd6] sm:px-3" asChild>
-              <Link href="/iletisim">İletişim</Link>
-            </Button>
-            <Button variant="ghost" size="sm" className="hidden px-2 text-[#f5edd6] sm:inline-flex sm:px-3" asChild>
-              <Link href="/takip">Takip</Link>
-            </Button>
-            <Button size="sm" className={`${goldBtn} hidden whitespace-nowrap md:inline-flex`} asChild>
-              <a href="#cagir">{PRIMARY_CTA}</a>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
-      <main id="icerik" className="pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0">
+      <main id="icerik">
         <section className="relative overflow-hidden">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.18),transparent_42%)]" />
           <div className="relative mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:gap-10 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:py-16">
@@ -145,15 +131,15 @@ export default function Landing() {
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--gold)]">
                 İstanbul · {BRAND_PRODUCT} · {BRAND_NAME}
               </p>
-              <h1 className="mt-3 max-w-xl text-[2rem] font-black leading-tight tracking-tight text-[#f5edd6] sm:text-5xl">
+              <h1 className="mt-3 max-w-xl break-words text-[2rem] font-black leading-tight tracking-tight text-[#f5edd6] sm:text-5xl">
                 {HERO_HEADLINE}
               </h1>
-              <p className="mt-4 max-w-lg text-base leading-7 text-[#b4a882]">{HERO_LEAD}</p>
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Button size="lg" className={`h-12 px-6 text-base ${goldBtn}`} asChild>
+              <p className="mt-4 max-w-lg text-base leading-[1.5] text-[#b4a882]">{HERO_LEAD}</p>
+              <div className="mt-7 flex flex-col gap-2 sm:flex-row">
+                <Button size="lg" className={`h-12 w-full px-6 text-base sm:w-auto ${goldBtn}`} asChild>
                   <a href="#cagir">{PRIMARY_CTA}</a>
                 </Button>
-                <Button size="lg" variant="outline" className={`h-12 px-6 text-base ${ghostBtn}`} asChild>
+                <Button size="lg" variant="outline" className={`h-12 w-full px-6 text-base sm:w-auto ${ghostBtn}`} asChild>
                   <a href={contactPhoneTel()}>
                     <Phone className="mr-2 size-4" aria-hidden />
                     {SECONDARY_CTA}
@@ -229,7 +215,7 @@ export default function Landing() {
               </article>
             ))}
           </div>
-          <Link href="/sss" className="mt-4 inline-block text-sm font-bold text-[var(--gold)]">
+          <Link href="/sss" className="mt-4 inline-flex min-h-11 items-center text-sm font-bold text-[var(--gold)]">
             Tüm SSS
           </Link>
         </section>
@@ -300,12 +286,17 @@ export default function Landing() {
               <p className="mt-2 text-sm leading-6 text-[#8a7c52]">
                 {BUSINESS.legalName} – Hızlıgel / kuryeler.tr · {BUSINESS.address}
               </p>
-              <p className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">
-                <Phone className="size-4 text-[var(--gold)]" aria-hidden />
-                <a href={contactPhoneTel()}>{contactPhoneDisplay()}</a>
+              <p className="mt-4">
+                <a
+                  className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold"
+                  href={contactPhoneTel()}
+                >
+                  <Phone className="size-4 text-[var(--gold)]" aria-hidden />
+                  {contactPhoneDisplay()}
+                </a>
               </p>
-              <p className="mt-2 text-xs text-[#8a7c52]">E-posta: {BUSINESS.email}</p>
-              <Link href="/iletisim" className="mt-3 inline-block text-sm font-bold text-[var(--gold)]">
+              <p className="mt-2 text-sm text-[#8a7c52]">E-posta: {BUSINESS.email}</p>
+              <Link href="/iletisim" className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-[var(--gold)]">
                 Tam iletişim / künye
               </Link>
             </div>

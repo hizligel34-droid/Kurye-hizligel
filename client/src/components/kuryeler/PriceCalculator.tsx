@@ -55,10 +55,10 @@ export function PriceCalculator({
         />
       </div>
       <div className="mt-4 rounded-2xl border border-[#3a3014] bg-black p-4">
-        <p className="text-3xl font-black leading-tight text-[var(--gold)] sm:text-4xl">
+        <p className="break-words text-3xl font-black leading-tight text-[var(--gold)] sm:text-4xl">
           {distanceKm > 0 ? formatConsumerGross(price) : "—"}
         </p>
-        <p className="mt-1 text-xs text-[#8a7c52]">
+        <p className="mt-1 text-sm text-[#8a7c52]">
           {distanceKm > 0 ? formatConsumerVatLine(price) : "Kilometre yazınca KDV dahil tutar görünür."}
         </p>
       </div>

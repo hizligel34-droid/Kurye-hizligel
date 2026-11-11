@@ -26,6 +26,8 @@
   --gold-hover: #E3C35A;
   --gold-soft: #f5e6b8;
   --ink: #0A0A0A;
+  --mobile-call-bar-height: 65px;
+  --mobile-bottom-bar: calc(var(--mobile-call-bar-height) + env(safe-area-inset-bottom, 0px));
 }
 
 @theme inline {
@@ -50,13 +52,40 @@
 }
 
 * { border-color: rgb(var(--border)); }
-html { scroll-behavior: smooth; color-scheme: dark; overflow-x: hidden; }
+html { scroll-behavior: smooth; color-scheme: dark; overflow-x: clip; }
 body {
   margin: 0;
   background: var(--ink);
   color: #f5edd6;
   font-family: 'DM Sans', sans-serif;
-  overflow-x: hidden;
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-x: clip;
+}
+input, select, textarea { font-size: 16px; line-height: 1.5; }
+select { font-size: 16px; min-height: 44px; }
+img, video, canvas { max-width: 100%; height: auto; }
+.bg-\[var\(--gold\)\], .bg-\[\#D4AF37\] { color: #0A0A0A; }
+.text-\[\#8a7c52\] { font-size: max(0.875rem, 1em); line-height: 1.5; }
+@media (max-width: 767px) {
+  .has-call-bar {
+    padding-bottom: var(--mobile-bottom-bar);
+  }
+  .touch-scope a:not(.sr-only):not([class*="leaflet"]),
+  .touch-scope button,
+  .touch-scope [role="button"],
+  .touch-scope select,
+  .touch-scope summary,
+  .touch-scope input[type="checkbox"],
+  .touch-scope input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+    box-sizing: border-box;
+  }
+  .touch-scope a:not(.sr-only):not([class*="leaflet"]):not([class*="flex"]):not([class*="grid"]) {
+    display: inline-flex;
+    align-items: center;
+  }
 }
 :focus-visible {
   outline: 2px solid var(--gold);

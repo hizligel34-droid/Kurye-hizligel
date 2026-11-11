@@ -22,7 +22,7 @@ export function PriceLines({
     return (
       <div className="space-y-1">
         <p className={grossClass}>{formatConsumerGross(price)}</p>
-        <p className="text-xs text-[#8a7c52]">{formatConsumerVatLine(price)}</p>
+        <p className="text-sm text-[#8a7c52]">{formatConsumerVatLine(price)}</p>
       </div>
     );
   }
@@ -32,9 +32,9 @@ export function PriceLines({
   return (
     <div className="space-y-1">
       <p className={netClass}>
-        {formatTl(price.netTl)} <span className="text-xs font-bold text-[#8a7c52]">{VAT_EXCL_LABEL}</span>
+        {formatTl(price.netTl)} <span className="text-sm font-bold text-[#8a7c52]">{VAT_EXCL_LABEL}</span>
       </p>
-      <p className="text-xs text-[#8a7c52]">
+      <p className="text-sm text-[#8a7c52]">
         KDV ({formatVatPercent(price.vatRate)}): {formatTl(price.vatTl)}
       </p>
       <p className={grossClass}>

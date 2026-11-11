@@ -131,21 +131,21 @@ function CourierHome() {
             <section className={`${cardClass} flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5`}>
               <div>
                 <p className="text-sm font-bold text-[#D4AF37]">{online ? "Çevrimiçisiniz" : "Çevrimdışısınız"}</p>
-                <p className="mt-1 text-xs text-[#8a7c52]">
+                <p className="mt-1 text-sm text-[#8a7c52]">
                   Çevrimiçi olunca bekleyen işler listelenir. Alım ve teslimde fotoğraf; teslimde imza gerekir.
                 </p>
               </div>
               <Switch checked={online} onCheckedChange={value => void setAvailability(value)} aria-label="Çevrimiçi" />
             </section>
-            <section className="grid grid-cols-3 gap-2 sm:gap-3">
+            <section className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
               {[
                 ["Bugün teslim", String(stats.deliveredCount)],
                 ["Bugün kazanç", `${formatTl(stats.earningTl)} ${VAT_EXCL_LABEL}`],
                 ["Aktif iş", String(stats.activeCount)],
               ].map(([label, value]) => (
-                <div key={label} className={`${cardClass} min-w-0 p-3 sm:p-4`}>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#8a7c52] sm:text-xs">{label}</p>
-                  <p className="mt-2 text-lg font-black text-[#D4AF37] sm:text-2xl">{value}</p>
+                <div key={label} className={`${cardClass} flex min-w-0 items-baseline justify-between gap-2 p-3 sm:block sm:p-4`}>
+                  <p className="text-base text-[#8a7c52] sm:text-sm sm:font-bold sm:uppercase sm:tracking-wider sm:text-[#8a7c52]">{label}:</p>
+                  <p className="break-words text-lg font-black text-[#D4AF37] sm:mt-2 sm:text-2xl">{value}</p>
                 </div>
               ))}
             </section>
@@ -165,7 +165,7 @@ function CourierHome() {
                       audience="business"
                       showMap
                       extra={
-                        <p className="mt-2 text-xs text-[#8a7c52]">
+                        <p className="mt-2 text-sm text-[#8a7c52]">
                           Sürüş {formatKm(order.distanceKm)} · {formatPriceBreakdown(breakdownFromOrder(order))}
                           {order.boardOnly ? " · ilçe / km / ücret" : order.courierEarningTl > 0 ? ` · kurye payı ${formatTl(order.courierEarningTl)} ${VAT_EXCL_LABEL}` : ""}
                         </p>
@@ -200,7 +200,7 @@ function CourierHome() {
                         audience="business"
                         showMap
                         extra={
-                          <p className="mt-2 text-xs text-[#8a7c52]">
+                          <p className="mt-2 text-sm text-[#8a7c52]">
                             Sürüş {formatKm(order.distanceKm)}
                             {order.recipientPhone ? ` · Alıcı: ${order.recipientPhone}` : ""}
                             {order.contactPhone ? ` · Gönderen: ${order.contactPhone}` : ""}

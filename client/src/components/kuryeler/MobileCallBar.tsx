@@ -12,13 +12,13 @@ export function MobileCallBar() {
       <div className="mx-auto grid max-w-lg grid-cols-2 gap-2">
         <a
           href="#cagir"
-          className={`${goldBtn} inline-flex h-12 items-center justify-center px-3 text-sm`}
+          className={`${goldBtn} inline-flex min-h-11 items-center justify-center px-3 text-base`}
         >
           {PRIMARY_CTA}
         </a>
         <a
           href={contactPhoneTel()}
-          className={`${ghostBtn} inline-flex h-12 items-center justify-center gap-2 px-3 text-sm`}
+          className={`${ghostBtn} inline-flex min-h-11 items-center justify-center gap-2 px-3 text-base`}
         >
           <Phone className="size-4" aria-hidden />
           {SECONDARY_CTA}

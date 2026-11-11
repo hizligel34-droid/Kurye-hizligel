@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { whatsappHref } from "@/lib/contact";
 import { submitGuestLead } from "@/lib/kuryelerApi";
-import { areaClass, fieldClass, ghostBtn, goldBtn } from "@/lib/kuryelerTheme";
+import { areaClass, checkLabelClass, fieldClass, ghostBtn, goldBtn } from "@/lib/kuryelerTheme";
 import {
   buildGuestWhatsappText,
   formatConsumerGross,
@@ -73,12 +73,12 @@ export function GuestLeadForm({
     return (
       <div className="space-y-3" role="status">
         <p className="text-sm font-semibold text-[#f5edd6]">Talebiniz alındı.</p>
-        <p className="text-xs leading-5 text-[#8a7c52]">
+        <p className="text-sm leading-6 text-[#8a7c52]">
           Dilerseniz aynı metni kendi telefonunuzdan WhatsApp ile de iletebilirsiniz. Sistem kimseye
           otomatik mesaj göndermez.
         </p>
         <a
-          className={`${ghostBtn} inline-flex h-11 items-center justify-center px-4 text-sm`}
+          className={`${ghostBtn} inline-flex min-h-11 w-full items-center justify-center px-4 text-base`}
           href={whatsappHref(whatsappText)}
           target="_blank"
           rel="noopener noreferrer"
@@ -90,19 +90,20 @@ export function GuestLeadForm({
   }
 
   return (
-    <form className="space-y-3 pb-20 md:pb-0" onSubmit={onSubmit} noValidate>
-      <p className="text-sm text-[#b4a882]">
+    <form className="grid grid-cols-1 gap-3" onSubmit={onSubmit} noValidate>
+      <p className="break-words text-base text-[#b4a882]">
         {formatConsumerGross(price)}
-        <span className="mt-1 block text-xs">{formatConsumerVatLine(price)}</span>
+        <span className="mt-1 block text-sm">{formatConsumerVatLine(price)}</span>
       </p>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3">
         <div>
           <Label htmlFor="guest-name">Ad soyad</Label>
           <Input
             id="guest-name"
             name="fullName"
             autoComplete="name"
-            className={`mt-1 ${fieldClass}`}
+            autoCapitalize="words"
+            className={`mt-1 w-full ${fieldClass}`}
             value={form.fullName}
             onChange={e => setForm(current => ({ ...current, fullName: e.target.value }))}
           />
@@ -115,7 +116,7 @@ export function GuestLeadForm({
             type="tel"
             inputMode="tel"
             autoComplete="tel"
-            className={`mt-1 ${fieldClass}`}
+            className={`mt-1 w-full ${fieldClass}`}
             value={form.phone}
             onChange={e => setForm(current => ({ ...current, phone: e.target.value }))}
           />
@@ -126,7 +127,8 @@ export function GuestLeadForm({
         <Textarea
           id="guest-pickup"
           name="pickupAddress"
-          className={`mt-1 ${areaClass}`}
+          autoComplete="street-address"
+          className={`mt-1 w-full ${areaClass}`}
           value={form.pickupAddress}
           onChange={e => setForm(current => ({ ...current, pickupAddress: e.target.value }))}
         />
@@ -136,7 +138,8 @@ export function GuestLeadForm({
         <Textarea
           id="guest-dropoff"
           name="dropoffAddress"
-          className={`mt-1 ${areaClass}`}
+          autoComplete="street-address"
+          className={`mt-1 w-full ${areaClass}`}
           value={form.dropoffAddress}
           onChange={e => setForm(current => ({ ...current, dropoffAddress: e.target.value }))}
         />
@@ -152,27 +155,27 @@ export function GuestLeadForm({
           onChange={e => setForm(current => ({ ...current, website: e.target.value }))}
         />
       </div>
-      <label className="flex items-start gap-2 text-xs leading-5 text-[#b4a882]">
+      <label className={checkLabelClass}>
         <input
-          className="mt-0.5"
+          className="mt-1 size-5 shrink-0"
           type="checkbox"
           checked={form.preInfoOk}
           onChange={e => setForm(current => ({ ...current, preInfoOk: e.target.checked }))}
         />
         <span>
           {ORDER_CHECKBOX_LABELS.preInfo}{" "}
-          <a href="/on-bilgilendirme" className="font-bold text-[var(--gold)]" target="_blank" rel="noreferrer">
+          <a href="/on-bilgilendirme" className="inline-flex min-h-11 items-center font-bold text-[var(--gold)]" target="_blank" rel="noreferrer">
             Ön Bilgilendirme
           </a>
           {" · "}
-          <a href="/mesafeli-sozlesme" className="font-bold text-[var(--gold)]" target="_blank" rel="noreferrer">
+          <a href="/mesafeli-sozlesme" className="inline-flex min-h-11 items-center font-bold text-[var(--gold)]" target="_blank" rel="noreferrer">
             Mesafeli Sözleşme
           </a>
         </span>
       </label>
-      <label className="flex items-start gap-2 text-xs leading-5 text-[#b4a882]">
+      <label className={checkLabelClass}>
         <input
-          className="mt-0.5"
+          className="mt-1 size-5 shrink-0"
           type="checkbox"
           checked={form.withdrawOk}
           onChange={e => setForm(current => ({ ...current, withdrawOk: e.target.checked }))}
@@ -184,12 +187,12 @@ export function GuestLeadForm({
           {error}
         </p>
       ) : null}
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Button type="submit" className={`h-12 flex-1 ${goldBtn}`} disabled={busy}>
+      <div className="flex flex-col gap-2">
+        <Button type="submit" className={`h-12 w-full ${goldBtn}`} disabled={busy}>
           {busy ? "Gönderiliyor…" : "Talebi gönder"}
         </Button>
         <a
-          className={`${ghostBtn} inline-flex h-12 flex-1 items-center justify-center px-4 text-sm`}
+          className={`${ghostBtn} inline-flex h-12 w-full items-center justify-center px-4 text-base`}
           href={whatsappHref(whatsappText)}
           target="_blank"
           rel="noopener noreferrer"
@@ -197,7 +200,7 @@ export function GuestLeadForm({
           WhatsApp ile gönder
         </a>
       </div>
-      <p className="text-[11px] leading-4 text-[#8a7c52]">
+      <p className="text-sm leading-5 text-[#8a7c52]">
         WhatsApp bağlantısı yalnızca sizin tıklamanızla açılır; otomatik mesaj yoktur.
       </p>
     </form>

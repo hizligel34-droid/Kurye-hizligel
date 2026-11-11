@@ -24,7 +24,7 @@ import {
   updateUserRole,
 } from "@/lib/kuryelerApi";
 import { PriceLines } from "@/components/kuryeler/PriceLines";
-import { areaClass, cardClass, fieldClass, goldBtn, ghostBtn, selectClass } from "@/lib/kuryelerTheme";
+import { areaClass, cardClass, checkLabelClass, fieldClass, goldBtn, ghostBtn, selectClass } from "@/lib/kuryelerTheme";
 import {
   calculateDeliveryPrice,
   DEFAULT_PRICING,
@@ -157,13 +157,13 @@ function AdminHome() {
                 ["Bekleyen / yolda", `${stats?.pendingOrders ?? 0} / ${stats?.enRouteOrders ?? 0}`],
               ].map(([label, value]) => (
                 <div key={label} className={`${cardClass} min-w-0 p-3 sm:p-4`}>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#8a7c52] sm:text-xs">{label}</p>
+                  <p className="text-sm font-bold uppercase tracking-wider text-[#8a7c52]">{label}</p>
                   <p className="mt-2 text-xl font-black text-[#D4AF37] sm:text-2xl">{value}</p>
                 </div>
               ))}
             </section>
 
-            <div className="grid grid-cols-4 gap-1 rounded-2xl border border-[#3a3014] bg-black p-1">
+            <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[#3a3014] bg-black p-1 sm:grid-cols-4">
               {([
                 ["siparis", "Siparişler"],
                 ["destek", `Destek (${tickets.filter(t => t.status !== "kapali").length})`],
@@ -197,7 +197,7 @@ function AdminHome() {
                         audience="business"
                         showMap
                         extra={
-                          <p className="mt-2 text-xs text-[#8a7c52]">
+                          <p className="mt-2 text-sm text-[#8a7c52]">
                             Firma payı {formatTl(order.companyRevenueTl)} {VAT_EXCL_LABEL} · Kurye {formatTl(order.courierEarningTl)} {VAT_EXCL_LABEL}
                           </p>
                         }
@@ -284,7 +284,7 @@ function AdminHome() {
                         }}
                       >
                         <p className="text-sm font-bold text-[#D4AF37]">{ticket.subject}</p>
-                        <p className="mt-1 text-xs text-[#8a7c52]">
+                        <p className="mt-1 text-sm text-[#8a7c52]">
                           {SUPPORT_KIND_LABELS[ticket.kind]} · {ticket.status}
                         </p>
                       </button>
@@ -297,7 +297,7 @@ function AdminHome() {
                       <div className="max-h-80 space-y-2 overflow-y-auto">
                         {ticketMessages.map(message => (
                           <div key={message.id} className="rounded-2xl border border-[#3a3014] bg-black p-3">
-                            <p className="text-[11px] font-bold uppercase text-[#8a7c52]">
+                            <p className="text-sm font-bold uppercase text-[#8a7c52]">
                               {message.sender === "customer" ? "Müşteri" : message.sender === "bot" ? "Bot" : "Yönetici"}
                             </p>
                             <p className="mt-1 whitespace-pre-wrap text-sm">{message.body}</p>
@@ -310,9 +310,9 @@ function AdminHome() {
                         value={reply}
                         onChange={e => setReply(e.target.value)}
                       />
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         <Button
-                          className={goldBtn}
+                          className={`min-h-11 w-full ${goldBtn}`}
                           onClick={() =>
                             void postSupportMessage({ ticketId, body: reply })
                               .then(() => {
@@ -327,7 +327,7 @@ function AdminHome() {
                         </Button>
                         <Button
                           variant="outline"
-                          className={ghostBtn}
+                          className={`min-h-11 w-full ${ghostBtn}`}
                           onClick={() =>
                             void postSupportMessage({ ticketId, body: reply, asBot: true })
                               .then(() => {
@@ -353,7 +353,7 @@ function AdminHome() {
               <section className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
                 <form className={`${cardClass} h-fit space-y-3 p-5`} onSubmit={savePricing}>
                   <h2 className="text-lg font-black">Sürüş ücreti (TL)</h2>
-                  <p className="text-xs text-[#8a7c52]">
+                  <p className="text-sm text-[#8a7c52]">
                     Ana fiyat KDV hariçtir: açılış + km bedeli × yol mesafesi. Üstüne KDV eklenir. Kuş uçuşu kullanılmaz. Fiyat yalnızca Türk lirasıdır.
                   </p>
                   <label className="block text-sm">
@@ -361,6 +361,7 @@ function AdminHome() {
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
+                      inputMode="decimal"
                       min={0}
                       step="0.01"
                       value={pricing.baseTry}
@@ -373,6 +374,7 @@ function AdminHome() {
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
+                      inputMode="decimal"
                       min={0}
                       step="0.01"
                       value={pricing.perKmTry}
@@ -385,6 +387,7 @@ function AdminHome() {
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
+                      inputMode="numeric"
                       min={0}
                       max={6}
                       step="1"
@@ -398,6 +401,7 @@ function AdminHome() {
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
+                      inputMode="decimal"
                       min={0}
                       max={100}
                       step="0.01"
@@ -406,16 +410,18 @@ function AdminHome() {
                     />
                     <FieldError id="vat-err" message={pricingErrors.vatRate} />
                   </label>
-                  <label className="flex items-center gap-2 text-sm">
+                  <label className={checkLabelClass}>
                     <input
+                      className="mt-1 size-5 shrink-0"
                       type="checkbox"
                       checked={pricing.showcaseMode}
                       onChange={e => setPricing({ ...pricing, showcaseMode: e.target.checked })}
                     />
                     Vitrin modu (kayıt ve sipariş kapalı)
                   </label>
-                  <label className="flex items-center gap-2 text-sm">
+                  <label className={checkLabelClass}>
                     <input
+                      className="mt-1 size-5 shrink-0"
                       type="checkbox"
                       checked={pricing.deliveryTargetsPublic}
                       onChange={e => setPricing({ ...pricing, deliveryTargetsPublic: e.target.checked })}
@@ -424,15 +430,16 @@ function AdminHome() {
                   </label>
                   <fieldset className="space-y-2">
                     <legend className="text-sm font-bold">Hedef teslim kademeleri (yol km)</legend>
-                    <p className="text-xs text-[#8a7c52]">
+                    <p className="text-sm text-[#8a7c52]">
                       Müşteriye açık (varsayılan). Kapalıysa yedek metin: “Makul sürede, aktarmasız teslim”. Boş km =
                       son kademe (aynı gün). Garanti veya iade sözü yazılmaz.
                     </p>
                     {pricing.deliveryTargetTiers.map((tier, index) => (
-                      <div key={`${index}-${tier.label}`} className="grid grid-cols-[7rem_1fr] gap-2">
+                      <div key={`${index}-${tier.label}`} className="grid grid-cols-1 gap-2 sm:grid-cols-[7rem_1fr]">
                         <Input
                           className={fieldClass}
                           type="number"
+                          inputMode="decimal"
                           min={0}
                           step="0.1"
                           placeholder="km"
@@ -505,6 +512,7 @@ function AdminHome() {
                     <Input
                       className={`${fieldClass} mt-1`}
                       type="number"
+                      inputMode="decimal"
                       min={0}
                       max={1}
                       step="0.01"
@@ -518,7 +526,7 @@ function AdminHome() {
                     <div className="mt-2">
                       <PriceLines price={sample} audience="business" />
                     </div>
-                    <p className="mt-2 text-xs text-[#8a7c52]">{formatTariff(pricing)}</p>
+                    <p className="mt-2 text-sm text-[#8a7c52]">{formatTariff(pricing)}</p>
                   </div>
                   <Button className={`h-11 w-full ${goldBtn}`} disabled={busy}>
                     {busy ? "Kaydediliyor…" : "Fiyat ayarlarını kaydet"}
@@ -526,7 +534,7 @@ function AdminHome() {
                 </form>
                 <div className={`${cardClass} p-5`}>
                   <h2 className="text-lg font-black">Bölge listesi (isteğe bağlı referans)</h2>
-                  <p className="mt-1 text-xs text-[#8a7c52]">
+                  <p className="mt-1 text-sm text-[#8a7c52]">
                     Sipariş ücreti bu tablodan hesaplanmaz. Eski İstanbul CSV’si yalnızca yönetici notu olarak durur
                     (gösterilen rakamlar KDV hariç referanstır).
                   </p>
@@ -543,21 +551,28 @@ function AdminHome() {
                       {districts.map(row => (
                         <li
                           key={row.bolge}
-                          className="flex items-center gap-2 rounded-xl border border-[#3a3014] bg-black px-3 py-2"
+                          className="grid gap-2 rounded-2xl border border-[#3a3014] bg-black p-3"
                         >
-                          <span className="min-w-0 flex-1 truncate text-sm font-semibold">{row.bolge}</span>
-                          <Input
-                            className={`${fieldClass} h-10 w-24`}
-                            type="number"
-                            min={0}
-                            defaultValue={row.fiyatTl}
-                            aria-label={`${row.bolge} referans fiyat, KDV hariç`}
-                            onBlur={event => {
-                              const next = Number(event.target.value);
-                              if (next !== row.fiyatTl) void saveZone(row.bolge, next);
-                            }}
-                          />
-                          <span className="text-xs text-[#8a7c52]">TL {VAT_EXCL_LABEL}</span>
+                          <p className="min-w-0 break-words text-base">
+                            <span className="text-[#8a7c52]">Bölge: </span>
+                            {row.bolge}
+                          </p>
+                          <label className="flex min-h-11 items-center gap-2">
+                            <span className="shrink-0 text-base text-[#8a7c52]">Referans:</span>
+                            <Input
+                              className={`${fieldClass} min-w-0 flex-1`}
+                              type="number"
+                              inputMode="decimal"
+                              min={0}
+                              defaultValue={row.fiyatTl}
+                              aria-label={`${row.bolge} referans fiyat, KDV hariç`}
+                              onBlur={event => {
+                                const next = Number(event.target.value);
+                                if (next !== row.fiyatTl) void saveZone(row.bolge, next);
+                              }}
+                            />
+                            <span className="shrink-0 text-sm text-[#8a7c52]">TL {VAT_EXCL_LABEL}</span>
+                          </label>
                         </li>
                       ))}
                     </ul>
@@ -578,13 +593,25 @@ function AdminHome() {
                       key={person.id}
                       className="flex flex-col gap-2 rounded-2xl border border-[#3a3014] bg-black px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div>
-                        <p className="font-semibold">{person.fullName || person.email || person.id.slice(0, 8)}</p>
-                        <p className="text-xs text-[#8a7c52]">
-                          {ROLE_LABELS[person.role]}
-                          {person.phone ? ` · ${person.phone}` : ""}
-                          {person.role === "courier" ? (person.isOnline ? " · çevrimiçi" : " · kapalı") : ""}
+                      <div className="min-w-0 space-y-1 break-words text-base">
+                        <p>
+                          <span className="text-[#8a7c52]">Ad: </span>
+                          {person.fullName || person.email || person.id.slice(0, 8)}
                         </p>
+                        <p>
+                          <span className="text-[#8a7c52]">Rol: </span>
+                          {ROLE_LABELS[person.role]}
+                        </p>
+                        <p>
+                          <span className="text-[#8a7c52]">Telefon: </span>
+                          {person.phone || "—"}
+                        </p>
+                        {person.role === "courier" ? (
+                          <p>
+                            <span className="text-[#8a7c52]">Durum: </span>
+                            {person.isOnline ? "çevrimiçi" : "kapalı"}
+                          </p>
+                        ) : null}
                       </div>
                       <select
                         className={selectClass}
@@ -607,7 +634,7 @@ function AdminHome() {
                       </select>
                     </div>
                   ))}
-                  <p className="text-xs text-[#8a7c52]">
+                  <p className="text-sm text-[#8a7c52]">
                     {customers.length} müşteri · {couriers.length} kurye
                   </p>
                 </div>

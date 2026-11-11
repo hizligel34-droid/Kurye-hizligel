@@ -64,14 +64,14 @@ function AccountHome() {
         {loading ? <LoadingState label="Hesap yükleniyor…" /> : null}
         {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
         <form className={`${cardClass} space-y-3 p-4 sm:p-5`} onSubmit={save}>
-          <p className="text-xs font-bold uppercase tracking-wider text-[#8a7c52]">{user?.email}</p>
+          <p className="text-sm font-bold uppercase tracking-wider text-[#8a7c52]">{user?.email}</p>
           <label className="block text-sm">
             <span className="mb-1 block font-bold text-[#D4AF37]">Ad soyad</span>
             <Input className={fieldClass} value={fullName} onChange={e => setFullName(e.target.value)} autoComplete="name" />
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-bold text-[#D4AF37]">Telefon</span>
-            <Input className={fieldClass} value={phone} onChange={e => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" />
+            <Input className={fieldClass} value={phone} onChange={e => setPhone(e.target.value)} type="tel" inputMode="tel" autoComplete="tel" />
           </label>
           <Button className={`h-11 w-full ${goldBtn}`} disabled={busy}>
             {busy ? "Kaydediliyor…" : "Kaydet"}
@@ -88,7 +88,7 @@ function AccountHome() {
 
         <section className={`${cardClass} space-y-3 p-4 sm:p-5`}>
           <h2 className="text-lg font-black">Bildirimler</h2>
-          <p className="text-xs text-[#8a7c52]">Yalnızca uygulama içi. SMS, WhatsApp veya push otomatik gitmez.</p>
+          <p className="text-sm text-[#8a7c52]">Yalnızca uygulama içi. SMS, WhatsApp veya push otomatik gitmez.</p>
           {notes.length === 0 ? (
             <EmptyState title="Bildirim yok" body="Sipariş durumu değişince burada görünür." />
           ) : (
@@ -102,8 +102,8 @@ function AccountHome() {
                 }}
               >
                 <p className={`text-sm font-bold ${note.readAt ? "text-[#b4a882]" : "text-[#D4AF37]"}`}>{note.title}</p>
-                <p className="mt-1 text-xs text-[#8a7c52]">{note.body}</p>
-                <p className="mt-1 text-[11px] text-[#8a7c52]">{formatDateTimeTr(note.createdAt)}</p>
+                <p className="mt-1 text-sm text-[#8a7c52]">{note.body}</p>
+                <p className="mt-1 text-sm text-[#8a7c52]">{formatDateTimeTr(note.createdAt)}</p>
               </button>
             ))
           )}

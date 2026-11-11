@@ -108,7 +108,7 @@ export default function AuthPage({
   };
 
   return (
-    <div className="min-h-dvh bg-[#0a0a0a] text-[#f5edd6]">
+    <div className="touch-scope min-h-dvh overflow-x-clip bg-[#0a0a0a] pb-[env(safe-area-inset-bottom)] text-base leading-[1.5] text-[#f5edd6]">
       <SkipLink />
       <DemoBanner />
       <header className="border-b border-[#3a3014] bg-black pt-[env(safe-area-inset-top)]">
@@ -139,7 +139,7 @@ export default function AuthPage({
               {mode === "kayit" && !adminSignupClosed && (
                 <>
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-[#8a7c52]" htmlFor="full-name">
+                    <label className="mb-1 block text-sm font-semibold text-[#8a7c52]" htmlFor="full-name">
                       Ad soyad
                     </label>
                     <Input
@@ -155,7 +155,7 @@ export default function AuthPage({
                     <FieldError id="full-name-err" message={fieldErrors.fullName} />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-[#8a7c52]" htmlFor="signup-phone">
+                    <label className="mb-1 block text-sm font-semibold text-[#8a7c52]" htmlFor="signup-phone">
                       Cep telefonu
                     </label>
                     <Input
@@ -166,6 +166,7 @@ export default function AuthPage({
                       aria-invalid={Boolean(fieldErrors.phone)}
                       aria-describedby={fieldErrors.phone ? "signup-phone-err" : undefined}
                       onChange={e => setPhone(e.target.value)}
+                      type="tel"
                       inputMode="tel"
                       autoComplete="tel"
                     />
@@ -174,7 +175,7 @@ export default function AuthPage({
                 </>
               )}
               <div>
-                <label className="mb-1 block text-xs font-semibold text-[#8a7c52]" htmlFor="email">
+                <label className="mb-1 block text-sm font-semibold text-[#8a7c52]" htmlFor="email">
                   E-posta
                 </label>
                 <Input
@@ -191,7 +192,7 @@ export default function AuthPage({
                 <FieldError id="email-err" message={fieldErrors.email} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-[#8a7c52]" htmlFor="password">
+                <label className="mb-1 block text-sm font-semibold text-[#8a7c52]" htmlFor="password">
                   Şifre
                 </label>
                 <Input
@@ -208,13 +209,13 @@ export default function AuthPage({
                 <FieldError id="password-err" message={fieldErrors.password} />
               </div>
               {mode === "kayit" ? (
-                <p className="text-xs leading-5 text-[#8a7c52]">
+                <p className="text-sm leading-6 text-[#8a7c52]">
                   Hesap oluşturarak{" "}
-                  <a href="/kullanim-kosullari" className="font-bold text-[#D4AF37]">
+                  <a href="/kullanim-kosullari" className="inline-flex min-h-11 items-center font-bold text-[#D4AF37]">
                     Kullanım Koşulları
                   </a>
                   ’nı kabul etmiş olursunuz. Kişisel verilerinizin nasıl işlendiğini{" "}
-                  <a href="/kvkk" className="font-bold text-[#D4AF37]">
+                  <a href="/kvkk" className="inline-flex min-h-11 items-center font-bold text-[#D4AF37]">
                     KVKK Aydınlatma Metni
                   </a>
                   {panel === "kurye" ? " (kurye adayları için aynı metin, kurye bölümü)" : ""}
@@ -226,7 +227,7 @@ export default function AuthPage({
                   Vitrin modu: yeni kayıt kapalıdır. {CONTACT_PHONE_DISPLAY}
                 </p>
               ) : (
-                <Button className={`h-11 w-full ${goldBtn}`} disabled={busy || signupClosed || (mode === "kayit" && showcase)}>
+                <Button className={`h-12 w-full ${goldBtn}`} disabled={busy || signupClosed || (mode === "kayit" && showcase)}>
                   {busy ? "Lütfen bekleyin…" : mode === "giris" ? "Giriş yap" : "Hesap oluştur"}
                 </Button>
               )}
@@ -236,7 +237,7 @@ export default function AuthPage({
                 {resetOpen ? (
                   <button
                     type="button"
-                    className="text-sm font-bold text-[#D4AF37]"
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center px-3 text-base font-bold text-[#D4AF37]"
                     onClick={() => {
                       if (!email.trim()) {
                         toast.error("Önce e-posta yazın.");
@@ -250,7 +251,11 @@ export default function AuthPage({
                     Sıfırlama e-postası gönder
                   </button>
                 ) : (
-                  <button type="button" className="text-sm font-bold text-[#D4AF37]" onClick={() => setResetOpen(true)}>
+                  <button
+                    type="button"
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center px-3 text-base font-bold text-[#D4AF37]"
+                    onClick={() => setResetOpen(true)}
+                  >
                     Şifremi unuttum
                   </button>
                 )}
@@ -260,14 +265,14 @@ export default function AuthPage({
               {mode === "giris" && !showcase && (panel !== "yonetici" || localDemo) ? (
                 <>
                   Hesabınız yok mu?{" "}
-                  <Link href="/kayit" className="font-bold text-[#D4AF37]">
+                  <Link href="/kayit" className="inline-flex min-h-11 items-center px-2 font-bold text-[#D4AF37]">
                     Kayıt olun
                   </Link>
                 </>
               ) : mode === "kayit" ? (
                 <>
                   Zaten üye misiniz?{" "}
-                  <Link href="/giris" className="font-bold text-[#D4AF37]">
+                  <Link href="/giris" className="inline-flex min-h-11 items-center px-2 font-bold text-[#D4AF37]">
                     Giriş yapın
                   </Link>
                 </>
@@ -275,11 +280,11 @@ export default function AuthPage({
                 "Yönetici hesabı kayıtla açılmaz."
               )}
             </p>
-            <p className="mt-3 text-center text-xs text-[#8a7c52]">
+            <p className="mt-3 text-center text-sm text-[#8a7c52]">
               Bu uygulama yalnızca {ROLE_LABELS[expectedRole].toLocaleLowerCase("tr-TR")} hesapları içindir.
             </p>
             {dataMode === "demo" ? (
-              <p className="mt-4 text-center text-xs text-[#8a7c52]">{DEMO_SIGNUP_HINT}</p>
+              <p className="mt-4 text-center text-sm text-[#8a7c52]">{DEMO_SIGNUP_HINT}</p>
             ) : null}
           </CardContent>
         </Card>

@@ -41,21 +41,22 @@ export function DeliveryTargetsBlock({
         <ul className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
           {rows.map(row => (
             <li key={row.range} className={`${cardClass} p-4`}>
-              <p className="text-xs font-bold uppercase tracking-wide text-[#8a7c52]">{row.range}</p>
+              <p className="text-sm font-bold uppercase tracking-wide text-[#8a7c52]">{row.range}</p>
               <p className="mt-2 text-lg font-black text-[#D4AF37]">{row.label}</p>
             </li>
           ))}
         </ul>
       ) : (
-        <ul className="mt-2 space-y-1 text-xs text-[#b4a882]">
+        <ul className="mt-2 grid gap-2">
           {rows.map(row => (
-            <li key={row.range}>
-              {row.range} {row.label}
+            <li key={row.range} className={`${cardClass} flex items-baseline justify-between gap-2 p-3 text-base`}>
+              <span className="text-[#8a7c52]">{row.range}:</span>
+              <span className="font-bold text-[var(--gold)]">{row.label}</span>
             </li>
           ))}
         </ul>
       )}
-      <p className="mt-2 text-xs text-[#8a7c52]">{DELIVERY_TARGET_DISCLAIMER}</p>
+      <p className="mt-2 text-sm text-[#8a7c52]">{DELIVERY_TARGET_DISCLAIMER}</p>
     </div>
   );
 }

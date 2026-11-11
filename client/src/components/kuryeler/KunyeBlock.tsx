@@ -5,7 +5,7 @@ import { BUSINESS, CONTACT_PHONE_TEL } from "@shared/kuryeler";
 function lineValue(line: KunyeLine) {
   if (line.label === "Telefon") {
     return (
-      <a className="font-semibold text-[#D4AF37] hover:underline" href={CONTACT_PHONE_TEL}>
+      <a className="inline-flex min-h-11 items-center font-semibold text-[#D4AF37] hover:underline" href={CONTACT_PHONE_TEL}>
         {line.value}
       </a>
     );
@@ -23,7 +23,7 @@ export function KunyeBlock({
   const lines = kunyeDisplayLines(profile);
   if (compact) {
     return (
-      <p className="max-w-md text-xs leading-6">
+      <p className="max-w-md text-sm leading-6 text-[#8a7c52]">
         {lines.map((line, index) => (
           <span key={line.label}>
             {index > 0 ? <br /> : null}

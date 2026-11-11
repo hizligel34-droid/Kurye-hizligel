@@ -151,8 +151,10 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
           <div className="flex gap-2">
             <Input
               id="pickup-search"
-              className={fieldClass}
+              className={`min-w-0 flex-1 ${fieldClass}`}
               placeholder="Adres yazın, Ara’ya basın"
+              autoComplete="street-address"
+              enterKeyHint="search"
               value={pickupQ}
               role="combobox"
               aria-autocomplete="list"
@@ -162,7 +164,7 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
               onChange={e => setPickupQ(e.target.value)}
               onKeyDown={onSearchKey("pickup")}
             />
-            <Button type="button" variant="outline" className={`${ghostBtn} shrink-0`} disabled={searching === "pickup"} onClick={() => void runSearch("pickup")}>
+            <Button type="button" variant="outline" className={`${ghostBtn} min-h-11 shrink-0`} disabled={searching === "pickup"} onClick={() => void runSearch("pickup")}>
               {searching === "pickup" ? "…" : "Ara"}
             </Button>
           </div>
@@ -177,7 +179,7 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
                 <li key={`${hit.lat}-${hit.lng}`} role="option">
                   <button
                     type="button"
-                    className="w-full px-3 py-2 text-left hover:bg-[#1a1508]"
+                    className="min-h-11 w-full px-3 py-2 text-left hover:bg-[#1a1508]"
                     onClick={() => void choosePickup(hit.lat, hit.lng, hit.label)}
                   >
                     {hit.label}
@@ -194,8 +196,10 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
           <div className="flex gap-2">
             <Input
               id="dropoff-search"
-              className={fieldClass}
+              className={`min-w-0 flex-1 ${fieldClass}`}
               placeholder="Adres yazın, Ara’ya basın"
+              autoComplete="street-address"
+              enterKeyHint="search"
               value={dropoffQ}
               role="combobox"
               aria-autocomplete="list"
@@ -205,7 +209,7 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
               onChange={e => setDropoffQ(e.target.value)}
               onKeyDown={onSearchKey("dropoff")}
             />
-            <Button type="button" variant="outline" className={`${ghostBtn} shrink-0`} disabled={searching === "dropoff"} onClick={() => void runSearch("dropoff")}>
+            <Button type="button" variant="outline" className={`${ghostBtn} min-h-11 shrink-0`} disabled={searching === "dropoff"} onClick={() => void runSearch("dropoff")}>
               {searching === "dropoff" ? "…" : "Ara"}
             </Button>
           </div>
@@ -220,7 +224,7 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
                 <li key={`${hit.lat}-${hit.lng}`} role="option">
                   <button
                     type="button"
-                    className="w-full px-3 py-2 text-left hover:bg-[#1a1508]"
+                    className="min-h-11 w-full px-3 py-2 text-left hover:bg-[#1a1508]"
                     onClick={() => void chooseDropoff(hit.lat, hit.lng, hit.label)}
                   >
                     {hit.label}
@@ -234,7 +238,7 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
       <div className="flex gap-2">
         <button
           type="button"
-          className={`min-h-10 flex-1 rounded-xl border text-xs font-bold ${
+          className={`min-h-11 flex-1 rounded-xl border text-xs font-bold ${
             active === "pickup" ? "border-[#D4AF37] bg-[#1a1508] text-[#D4AF37]" : "border-[#3a3014] text-[#8a7c52]"
           }`}
           onClick={() => setActive("pickup")}
@@ -243,7 +247,7 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
         </button>
         <button
           type="button"
-          className={`min-h-10 flex-1 rounded-xl border text-xs font-bold ${
+          className={`min-h-11 flex-1 rounded-xl border text-xs font-bold ${
             active === "dropoff" ? "border-[#D4AF37] bg-[#1a1508] text-[#D4AF37]" : "border-[#3a3014] text-[#8a7c52]"
           }`}
           onClick={() => setActive("dropoff")}
@@ -260,7 +264,7 @@ export function RoutePicker({ pricing, value, onChange }: Props) {
         onPickup={(lat, lng) => void choosePickup(lat, lng)}
         onDropoff={(lat, lng) => void chooseDropoff(lat, lng)}
       />
-      <p className="text-xs text-[#8a7c52]">
+      <p className="text-sm text-[#8a7c52]">
         Harita: OpenStreetMap. Adres araması Nominatim kullanım politikasına göre Ara düğmesiyledir (otomatik
         tamamlama yok, saniyede en fazla 1 istek). Rota: {pricing.routingProvider === "ors" ? "OpenRouteService" : "OSRM"}{" "}
         sürüş mesafesi (kuş uçuşu değil). {busy ? "Hesaplanıyor…" : hint}
