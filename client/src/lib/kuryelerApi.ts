@@ -9,6 +9,10 @@ import {
   normalizeDeliveryTargetTiers,
   redactPendingForCourier,
   WEIGHT_LIMIT_MESSAGE,
+  DEMO_LOCAL_ACCOUNTS,
+  DEMO_LOCAL_PASSWORD,
+  isLocalDemoPreview,
+  assertSelfSignupAllowed,
   type DashboardStats,
   type DeliveryOrder,
   type DistrictPrice,
@@ -32,10 +36,20 @@ import {
   type SupportTicketKind,
 } from "@shared/kuryelerSupport";
 import { buildOrderConfirmationMail, type OutboundMail } from "@shared/orderConfirmation";
-import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
+import { DEFAULT_BUSINESS_PROFILE, mapBusinessProfileRow, type BusinessProfile } from "@shared/businessProfile";
+import {
+  GUEST_LEAD_RATE_LIMIT,
+  GUEST_LEAD_WINDOW_MS,
+  isHoneypotFilled,
+  normalizeGuestLead,
+  validateGuestLead,
+  type GuestLeadInput,
+} from "@shared/guestLead";
+import { firstError } from "@shared/kuryelerValidation";
+import { getSupabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
-const DEMO_KEY = "kuryeler.tr.demo.v7";
+const DEMO_KEY = "kuryeler.tr.demo.v8";
 
 export type SessionUser = Profile;
 
@@ -99,6 +113,30 @@ type DemoState = {
   messages: SupportMessage[];
   notifications: AppNotification[];
   outboundMail: OutboundMail[];
+  legalAcceptances: LegalAcceptanceRecord[];
+  guestLeads: GuestLeadRecord[];
+};
+
+export type GuestLeadRecord = {
+  id: string;
+  fullName: string;
+  phone: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  distanceKm: number;
+  product: string;
+  createdAt: string;
+};
+
+export type LegalAcceptanceRecord = {
+  id: string;
+  userId: string;
+  orderId: string | null;
+  docKey: string;
+  version: string;
+  contentSha256: string;
+  checkboxKey: string;
+  acceptedAt: string;
 };
 
 function nowIso() {
@@ -116,6 +154,7 @@ export function mergePricing(raw?: Partial<PricingSettings> | null): PricingSett
     routingProvider: (raw?.routingProvider ?? DEFAULT_PRICING.routingProvider) as RoutingProvider,
     geocoder: (raw?.geocoder ?? DEFAULT_PRICING.geocoder) as Geocoder,
     deliveryTargetTiers: normalizeDeliveryTargetTiers(raw?.deliveryTargetTiers ?? DEFAULT_PRICING.deliveryTargetTiers),
+    deliveryTargetsPublic: Boolean(raw?.deliveryTargetsPublic ?? DEFAULT_PRICING.deliveryTargetsPublic),
   };
 }
 
@@ -211,7 +250,7 @@ function seedDemo(): DemoState {
         scheduledAt: laterIso(1),
         notes: "Daire 8",
         contactPhone: "05421110003",
-        paymentMethod: "havale",
+        paymentMethod: "iyzico",
         paymentStatus: "bekliyor",
         pickupPhoto: null,
         deliveryPhoto: null,
@@ -240,9 +279,41 @@ function seedDemo(): DemoState {
       pricing,
     ),
   ];
+  const users = [
+    {
+      id: "demo-customer",
+      email: DEMO_LOCAL_ACCOUNTS.customer.email,
+      password: DEMO_LOCAL_PASSWORD,
+      role: "customer" as UserRole,
+      fullName: DEMO_LOCAL_ACCOUNTS.customer.fullName,
+      phone: DEMO_LOCAL_ACCOUNTS.customer.phone,
+      isOnline: false,
+      createdAt,
+    },
+    {
+      id: "demo-courier",
+      email: DEMO_LOCAL_ACCOUNTS.courier.email,
+      password: DEMO_LOCAL_PASSWORD,
+      role: "courier" as UserRole,
+      fullName: DEMO_LOCAL_ACCOUNTS.courier.fullName,
+      phone: DEMO_LOCAL_ACCOUNTS.courier.phone,
+      isOnline: true,
+      createdAt,
+    },
+    {
+      id: "demo-admin",
+      email: DEMO_LOCAL_ACCOUNTS.admin.email,
+      password: DEMO_LOCAL_PASSWORD,
+      role: "admin" as UserRole,
+      fullName: DEMO_LOCAL_ACCOUNTS.admin.fullName,
+      phone: DEMO_LOCAL_ACCOUNTS.admin.phone,
+      isOnline: false,
+      createdAt,
+    },
+  ];
   return {
     sessionId: null,
-    users: [],
+    users,
     orders,
     pricing,
     districtPrices,
@@ -250,6 +321,8 @@ function seedDemo(): DemoState {
     messages: [],
     notifications: [],
     outboundMail: [],
+    legalAcceptances: [],
+    guestLeads: [],
   };
 }
 
@@ -268,6 +341,8 @@ function loadDemo(): DemoState {
     parsed.messages = parsed.messages ?? [];
     parsed.notifications = parsed.notifications ?? [];
     parsed.outboundMail = parsed.outboundMail ?? [];
+    parsed.legalAcceptances = parsed.legalAcceptances ?? [];
+    parsed.guestLeads = parsed.guestLeads ?? [];
     parsed.orders = (parsed.orders ?? []).map(order => ({
       ...emptyOrderExtras(),
       ...order,
@@ -437,7 +512,7 @@ function dashboardFrom(orders: DeliveryOrder[], couriersOnline: number): Dashboa
     todayOrders: today.length,
     todayRevenueTl: today.reduce((sum, o) => sum + o.totalPriceTl, 0),
     activeCouriers: couriersOnline,
-    pendingOrders: orders.filter(o => o.status === "pending" || o.status === "assigned").length,
+    pendingOrders: orders.filter(o => o.status === "pending" || o.status === "confirmed" || o.status === "assigned").length,
     enRouteOrders: orders.filter(o => o.status === "en_route" || o.status === "picked_up").length,
   };
 }
@@ -448,7 +523,7 @@ function notifyDemo() {
   demoListeners.forEach(fn => fn());
 }
 
-export const kuryelerMode = isSupabaseConfigured() ? "supabase" : "demo";
+export const kuryelerMode = isLocalDemoPreview() ? "demo" : "supabase";
 
 export async function getSession(): Promise<SessionUser | null> {
   if (kuryelerMode === "demo") {
@@ -500,8 +575,9 @@ export async function signUp(input: {
   password: string;
   fullName: string;
   phone: string;
-  role: "customer" | "courier";
+  role: UserRole;
 }): Promise<SessionUser> {
+  assertSelfSignupAllowed(input.role, isLocalDemoPreview());
   if (kuryelerMode === "demo") {
     const state = loadDemo();
     if (state.users.some(u => u.email.toLocaleLowerCase("tr-TR") === input.email.trim().toLocaleLowerCase("tr-TR"))) {
@@ -517,7 +593,7 @@ export async function signUp(input: {
       isOnline: false,
       createdAt: nowIso(),
     };
-    if (input.role === "customer") {
+    if (input.role === "customer" && !state.users.some(item => item.id === "demo-customer")) {
       for (const order of state.orders) {
         if (order.customerId === "demo-customer") order.customerId = user.id;
       }
@@ -568,6 +644,9 @@ function mapPricingRow(row: Record<string, unknown>): PricingSettings {
     deliveryTargetTiers: normalizeDeliveryTargetTiers(
       (row.delivery_target_tiers ?? row.deliveryTargetTiers) as PricingSettings["deliveryTargetTiers"] | undefined,
     ),
+    deliveryTargetsPublic: Boolean(
+      row.delivery_targets_public ?? row.deliveryTargetsPublic ?? DEFAULT_PRICING.deliveryTargetsPublic,
+    ),
   });
 }
 
@@ -576,6 +655,45 @@ export async function getPricing(): Promise<PricingSettings> {
   const { data, error } = await getSupabase()!.from("pricing_settings").select("*").eq("id", 1).single();
   if (error) throw new Error(error.message);
   return mapPricingRow(data as Record<string, unknown>);
+}
+
+export async function getBusinessProfile(): Promise<BusinessProfile> {
+  if (kuryelerMode === "demo") return { ...DEFAULT_BUSINESS_PROFILE };
+  const { data, error } = await getSupabase()!.from("business_profile").select("*").eq("id", 1).maybeSingle();
+  if (error || !data) return { ...DEFAULT_BUSINESS_PROFILE };
+  return mapBusinessProfileRow(data as Record<string, unknown>);
+}
+
+export type IyzicoCheckoutStart = {
+  paymentId: string;
+  token: string;
+  checkoutFormContent: string | null;
+  paymentPageUrl: string | null;
+  amountKurus: number;
+  currency: "TRY";
+};
+
+export async function startIyzicoCheckout(orderId: string): Promise<IyzicoCheckoutStart> {
+  if (kuryelerMode === "demo") {
+    throw new Error("Demo modunda iyzico yok; sandbox anahtarlarıyla Edge Function kullanın.");
+  }
+  const { data, error } = await getSupabase()!.functions.invoke("iyzico-checkout", {
+    body: { orderId },
+  });
+  if (error) throw new Error(error.message);
+  const payload = data as IyzicoCheckoutStart & { error?: string };
+  if (payload?.error) throw new Error(payload.error);
+  return payload;
+}
+
+export async function requestPaymentRefund(orderId: string) {
+  if (kuryelerMode === "demo") {
+    return { action: "cancel_or_refund", admin_required: false, accounting_correction_required: false };
+  }
+  const { data, error } = await getSupabase()!.rpc("request_payment_refund", { p_order_id: orderId });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  return row as { action: string; admin_required: boolean; accounting_correction_required: boolean };
 }
 
 export async function listDistrictPrices(): Promise<DistrictPrice[]> {
@@ -627,6 +745,7 @@ export async function updatePricing(pricing: PricingSettings): Promise<PricingSe
       commission_rate: next.commissionRate,
       showcase_mode: next.showcaseMode,
       delivery_target_tiers: next.deliveryTargetTiers,
+      delivery_targets_public: next.deliveryTargetsPublic,
     })
     .eq("id", 1)
     .select("*")
@@ -747,6 +866,85 @@ export async function createOrder(customerId: string, input: CreateOrderInput): 
     mapped.companyRevenueTl = quote.companyRevenueTl;
   }
   return mapped;
+}
+
+export async function submitGuestLead(input: GuestLeadInput): Promise<{ id: string }> {
+  if (isHoneypotFilled(input.website)) {
+    return { id: "ignored" };
+  }
+  const first = firstError(validateGuestLead(input));
+  if (first) throw new Error(first);
+  const lead = normalizeGuestLead(input);
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    state.guestLeads = state.guestLeads ?? [];
+    const recent = state.guestLeads.filter(
+      row => row.phone === lead.phone && Date.now() - Date.parse(row.createdAt) < GUEST_LEAD_WINDOW_MS,
+    ).length;
+    if (recent >= GUEST_LEAD_RATE_LIMIT) {
+      throw new Error("Çok sık istek. Lütfen birkaç dakika bekleyin.");
+    }
+    const record: GuestLeadRecord = {
+      id: crypto.randomUUID(),
+      fullName: lead.fullName,
+      phone: lead.phone,
+      pickupAddress: lead.pickupAddress,
+      dropoffAddress: lead.dropoffAddress,
+      distanceKm: lead.distanceKm,
+      product: lead.product ?? "Kurye gönderisi",
+      createdAt: nowIso(),
+    };
+    state.guestLeads.unshift(record);
+    saveDemo(state);
+    return { id: record.id };
+  }
+  const { error } = await getSupabase()!.from("guest_leads").insert({
+    full_name: lead.fullName,
+    phone: lead.phone,
+    pickup_address: lead.pickupAddress,
+    dropoff_address: lead.dropoffAddress,
+    distance_km: lead.distanceKm,
+    product: lead.product,
+    website: "",
+    pre_info_ok: lead.preInfoOk,
+    withdraw_ok: lead.withdrawOk,
+  });
+  if (error) throw new Error(error.message);
+  return { id: "ok" };
+}
+
+export async function recordLegalAcceptance(input: {
+  docKey: string;
+  version: string;
+  contentSha256: string;
+  checkboxKey: string;
+  orderId?: string | null;
+}) {
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    state.legalAcceptances = state.legalAcceptances ?? [];
+    state.legalAcceptances.unshift({
+      id: crypto.randomUUID(),
+      userId: state.sessionId ?? "demo",
+      orderId: input.orderId ?? null,
+      docKey: input.docKey,
+      version: input.version,
+      contentSha256: input.contentSha256,
+      checkboxKey: input.checkboxKey,
+      acceptedAt: nowIso(),
+    });
+    saveDemo(state);
+    notifyDemo();
+    return;
+  }
+  const { error } = await getSupabase()!.rpc("record_legal_acceptance", {
+    p_doc_key: input.docKey,
+    p_version: input.version,
+    p_content_sha256: input.contentSha256,
+    p_checkbox_key: input.checkboxKey,
+    p_order_id: input.orderId ?? null,
+  });
+  if (error) throw new Error(error.message);
 }
 
 export async function queueOrderConfirmation(order: DeliveryOrder, toEmail: string) {

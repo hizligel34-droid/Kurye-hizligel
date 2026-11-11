@@ -10,10 +10,21 @@ import { Link, useLocation } from "wouter";
 
 export function BrandMark({ compact = false, href = "/" }: { compact?: boolean; href?: string }) {
   return (
-    <Link href={href} className="flex min-h-11 min-w-0 items-center gap-2 font-black tracking-tight text-[#f5edd6]">
-      <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#D4AF37] bg-black text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.25)]">
-        <Bike size={20} aria-hidden />
-      </span>
+    <Link
+      href={href}
+      className="flex min-h-11 min-w-0 items-center gap-2 font-black tracking-tight text-[#f5edd6]"
+      aria-label="Hızlıgel ana sayfa"
+    >
+      <picture>
+        <source srcSet="/pwa/logo.webp" type="image/webp" />
+        <img
+          src="/pwa/icons/site-192.png"
+          alt=""
+          width={36}
+          height={36}
+          className="size-9 shrink-0 rounded-xl border border-[var(--gold)] bg-black object-cover"
+        />
+      </picture>
       <span className={`truncate ${compact ? "text-base" : "text-base sm:text-xl"}`}>
         Hızlıgel
       </span>
@@ -56,7 +67,7 @@ export function BrandShell({
   ];
 
   return (
-    <div className="flex min-h-dvh flex-col overflow-x-hidden bg-[#0a0a0a] pb-[calc(6rem+env(safe-area-inset-bottom))] text-[#f5edd6] md:pb-0">
+    <div className="touch-scope flex min-h-dvh flex-col overflow-x-clip bg-[#0a0a0a] pb-[var(--mobile-bottom-bar)] text-base leading-[1.5] text-[#f5edd6] md:pb-0">
       <SkipLink />
       <DemoBanner />
       <header className="sticky top-0 z-30 border-b border-[#3a3014] bg-black/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
@@ -92,7 +103,7 @@ export function BrandShell({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-[#f5edd6]"
+                  className="min-h-11 min-w-11 text-[#f5edd6]"
                   aria-label="Çıkış"
                   onClick={() => void signOut()}
                 >
@@ -101,7 +112,7 @@ export function BrandShell({
                 </Button>
               </>
             ) : (
-              <Button size="sm" className={goldBtn} asChild>
+              <Button size="sm" className={`min-h-11 ${goldBtn}`} asChild>
                 <Link href={loginHref}>Giriş</Link>
               </Button>
             )}
@@ -121,13 +132,13 @@ export function BrandShell({
         aria-label="Mobil menü"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-[#3a3014] bg-black/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur md:hidden"
       >
-        <div className={`mx-auto grid max-w-lg gap-1 ${mobileNav.length >= 4 ? "grid-cols-4" : mobileNav.length > 2 ? "grid-cols-3" : "grid-cols-2"}`}>
+        <div className={`mx-auto grid max-w-lg gap-2 ${mobileNav.length >= 4 ? "grid-cols-4" : mobileNav.length > 2 ? "grid-cols-3" : "grid-cols-2"}`}>
           {mobileNav.map(item => (
             <Link
               key={`${item.href}-${item.label}`}
               href={item.href}
               aria-current={location === item.href ? "page" : undefined}
-              className={`flex min-h-12 flex-col items-center justify-center rounded-xl text-[11px] font-bold ${
+              className={`flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[11px] font-bold ${
                 location === item.href ? "bg-[#1a1508] text-[#D4AF37]" : "text-[#8a7c52]"
               }`}
             >

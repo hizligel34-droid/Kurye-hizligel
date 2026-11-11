@@ -177,6 +177,7 @@ export function orderStatusNotification(
 
 export function paymentHint(method: PaymentMethod, status: PaymentStatus) {
   if (status === "odendi") return "Ödendi olarak işaretlendi.";
+  if (method === "iyzico") return "Kart ödemesi iyzico’nun barındırdığı formda alınır; kart bilgisi bize gelmez.";
   if (method === "havale") return "Havale bilgisi onayda iletilir.";
   if (method === "kart_kapida") return "Kapıda kart için POS henüz yok; kurye tahsilatı not eder.";
   return "Kapıda nakit ödenecek.";

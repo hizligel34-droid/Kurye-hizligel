@@ -58,12 +58,12 @@ export function ProofCapture({
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-black/70 p-3 sm:place-items-center" role="dialog" aria-modal="true" aria-labelledby="proof-title">
-      <div className="w-full max-w-md rounded-3xl border border-[#3a3014] bg-[#101010] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <div className="fixed inset-0 z-50 grid h-dvh place-items-stretch bg-black/70 p-0 sm:place-items-center sm:p-3" role="dialog" aria-modal="true" aria-labelledby="proof-title">
+      <div className="flex h-full w-full max-w-md flex-col overflow-y-auto rounded-none border border-[#3a3014] bg-[#101010] p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:h-auto sm:rounded-3xl">
         <h2 id="proof-title" className="text-lg font-black text-[#D4AF37]">
           {title}
         </h2>
-        <p className="mt-2 text-xs leading-5 text-[#8a7c52]">
+        <p className="mt-2 text-sm leading-6 text-[#8a7c52]">
           Yalnızca paketi veya teslim noktasını çekin; kişilerin yüzünü çekmeyin. Fotoğraf ve imza teslimin
           ispatı için [X] ay saklanır.
         </p>
@@ -115,13 +115,13 @@ export function ProofCapture({
             />
           </div>
         ) : null}
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <Button type="button" variant="outline" className={ghostBtn} onClick={onCancel}>
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Button type="button" variant="outline" className={`min-h-11 w-full ${ghostBtn}`} onClick={onCancel}>
             Vazgeç
           </Button>
           <Button
             type="button"
-            className={goldBtn}
+            className={`min-h-11 w-full ${goldBtn}`}
             disabled={busy || (needPhoto && !photo) || (needSignature && !signed)}
             onClick={() =>
               onConfirm({

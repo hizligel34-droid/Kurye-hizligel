@@ -31,7 +31,7 @@ export function AddressFields({
   return (
     <fieldset className="space-y-2">
       <legend className="text-sm font-bold text-[#D4AF37]">{label}</legend>
-      <label className="block text-xs font-semibold text-[#8a7c52]" htmlFor={`${id}-district`}>
+      <label className="block text-sm font-semibold text-[#8a7c52]" htmlFor={`${id}-district`}>
         İlçe
       </label>
       <select
@@ -52,13 +52,14 @@ export function AddressFields({
       <FieldError id={`${id}-district-err`} message={districtErr} />
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="min-w-0">
-          <label className="mb-1 block text-xs font-semibold text-[#8a7c52]" htmlFor={`${id}-hood`}>
+          <label className="mb-1 block text-sm font-semibold text-[#8a7c52]" htmlFor={`${id}-hood`}>
             Mahalle
           </label>
           <Input
             id={`${id}-hood`}
             className={fieldClass}
             placeholder="Mahalle"
+            autoComplete="address-level3"
             value={value.neighborhood}
             aria-invalid={Boolean(hoodErr)}
             aria-describedby={hoodErr ? `${id}-hood-err` : undefined}
@@ -67,13 +68,14 @@ export function AddressFields({
           <FieldError id={`${id}-hood-err`} message={hoodErr} />
         </div>
         <div className="min-w-0">
-          <label className="mb-1 block text-xs font-semibold text-[#8a7c52]" htmlFor={`${id}-street`}>
+          <label className="mb-1 block text-sm font-semibold text-[#8a7c52]" htmlFor={`${id}-street`}>
             Sokak / cadde
           </label>
           <Input
             id={`${id}-street`}
             className={fieldClass}
             placeholder="Sokak / cadde ve no"
+            autoComplete="street-address"
             value={value.street}
             aria-invalid={Boolean(streetErr)}
             aria-describedby={streetErr ? `${id}-street-err` : undefined}
@@ -82,7 +84,7 @@ export function AddressFields({
           <FieldError id={`${id}-street-err`} message={streetErr} />
         </div>
       </div>
-      <label className="mb-1 block text-xs font-semibold text-[#8a7c52]" htmlFor={`${id}-note`}>
+      <label className="mb-1 block text-sm font-semibold text-[#8a7c52]" htmlFor={`${id}-note`}>
         Kurye notu (isteğe bağlı)
       </label>
       <Input

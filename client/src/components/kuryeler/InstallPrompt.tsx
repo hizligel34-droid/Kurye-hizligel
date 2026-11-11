@@ -33,30 +33,28 @@ export function InstallPrompt({ panel }: { panel: PwaPanel }) {
 
   if (!visible) {
     return (
-      <p className="mt-2 text-xs leading-5 text-[#8a7c52]">
-        iPhone 13 Safari: <span className="text-[#D4AF37]">Paylaş → Ana Ekrana Ekle</span>. Bu uygulama: {app.name}.
+      <p className="mt-2 flex min-h-11 items-center gap-2 text-sm text-[#8a7c52]">
+        <Smartphone className="size-5 shrink-0 text-[#D4AF37]" aria-hidden />
+        <span>Ana ekrana ekle</span>
       </p>
     );
   }
 
   return (
     <div className="mt-3 rounded-2xl border border-[#D4AF37]/50 bg-[#1a1508] p-3 text-sm text-[#f5edd6]">
-      <p className="flex items-center gap-2 font-bold text-[#D4AF37]">
-        <Smartphone className="size-4" aria-hidden />
-        {app.name} ana ekrana
+      <p className="flex min-h-11 items-center gap-2 font-bold text-[#D4AF37]">
+        <Smartphone className="size-5 shrink-0" aria-hidden />
+        Ana ekrana ekle
       </p>
-      <ol className="mt-2 space-y-1 text-xs leading-5 text-[#b4a882]">
-        <li className="flex gap-2">
-          <Share className="mt-0.5 size-3.5 shrink-0 text-[#D4AF37]" aria-hidden />
-          Safari alt çubuğunda <strong className="text-[#f5edd6]">Paylaş</strong> simgesine dokunun.
-        </li>
-        <li>
-          <strong className="text-[#f5edd6]">Ana Ekrana Ekle</strong> → Ekle. İkon adı: {app.shortName}.
+      <ol className="mt-2 space-y-1 text-sm leading-6 text-[#b4a882]">
+        <li className="flex min-h-11 items-center gap-2">
+          <Share className="size-4 shrink-0 text-[#D4AF37]" aria-hidden />
+          Paylaş → Ekle · {app.shortName}
         </li>
       </ol>
       <button
         type="button"
-        className="mt-2 min-h-11 text-xs font-bold text-[#b4a882]"
+        className="mt-2 inline-flex min-h-11 min-w-11 items-center px-3 text-sm font-bold text-[#b4a882]"
         onClick={() => {
           sessionStorage.setItem(`hizligel.install.${panel}`, "gizle");
           setVisible(false);

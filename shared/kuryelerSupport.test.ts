@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { ALLOW_COURIER_SELF_SIGNUP, STATUS_LABELS, displayStatus, paymentStatusLabel, trackStepReached } from "./kuryeler";
+import {
+  ALLOW_COURIER_SELF_SIGNUP,
+  DEMO_LOCAL_ACCOUNTS,
+  DEMO_LOCAL_PASSWORD,
+  DEMO_SIGNUP_HINT,
+  STATUS_LABELS,
+  assertSelfSignupAllowed,
+  canSelfSignupRole,
+  displayStatus,
+  isLocalDemoPreview,
+  paymentStatusLabel,
+  trackStepReached,
+} from "./kuryeler";
 import {
   botContextPayload,
   canBotReply,
@@ -70,8 +82,8 @@ describe("durum etiketleri ve uygulama içi bildirim", () => {
 
   it("ödeme etiketini yönteme göre ayırır", () => {
     expect(paymentStatusLabel("nakit", "bekliyor")).toBe("Kapıda ödenecek");
-    expect(paymentStatusLabel("havale", "bekliyor")).toBe("Havale bekleniyor");
-    expect(paymentHint("havale", "bekliyor")).toMatch(/onayda iletilir/);
+    expect(paymentStatusLabel("iyzico", "bekliyor")).toBe("Kart ödemesi bekleniyor");
+    expect(paymentHint("iyzico", "bekliyor")).toMatch(/iyzico/);
   });
 });
 
@@ -117,5 +129,44 @@ describe("çağrı merkezi botu entegrasyon noktası", () => {
 describe("kurye kendi kaydı", () => {
   it("varsayılan olarak kapalıdır", () => {
     expect(ALLOW_COURIER_SELF_SIGNUP).toBe(false);
+  });
+});
+
+describe("yerel demo önizleme kaydı", () => {
+  it("Supabase yokken veya VITE_DEMO=1 iken yerel demoyu açar", () => {
+    expect(isLocalDemoPreview({})).toBe(true);
+    expect(
+      isLocalDemoPreview({
+        VITE_SUPABASE_URL: "https://example.supabase.co",
+        VITE_SUPABASE_ANON_KEY: "anon-key",
+      }),
+    ).toBe(false);
+    expect(
+      isLocalDemoPreview({
+        VITE_DEMO: "1",
+        VITE_SUPABASE_URL: "https://example.supabase.co",
+        VITE_SUPABASE_ANON_KEY: "anon-key",
+      }),
+    ).toBe(true);
+  });
+
+  it("canlıda kurye ve yönetici self-kaydı kapalı kalır", () => {
+    expect(canSelfSignupRole("customer", false)).toBe(true);
+    expect(canSelfSignupRole("courier", false)).toBe(false);
+    expect(canSelfSignupRole("admin", false)).toBe(false);
+    expect(ALLOW_COURIER_SELF_SIGNUP).toBe(false);
+    expect(() => assertSelfSignupAllowed("customer", false)).not.toThrow();
+    expect(() => assertSelfSignupAllowed("courier", false)).toThrow(/açılmaz/);
+    expect(() => assertSelfSignupAllowed("admin", false)).toThrow(/açılmaz/);
+  });
+
+  it("demo kipinde kurye ve yönetici kaydı açılır; şifre UI metninde yok", () => {
+    expect(canSelfSignupRole("courier", true)).toBe(true);
+    expect(canSelfSignupRole("admin", true)).toBe(true);
+    expect(DEMO_SIGNUP_HINT).toBe("Demo kipinde kayıt olabilirsiniz");
+    expect(DEMO_SIGNUP_HINT.toLocaleLowerCase("tr-TR")).not.toContain(DEMO_LOCAL_PASSWORD.toLocaleLowerCase("tr-TR"));
+    expect(DEMO_LOCAL_ACCOUNTS.customer.email).toBe("musteri@demo.local");
+    expect(DEMO_LOCAL_ACCOUNTS.courier.email).toBe("kurye@demo.local");
+    expect(DEMO_LOCAL_ACCOUNTS.admin.email).toBe("yonetici@demo.local");
   });
 });

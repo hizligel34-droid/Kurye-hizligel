@@ -22,9 +22,12 @@
   --popover: 16 16 16;
   --popover-foreground: 245 237 214;
   --radius: 1rem;
-  --gold: #d4af37;
+  --gold: #D4AF37;
+  --gold-hover: #E3C35A;
   --gold-soft: #f5e6b8;
-  --ink: #0a0a0a;
+  --ink: #0A0A0A;
+  --mobile-call-bar-height: 65px;
+  --mobile-bottom-bar: calc(var(--mobile-call-bar-height) + env(safe-area-inset-bottom, 0px));
 }
 
 @theme inline {
@@ -32,7 +35,7 @@
   --color-foreground: #f5edd6;
   --color-card: #101010;
   --color-card-foreground: #f5edd6;
-  --color-primary: #d4af37;
+  --color-primary: #D4AF37;
   --color-primary-foreground: #0a0a0a;
   --color-secondary: #1a1a1a;
   --color-secondary-foreground: #f5edd6;
@@ -43,28 +46,55 @@
   --color-destructive: #c45c5c;
   --color-border: #3a3014;
   --color-input: #1a1a1a;
-  --color-ring: #d4af37;
+  --color-ring: #D4AF37;
   --color-popover: #101010;
   --color-popover-foreground: #f5edd6;
 }
 
 * { border-color: rgb(var(--border)); }
-html { scroll-behavior: smooth; color-scheme: dark; overflow-x: hidden; }
+html { scroll-behavior: smooth; color-scheme: dark; overflow-x: clip; }
 body {
   margin: 0;
-  background: #0a0a0a;
+  background: var(--ink);
   color: #f5edd6;
   font-family: 'DM Sans', sans-serif;
-  overflow-x: hidden;
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-x: clip;
+}
+input, select, textarea { font-size: 16px; line-height: 1.5; }
+select { font-size: 16px; min-height: 44px; }
+img, video, canvas { max-width: 100%; height: auto; }
+.bg-\[var\(--gold\)\], .bg-\[\#D4AF37\] { color: #0A0A0A; }
+.text-\[\#8a7c52\] { font-size: max(0.875rem, 1em); line-height: 1.5; }
+@media (max-width: 767px) {
+  .has-call-bar {
+    padding-bottom: var(--mobile-bottom-bar);
+  }
+  .touch-scope a:not(.sr-only):not([class*="leaflet"]),
+  .touch-scope button,
+  .touch-scope [role="button"],
+  .touch-scope select,
+  .touch-scope summary,
+  .touch-scope input[type="checkbox"],
+  .touch-scope input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+    box-sizing: border-box;
+  }
+  .touch-scope a:not(.sr-only):not([class*="leaflet"]):not([class*="flex"]):not([class*="grid"]) {
+    display: inline-flex;
+    align-items: center;
+  }
 }
 :focus-visible {
-  outline: 2px solid #d4af37;
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
 h1, h2, h3, h4, button { font-family: 'Space Grotesk', 'DM Sans', sans-serif; }
 button { cursor: pointer; transition: transform .16s cubic-bezier(.23,1,.32,1), background-color .16s ease, border-color .16s ease; }
 button:active { transform: scale(.97); }
-::selection { background: #d4af37; color: #0a0a0a; }
+::selection { background: var(--gold); color: var(--ink); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
@@ -79,5 +109,5 @@ button:active { transform: scale(.97); }
   font-size: 10px;
 }
 .leaflet-kuryeler .leaflet-control-attribution a {
-  color: #d4af37;
+  color: var(--gold);
 }

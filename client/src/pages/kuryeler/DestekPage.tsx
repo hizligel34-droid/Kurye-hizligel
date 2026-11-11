@@ -155,7 +155,7 @@ function DestekHome() {
           Yazışmalar kayda düşer. Çağrı merkezi botu yalnızca burada cevaplar. WhatsApp’tan otomatik bot mesajı
           gitmez.
         </p>
-        <div className="grid grid-cols-2 gap-1 rounded-2xl border border-[#3a3014] bg-black p-1">
+        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[#3a3014] bg-black p-1">
           {(
             [
               ["yazisma", "Yazışmalar"],
@@ -194,7 +194,7 @@ function DestekHome() {
                     }`}
                   >
                     <p className="text-sm font-bold text-[#D4AF37]">{ticket.subject}</p>
-                    <p className="mt-1 text-xs text-[#8a7c52]">
+                    <p className="mt-1 text-sm text-[#8a7c52]">
                       {SUPPORT_KIND_LABELS[ticket.kind]} · {formatDateTimeTr(ticket.createdAt)}
                     </p>
                   </button>
@@ -206,7 +206,7 @@ function DestekHome() {
                 <div className="max-h-72 space-y-2 overflow-y-auto">
                   {messages.map(message => (
                     <div key={message.id} className="rounded-2xl border border-[#3a3014] bg-black p-3">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#8a7c52]">
+                      <p className="text-sm font-bold uppercase tracking-wider text-[#8a7c52]">
                         {message.sender === "customer" ? "Siz" : message.sender === "bot" ? "Destek botu" : "Yönetici"}
                       </p>
                       <p className="mt-1 whitespace-pre-wrap text-sm">{message.body}</p>
@@ -317,7 +317,7 @@ function DestekHome() {
         ) : null}
 
         <div className={`${cardClass} p-4`}>
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[#8a7c52]">İletişim</p>
+          <p className="mb-2 text-sm font-bold uppercase tracking-wider text-[#8a7c52]">İletişim</p>
           <PwaLegalLinks />
         </div>
       </div>

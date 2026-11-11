@@ -5,14 +5,25 @@ import {
   calculateDeliveryPrice,
   canTransitionStatus,
   CONTACT_PHONE_DISPLAY,
+  CONTACT_PHONE_E164,
+  CONTACT_PHONE_INTERNATIONAL,
+  CONTACT_PHONE_TEL,
   CONTACT_WHATSAPP_E164,
+  CONTACT_WHATSAPP_HREF,
   DEFAULT_DELIVERY_TARGET_TIERS,
   DEFAULT_PRICING,
   DEFAULT_VAT_RATE,
+  DELIVERY_TARGET_DISCLAIMER,
   deliveryTargetForDistance,
+  deliveryTargetTable,
   displayStatus,
+  formatCustomerDelivery,
   formatDeliveryTarget,
+  PUBLIC_DELIVERY_PROMISE,
+  SAME_DAY_CITY_DELIVERY,
   formatPriceBreakdown,
+  formatConsumerGross,
+  formatConsumerVatLine,
   formatPriceHint,
   formatPriceInclusive,
   formatTariff,
@@ -119,7 +130,9 @@ describe("kuryeler.tr sürüş fiyatı", () => {
     expect(formatTariff()).toBe("Açılış 600 TL + km başı 50 TL (KDV hariç)");
     const sample = calculateDeliveryPrice({ distanceKm: 10 });
     expect(formatPriceInclusive(sample)).toBe("1.320 TL (KDV dahil)");
-    expect(formatPriceHint(sample)).toBe("1.100 TL + 220 TL KDV");
+    expect(formatConsumerGross(sample)).toBe("1.320 TL KDV dahil");
+    expect(formatConsumerVatLine(sample)).toBe("Net 1.100 TL + KDV %20 220 TL");
+    expect(formatPriceHint(sample)).toBe("Net 1.100 TL + KDV %20 220 TL");
     expect(formatPriceBreakdown(sample)).toBe("1.100 TL KDV hariç · KDV (%20): 220 TL · 1.320 TL KDV dahil");
   });
 
@@ -134,6 +147,7 @@ describe("kuryeler.tr sürüş fiyatı", () => {
         "routingProvider",
         "routingUrl",
         "deliveryTargetTiers",
+        "deliveryTargetsPublic",
         "showcaseMode",
         "vatRate",
       ].sort(),
@@ -145,6 +159,7 @@ describe("kuryeler.tr sürüş fiyatı", () => {
         roundingDecimals: 2,
         vatRate: 0.2,
         showcaseMode: false,
+        deliveryTargetsPublic: true,
       }),
     );
   });
@@ -175,6 +190,24 @@ describe("kuryeler.tr hedef teslim kademeleri", () => {
     expect(deliveryTargetForDistance(8.1, custom).label).toBe("aynı gün");
     expect(DEFAULT_DELIVERY_TARGET_TIERS.map(tier => tier.maxKm)).toEqual([5, 20, 40, 100, null]);
   });
+
+  it("müşteriye varsayılan olarak kademe tablosunu açar", () => {
+    expect(DEFAULT_PRICING.deliveryTargetsPublic).toBe(true);
+    expect(formatCustomerDelivery(5)).toBe("Hedef teslim: 60 dakika");
+    expect(formatCustomerDelivery(120)).toBe("Hedef teslim: aynı gün");
+    expect(SAME_DAY_CITY_DELIVERY).toBe("İl içi aynı gün teslimat");
+    expect(DELIVERY_TARGET_DISCLAIMER).toBe("Hedef süredir; trafik ve hava koşullarına göre değişebilir.");
+    expect(deliveryTargetTable()).toEqual([
+      { range: "≤5 km", label: "60 dakika" },
+      { range: "≤20 km", label: "2 saat" },
+      { range: "≤40 km", label: "3 saat" },
+      { range: "≤100 km", label: "4 saat" },
+      { range: ">100 km", label: "aynı gün" },
+    ]);
+    expect(
+      formatCustomerDelivery(5, { ...DEFAULT_PRICING, deliveryTargetsPublic: false }),
+    ).toBe(PUBLIC_DELIVERY_PROMISE);
+  });
 });
 
 describe("kuryeler.tr bölge referans listesi", () => {
@@ -195,8 +228,29 @@ describe("kuryeler.tr takip kodu", () => {
 describe("kuryeler.tr iletişim", () => {
   it("işletme telefonu ve WhatsApp numarasını gösterir", () => {
     expect(CONTACT_PHONE_DISPLAY).toBe("0532 474 67 45");
+    expect(CONTACT_PHONE_INTERNATIONAL).toBe("+90 532 474 67 45");
+    expect(CONTACT_PHONE_E164).toBe("905324746745");
     expect(CONTACT_WHATSAPP_E164).toBe("905324746745");
-    expect(BUSINESS.legalName).toBe("[AD SOYAD]");
+    expect(CONTACT_PHONE_TEL).toBe("tel:+905324746745");
+    expect(CONTACT_WHATSAPP_HREF).toBe("https://wa.me/905324746745");
+    expect(BUSINESS.phone).toBe(CONTACT_PHONE_DISPLAY);
+  });
+
+  it("künyede unvan, telefon ve Beşiktaş adresini doldurur; vergi ve e-posta ? kalır", () => {
+    expect(BUSINESS.legalName).toBe("Canan Tekin Organizasyon ve Kurye Hizmetleri");
+    expect(BUSINESS.ownerName).toBe("Canan Tekin");
+    expect(BUSINESS.traderKind).toBe("esnaf");
+    expect(BUSINESS.address).toBe(
+      "Büyük Beşiktaş Çarşısı, Ortabahçe Caddesi No: 10, Kat 1, No: 143, Beşiktaş/İstanbul",
+    );
+    expect(BUSINESS.taxOffice).toBe("Maslak Vergi Dairesi");
+    expect(BUSINESS.taxId).toBe("?");
+    expect(BUSINESS.kep).toBe("?");
+    expect(BUSINESS.email).toBe("serif.tekin@hotmail.com");
+    expect(BUSINESS).not.toHaveProperty("tckn");
+    expect(BUSINESS).not.toHaveProperty("tcKimlik");
+    expect(BUSINESS).not.toHaveProperty("identityNumber");
+    expect(JSON.stringify(BUSINESS)).not.toMatch(/T\.C\.|TCKN|kimlik no/i);
   });
 });
 
@@ -308,9 +362,24 @@ describe("sipariş teyit e-postası", () => {
       "musteri@ornek.tr",
     );
     expect(mail.body).toContain("1.320 TL (KDV dahil)");
-    expect(mail.body).toContain("1.100 TL + 220 TL KDV");
+    expect(mail.body).toContain("Net 1.100 TL + KDV %20 220 TL");
+    expect(mail.body).toContain("0532 474 67 45");
+    expect(mail.body).not.toMatch(/0553\s*255|905532556745/);
     expect(mail.body).toContain("1.100 TL KDV hariç");
     expect(mail.body).toContain("KDV (%20): 220 TL");
     expect(mail.body).not.toContain("KDV ?");
+    expect(mail.body).toContain("Canan Tekin Organizasyon ve Kurye Hizmetleri");
+    expect(mail.body).toContain("İşletme sahibi: Canan Tekin");
+    expect(mail.body).toContain(
+      "Büyük Beşiktaş Çarşısı, Ortabahçe Caddesi No: 10, Kat 1, No: 143, Beşiktaş/İstanbul",
+    );
+    expect(mail.body).toContain("E-posta: serif.tekin@hotmail.com");
+    expect(mail.body).toContain("Vergi dairesi: Maslak Vergi Dairesi");
+    expect(mail.body).toContain("KEP: ?");
+    expect(mail.body).not.toMatch(/MERSİS/);
+    expect(mail.body).not.toMatch(/TCKN|T\.C\. kimlik/i);
+    expect(mail.body).toContain("Hedef teslim: 2 saat");
+    expect(mail.body).toContain("İl içi aynı gün teslimat");
+    expect(mail.body).toContain("Hedef süredir; trafik ve hava koşullarına göre değişebilir.");
   });
 });

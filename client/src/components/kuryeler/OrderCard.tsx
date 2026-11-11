@@ -56,32 +56,41 @@ export function OrderCard({
         {order.distanceKm > 0 ? formatKm(order.distanceKm) : ""}
         {order.weightKg ? ` · ${order.weightKg} kg` : ""}
       </p>
-      {eta ? <p className="mt-1 text-xs text-[#8a7c52]">{eta}</p> : null}
-      <p className="mt-1 break-words text-xs leading-5 text-[#8a7c52]">
-        Alım: {order.pickupAddress}
-        <br />
-        Gidecek yer: {order.dropoffAddress}
+      {eta ? <p className="mt-1 text-sm text-[#8a7c52]">{eta}</p> : null}
+      <dl className="mt-1 space-y-1 break-words text-base leading-[1.5] text-[#b4a882]">
+        <div>
+          <dt className="inline text-[#8a7c52]">Alım: </dt>
+          <dd className="inline">{order.pickupAddress}</dd>
+        </div>
+        <div>
+          <dt className="inline text-[#8a7c52]">Gidecek yer: </dt>
+          <dd className="inline">{order.dropoffAddress}</dd>
+        </div>
         {board ? null : (
           <>
-            <br />
-            Teslim alan: {order.recipientName || "—"}
+            <div>
+              <dt className="inline text-[#8a7c52]">Teslim alan: </dt>
+              <dd className="inline">{order.recipientName || "—"}</dd>
+            </div>
             {showPhones && order.recipientPhone ? (
-              <>
-                <br />
-                Alıcı tel: {order.recipientPhone}
-              </>
+              <div>
+                <dt className="inline text-[#8a7c52]">Alıcı tel: </dt>
+                <dd className="inline">{order.recipientPhone}</dd>
+              </div>
             ) : null}
             {showPhones && order.contactPhone ? (
-              <>
-                <br />
-                Gönderen tel: {order.contactPhone}
-              </>
+              <div>
+                <dt className="inline text-[#8a7c52]">Gönderen tel: </dt>
+                <dd className="inline">{order.contactPhone}</dd>
+              </div>
             ) : null}
-            <br />
-            İstenen alım zamanı: {formatDateTimeTr(order.scheduledAt)}
+            <div>
+              <dt className="inline text-[#8a7c52]">İstenen alım zamanı: </dt>
+              <dd className="inline">{formatDateTimeTr(order.scheduledAt)}</dd>
+            </div>
           </>
         )}
-      </p>
+      </dl>
       {board ? null : (
         <p className="mt-2 text-xs text-[#b4a882]">
           {PAYMENT_METHOD_LABELS[order.paymentMethod]} · {paymentStatusLabel(order.paymentMethod, order.paymentStatus)}
@@ -89,7 +98,7 @@ export function OrderCard({
       )}
       {!board && order.notes ? <p className="mt-2 text-xs text-[#b4a882]">{order.notes}</p> : null}
       {order.status === "cancelled" && order.cancelReason ? (
-        <p className="mt-2 text-xs text-[#8a7c52]">İptal notu: {order.cancelReason}</p>
+        <p className="mt-2 text-sm text-[#8a7c52]">İptal notu: {order.cancelReason}</p>
       ) : null}
       {order.status === "assigned" ? (
         <p className="mt-2 text-xs font-semibold text-[#D4AF37]">Kurye atandı, alıma gidiyor.</p>
@@ -100,23 +109,23 @@ export function OrderCard({
           {deliveryPhoto ? (
             <figure>
               <img src={deliveryPhoto} alt="Teslim fotoğrafı" className="h-32 w-full rounded-2xl object-cover" />
-              <figcaption className="mt-1 text-[11px] text-[#8a7c52]">Teslim fotoğrafı</figcaption>
+              <figcaption className="mt-1 text-sm text-[#8a7c52]">Teslim fotoğrafı</figcaption>
             </figure>
           ) : null}
           {signature ? (
             <figure>
               <img src={signature} alt="Teslim imzası" className="h-32 w-full rounded-2xl bg-[#141414] object-contain" />
-              <figcaption className="mt-1 text-[11px] text-[#8a7c52]">İmza</figcaption>
+              <figcaption className="mt-1 text-sm text-[#8a7c52]">İmza</figcaption>
             </figure>
           ) : null}
         </div>
       ) : null}
       {board ? null : (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button
             type="button"
             variant="outline"
-            className={`${ghostBtn} h-10`}
+            className={`${ghostBtn} min-h-11 w-full sm:w-auto`}
             onClick={() =>
               void copyText(order.trackingCode).then(() => toast.success("Takip kodu kopyalandı")).catch(() => toast.error("Kopyalanamadı"))
             }
@@ -126,7 +135,7 @@ export function OrderCard({
           <Button
             type="button"
             variant="outline"
-            className={`${ghostBtn} h-10`}
+            className={`${ghostBtn} min-h-11 w-full sm:w-auto`}
             onClick={() =>
               void copyTrackingLink(order.trackingCode)
                 .then(() => toast.success("Takip linki kopyalandı"))
@@ -138,7 +147,7 @@ export function OrderCard({
           <Button
             type="button"
             variant="outline"
-            className={`${ghostBtn} h-10`}
+            className={`${ghostBtn} min-h-11 w-full sm:w-auto`}
             onClick={() =>
               void shareTrackingLink(order.trackingCode)
                 .then(mode => toast.success(mode === "shared" ? "Paylaşıldı" : "Takip linki kopyalandı"))

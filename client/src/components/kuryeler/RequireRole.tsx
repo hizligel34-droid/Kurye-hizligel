@@ -30,7 +30,7 @@ export function RequireRole({
             {loading ? "Oturum kontrol ediliyor…" : `${ROLE_LABELS[role]} girişi gerekiyor`}
           </p>
           {wrongRole ? (
-            <p className="max-w-sm text-center text-xs text-[#8a7c52]">
+            <p className="max-w-sm text-center text-sm text-[#8a7c52]">
               Bu hesap {ROLE_LABELS[wrongRole]} içindir. Lütfen ilgili Hızlıgel uygulamasını açın.
             </p>
           ) : null}

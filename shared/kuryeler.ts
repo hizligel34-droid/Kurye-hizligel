@@ -1,5 +1,7 @@
 /** kuryeler.tr — roller, durumlar, sürüş mesafesi fiyatı ve sipariş modeli. */
 
+import { DEFAULT_BUSINESS_PROFILE } from "./businessProfile";
+
 export { DISTRICT_NAMES, DISTRICT_PRICES, findDistrictPrice, type DistrictPrice } from "./fiyatListesi";
 
 export const BRAND_NAME = "kuryeler.tr";
@@ -10,23 +12,26 @@ export const VAT_EXCL_LABEL = "KDV hariç";
 export const VAT_INCL_LABEL = "KDV dahil";
 export const DEFAULT_VAT_RATE = 0.2;
 export const BRAND_URL = "https://kuryeler.tr";
-export const CONTACT_EMAIL = "iletisim@kuryeler.tr";
-export const CONTACT_PHONE_DISPLAY = "0532 474 67 45";
-export const CONTACT_WHATSAPP_E164 = "905324746745";
+export const CONTACT_EMAIL = "serif.tekin@hotmail.com";
 
-/** Köşeli parantezli alanlar işletme kimliği doldurulunca değişir. */
-export const BUSINESS = {
-  legalName: "[AD SOYAD]",
-  taxOffice: "[VERGİ DAİRESİ]",
-  taxId: "[VKN]",
-  address: "[AÇIK ADRES], İstanbul",
-  kep: "[KEP ADRESİ]",
-  chamber: "[ODA ADI – varsa]",
-  trademarkNote: "Marka: kuryeler.tr (başvuru no 2026/088618 – tescil süreci devam ediyor)",
-  kvkkEffective: "[TARİH]",
-  retentionOrdersYears: "[X]",
-  retentionPhotoMonths: "[X]",
-} as const;
+export {
+  CONTACT_PHONE_DISPLAY,
+  CONTACT_PHONE_E164,
+  CONTACT_PHONE_INTERNATIONAL,
+  CONTACT_PHONE_TEL,
+  CONTACT_WHATSAPP_E164,
+  CONTACT_WHATSAPP_HREF,
+  CUSTOMER_PHONE_NATIONAL,
+} from "./contactConfig";
+
+export {
+  DEFAULT_BUSINESS_PROFILE,
+  kunyeDisplayLines,
+  type BusinessProfile,
+} from "./businessProfile";
+
+/** Künye varsayılanı (esnaf). MERSİS yok; TCKN alanı yok. */
+export const BUSINESS = DEFAULT_BUSINESS_PROFILE;
 
 export const MAX_WEIGHT_KG = 30;
 export const WEIGHT_LIMIT_MESSAGE = "Maksimum taşıma sınırı 30 kg";
@@ -36,6 +41,7 @@ export type UserRole = (typeof USER_ROLES)[number];
 
 export const ORDER_STATUSES = [
   "pending",
+  "confirmed",
   "assigned",
   "picked_up",
   "en_route",
@@ -48,8 +54,9 @@ export const PUBLIC_STATUSES = ["pending", "picked_up", "en_route", "delivered",
 export const TRACK_STEPS = ["pending", "assigned", "picked_up", "en_route", "delivered"] as const;
 export type TrackStep = (typeof TRACK_STEPS)[number];
 
-export const PAYMENT_METHODS = ["nakit", "havale", "kart_kapida"] as const;
+export const PAYMENT_METHODS = ["iyzico", "nakit", "kart_kapida", "havale"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+export const CUSTOMER_PAYMENT_METHODS = ["iyzico", "nakit", "kart_kapida"] as const;
 
 export const PAYMENT_STATUSES = ["bekliyor", "odendi"] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
@@ -68,6 +75,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "Bekliyor",
+  confirmed: "Ödendi",
   assigned: "Kurye atandı, alıma gidiyor",
   picked_up: "Alındı",
   en_route: "Yolda",
@@ -78,7 +86,40 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
 /** Canlıda kurye kendi kaydı kapalı; yalnız yönetici kurye atar. Şerif açarsa true yapılır. */
 export const ALLOW_COURIER_SELF_SIGNUP = false;
 
+export const DEMO_LOCAL_ACCOUNTS = {
+  customer: { email: "musteri@demo.local", fullName: "Demo Müşteri", phone: "05420000001", role: "customer" as const },
+  courier: { email: "kurye@demo.local", fullName: "Demo Kurye", phone: "05420000002", role: "courier" as const },
+  admin: { email: "yonetici@demo.local", fullName: "Demo Yönetici", phone: "05420000003", role: "admin" as const },
+} as const;
+
+/** Yalnız demo deposunda tutulur; UI’da gösterilmez. */
+export const DEMO_LOCAL_PASSWORD = "DemoLocal8";
+export const DEMO_SIGNUP_HINT = "Demo kipinde kayıt olabilirsiniz";
+
+export function isLocalDemoPreview(env?: Record<string, string | undefined>) {
+  const source = env ?? {
+    VITE_DEMO: readViteFlag("VITE_DEMO"),
+    VITE_SUPABASE_URL: readViteFlag("VITE_SUPABASE_URL"),
+    VITE_SUPABASE_ANON_KEY: readViteFlag("VITE_SUPABASE_ANON_KEY"),
+  };
+  const demoFlag = String(source.VITE_DEMO ?? "").trim().toLowerCase();
+  if (demoFlag === "1" || demoFlag === "true") return true;
+  return !(String(source.VITE_SUPABASE_URL ?? "").trim() && String(source.VITE_SUPABASE_ANON_KEY ?? "").trim());
+}
+
+export function canSelfSignupRole(role: UserRole, localDemo = false) {
+  if (role === "customer") return true;
+  return localDemo;
+}
+
+export function assertSelfSignupAllowed(role: UserRole, localDemo: boolean) {
+  if (!canSelfSignupRole(role, localDemo)) {
+    throw new Error("Kurye ve yönetici hesabı bu uygulamadan açılmaz.");
+  }
+}
+
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  iyzico: "Kart (iyzico)",
   nakit: "Nakit",
   havale: "Havale / EFT",
   kart_kapida: "Kapıda kart (POS henüz yok)",
@@ -98,6 +139,7 @@ export const ETA_DISCLAIMER = "tahmini, trafiğe göre değişebilir";
 
 export function paymentStatusLabel(method: PaymentMethod, status: PaymentStatus): string {
   if (status === "odendi") return PAYMENT_STATUS_LABELS.odendi;
+  if (method === "iyzico") return "Kart ödemesi bekleniyor";
   if (method === "nakit") return "Kapıda ödenecek";
   if (method === "havale") return "Havale bekleniyor";
   return "Kapıda tahsil edilecek";
@@ -110,7 +152,8 @@ export function formatEtaMinutes(durationMin: number | null | undefined): string
 
 export function trackStepReached(current: OrderStatus, step: TrackStep): boolean {
   if (current === "cancelled") return false;
-  const currentIndex = TRACK_STEPS.indexOf(current as TrackStep);
+  const normalized = current === "confirmed" ? "pending" : current;
+  const currentIndex = TRACK_STEPS.indexOf(normalized as TrackStep);
   const stepIndex = TRACK_STEPS.indexOf(step);
   if (currentIndex < 0 || stepIndex < 0) return false;
   return currentIndex >= stepIndex;
@@ -178,9 +221,9 @@ export function formatDeliveryTarget(
 
 export function deliveryTargetRangeLabel(tier: DeliveryTargetTier, previousMaxKm: number | null) {
   if (tier.maxKm == null) {
-    return previousMaxKm == null ? "üst kademe" : `${previousMaxKm} km üstü`;
+    return previousMaxKm == null ? "üst kademe" : `>${previousMaxKm} km`;
   }
-  return `${tier.maxKm} km ve altı`;
+  return `≤${tier.maxKm} km`;
 }
 
 export function deliveryTargetTable(tiers: DeliveryTargetTier[] = DEFAULT_DELIVERY_TARGET_TIERS) {
@@ -210,6 +253,8 @@ export type PricingSettings = {
   commissionRate: number;
   showcaseMode: boolean;
   deliveryTargetTiers: DeliveryTargetTier[];
+  /** Müşteriye süre tablosu. Varsayılan açık; false ise yedek metin. */
+  deliveryTargetsPublic: boolean;
 };
 
 export const DEFAULT_PRICING: PricingSettings = {
@@ -223,7 +268,27 @@ export const DEFAULT_PRICING: PricingSettings = {
   commissionRate: 0.2,
   showcaseMode: false,
   deliveryTargetTiers: DEFAULT_DELIVERY_TARGET_TIERS.map(tier => ({ ...tier })),
+  deliveryTargetsPublic: true,
 };
+
+export const SAME_DAY_CITY_DELIVERY = "İl içi aynı gün teslimat";
+export const PUBLIC_DELIVERY_PROMISE = "Makul sürede, aktarmasız teslim";
+export const PUBLIC_DELIVERY_DETAIL =
+  "Gönderiniz, kurye tarafından teslim alındıktan sonra aktarma ve depolama yapılmadan doğrudan alıcıya götürülür ve makul bir sürede teslim edilir. Mevzuat gereği teslim süresi taahhüdü verilmez. Gönderinizin nerede olduğunu uygulamadan canlı izleyebilirsiniz.";
+
+export function isDeliveryTargetsPublic(pricing?: Pick<PricingSettings, "deliveryTargetsPublic"> | null) {
+  return Boolean(pricing?.deliveryTargetsPublic ?? DEFAULT_PRICING.deliveryTargetsPublic);
+}
+
+export function formatCustomerDelivery(
+  distanceKm: number,
+  pricing: PricingSettings = DEFAULT_PRICING,
+) {
+  if (isDeliveryTargetsPublic(pricing)) {
+    return formatDeliveryTarget(distanceKm, pricing.deliveryTargetTiers);
+  }
+  return PUBLIC_DELIVERY_PROMISE;
+}
 
 function readViteFlag(name: string): string {
   try {
@@ -243,7 +308,8 @@ export function isShowcaseMode(pricing?: PricingSettings | null) {
 }
 
 const STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
-  pending: ["assigned", "cancelled"],
+  pending: ["confirmed", "assigned", "cancelled"],
+  confirmed: ["assigned", "cancelled"],
   assigned: ["picked_up", "cancelled"],
   picked_up: ["en_route", "cancelled"],
   en_route: ["delivered", "cancelled"],
@@ -271,7 +337,7 @@ export function courierStatusActionLabel(current: OrderStatus) {
 }
 
 export function displayStatus(status: OrderStatus): OrderStatus {
-  return status;
+  return status === "confirmed" ? "pending" : status;
 }
 
 export function roundMoney(value: number, decimals: number) {
@@ -349,8 +415,19 @@ export function formatPriceInclusive(price: Pick<PriceBreakdown, "grossTl">) {
   return `${formatTl(price.grossTl)} (${VAT_INCL_LABEL})`;
 }
 
-export function formatPriceHint(price: Pick<PriceBreakdown, "netTl" | "vatTl">) {
-  return `${formatTl(price.netTl)} + ${formatTl(price.vatTl)} KDV`;
+export function formatConsumerGross(price: Pick<PriceBreakdown, "grossTl">) {
+  return `${formatTl(price.grossTl)} ${VAT_INCL_LABEL}`;
+}
+
+export function formatConsumerVatLine(
+  price: Pick<PriceBreakdown, "netTl" | "vatTl"> & { vatRate?: number },
+) {
+  const vatRate = Number.isFinite(price.vatRate) ? Number(price.vatRate) : DEFAULT_VAT_RATE;
+  return `Net ${formatTl(price.netTl)} + KDV ${formatVatPercent(vatRate)} ${formatTl(price.vatTl)}`;
+}
+
+export function formatPriceHint(price: Pick<PriceBreakdown, "netTl" | "vatTl"> & { vatRate?: number }) {
+  return formatConsumerVatLine(price);
 }
 
 export function formatPriceBreakdown(price: Pick<PriceBreakdown, "netTl" | "vatTl" | "grossTl" | "vatRate">) {
@@ -424,13 +501,21 @@ export function redactPendingForCourier(order: DeliveryOrder): DeliveryOrder {
 }
 
 export function isActiveOrder(status: OrderStatus) {
-  return status === "pending" || status === "assigned" || status === "picked_up" || status === "en_route";
+  return (
+    status === "pending" ||
+    status === "confirmed" ||
+    status === "assigned" ||
+    status === "picked_up" ||
+    status === "en_route"
+  );
 }
 
 export function statusTone(status: OrderStatus) {
   switch (status) {
     case "pending":
       return "bg-[#2a2410] text-[#D4AF37]";
+    case "confirmed":
+      return "bg-[#14241a] text-[#D4AF37]";
     case "assigned":
       return "bg-[#2a2410] text-[#D4AF37]";
     case "picked_up":
@@ -438,7 +523,7 @@ export function statusTone(status: OrderStatus) {
     case "en_route":
       return "bg-[#2a1e0c] text-[#f0d78c]";
     case "delivered":
-      return "bg-[#14241a] text-[#d4af37]";
+      return "bg-[#14241a] text-[#D4AF37]";
     case "cancelled":
       return "bg-[#1c1c1c] text-[#8a7c52]";
   }

@@ -1,6 +1,6 @@
 const SCOPE = "/musteri/";
 const CACHE_PREFIX = "hizligel-musteri-shell-";
-const CACHE_NAME = CACHE_PREFIX + "v2";
+const CACHE_NAME = CACHE_PREFIX + "v3";
 const SHELL = [
   SCOPE,
   SCOPE + "index.html",

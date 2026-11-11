@@ -10,15 +10,34 @@ export const COURIER_SERVICES: Record<CourierServiceType, { label: string; descr
   express: { label: "Express kurye", description: "Hızlı şehir içi teslimat", deliveryTargetMinutes: 120, assignmentMinutes: 15 },
 };
 
-export function getDeliveryEstimate(input: { serviceType?: CourierServiceType; routeDurationMinutes?: number | null }) {
+export const PUBLIC_DELIVERY_PROMISE = "Makul sürede, aktarmasız teslim";
+
+export function publicServiceTimingLabel(
+  service: { deliveryTargetMinutes: number },
+  deliveryTargetsPublic = true,
+) {
+  if (!deliveryTargetsPublic) return PUBLIC_DELIVERY_PROMISE;
+  return service.deliveryTargetMinutes === 60 ? "60 dk" : "2–3 saat";
+}
+
+export function getDeliveryEstimate(input: {
+  serviceType?: CourierServiceType;
+  routeDurationMinutes?: number | null;
+  deliveryTargetsPublic?: boolean;
+}) {
   const service = COURIER_SERVICES[input.serviceType ?? "standard"];
   const routeMinutes = Math.max(0, Number(input.routeDurationMinutes) || 0);
   const calculatedMinutes = Math.ceil(routeMinutes + service.assignmentMinutes);
+  const publicTargets = input.deliveryTargetsPublic ?? true;
   return {
     assignmentMinutes: service.assignmentMinutes,
     calculatedMinutes,
     deliveryTargetMinutes: service.deliveryTargetMinutes,
-    label: service.deliveryTargetMinutes === 60 ? "60 dakika" : "2–3 saat",
+    label: publicTargets
+      ? service.deliveryTargetMinutes === 60
+        ? "60 dakika"
+        : "2–3 saat"
+      : PUBLIC_DELIVERY_PROMISE,
   };
 }
 
