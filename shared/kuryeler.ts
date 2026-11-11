@@ -79,6 +79,38 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
 /** Canlıda kurye kendi kaydı kapalı; yalnız yönetici kurye atar. Şerif açarsa true yapılır. */
 export const ALLOW_COURIER_SELF_SIGNUP = false;
 
+export const DEMO_LOCAL_ACCOUNTS = {
+  customer: { email: "musteri@demo.local", fullName: "Demo Müşteri", phone: "05420000001", role: "customer" as const },
+  courier: { email: "kurye@demo.local", fullName: "Demo Kurye", phone: "05420000002", role: "courier" as const },
+  admin: { email: "yonetici@demo.local", fullName: "Demo Yönetici", phone: "05420000003", role: "admin" as const },
+} as const;
+
+/** Yalnız demo deposunda tutulur; UI’da gösterilmez. */
+export const DEMO_LOCAL_PASSWORD = "DemoLocal8";
+export const DEMO_SIGNUP_HINT = "Demo kipinde kayıt olabilirsiniz";
+
+export function isLocalDemoPreview(env?: Record<string, string | undefined>) {
+  const source = env ?? {
+    VITE_DEMO: readViteFlag("VITE_DEMO"),
+    VITE_SUPABASE_URL: readViteFlag("VITE_SUPABASE_URL"),
+    VITE_SUPABASE_ANON_KEY: readViteFlag("VITE_SUPABASE_ANON_KEY"),
+  };
+  const demoFlag = String(source.VITE_DEMO ?? "").trim().toLowerCase();
+  if (demoFlag === "1" || demoFlag === "true") return true;
+  return !(String(source.VITE_SUPABASE_URL ?? "").trim() && String(source.VITE_SUPABASE_ANON_KEY ?? "").trim());
+}
+
+export function canSelfSignupRole(role: UserRole, localDemo = false) {
+  if (role === "customer") return true;
+  return localDemo;
+}
+
+export function assertSelfSignupAllowed(role: UserRole, localDemo: boolean) {
+  if (!canSelfSignupRole(role, localDemo)) {
+    throw new Error("Kurye ve yönetici hesabı bu uygulamadan açılmaz.");
+  }
+}
+
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   iyzico: "Kart (iyzico)",
   nakit: "Nakit",

@@ -9,6 +9,10 @@ import {
   normalizeDeliveryTargetTiers,
   redactPendingForCourier,
   WEIGHT_LIMIT_MESSAGE,
+  DEMO_LOCAL_ACCOUNTS,
+  DEMO_LOCAL_PASSWORD,
+  isLocalDemoPreview,
+  assertSelfSignupAllowed,
   type DashboardStats,
   type DeliveryOrder,
   type DistrictPrice,
@@ -33,10 +37,10 @@ import {
 } from "@shared/kuryelerSupport";
 import { buildOrderConfirmationMail, type OutboundMail } from "@shared/orderConfirmation";
 import { DEFAULT_BUSINESS_PROFILE, mapBusinessProfileRow, type BusinessProfile } from "@shared/businessProfile";
-import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
+import { getSupabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
-const DEMO_KEY = "kuryeler.tr.demo.v7";
+const DEMO_KEY = "kuryeler.tr.demo.v8";
 
 export type SessionUser = Profile;
 
@@ -254,9 +258,41 @@ function seedDemo(): DemoState {
       pricing,
     ),
   ];
+  const users = [
+    {
+      id: "demo-customer",
+      email: DEMO_LOCAL_ACCOUNTS.customer.email,
+      password: DEMO_LOCAL_PASSWORD,
+      role: "customer" as UserRole,
+      fullName: DEMO_LOCAL_ACCOUNTS.customer.fullName,
+      phone: DEMO_LOCAL_ACCOUNTS.customer.phone,
+      isOnline: false,
+      createdAt,
+    },
+    {
+      id: "demo-courier",
+      email: DEMO_LOCAL_ACCOUNTS.courier.email,
+      password: DEMO_LOCAL_PASSWORD,
+      role: "courier" as UserRole,
+      fullName: DEMO_LOCAL_ACCOUNTS.courier.fullName,
+      phone: DEMO_LOCAL_ACCOUNTS.courier.phone,
+      isOnline: true,
+      createdAt,
+    },
+    {
+      id: "demo-admin",
+      email: DEMO_LOCAL_ACCOUNTS.admin.email,
+      password: DEMO_LOCAL_PASSWORD,
+      role: "admin" as UserRole,
+      fullName: DEMO_LOCAL_ACCOUNTS.admin.fullName,
+      phone: DEMO_LOCAL_ACCOUNTS.admin.phone,
+      isOnline: false,
+      createdAt,
+    },
+  ];
   return {
     sessionId: null,
-    users: [],
+    users,
     orders,
     pricing,
     districtPrices,
@@ -464,7 +500,7 @@ function notifyDemo() {
   demoListeners.forEach(fn => fn());
 }
 
-export const kuryelerMode = isSupabaseConfigured() ? "supabase" : "demo";
+export const kuryelerMode = isLocalDemoPreview() ? "demo" : "supabase";
 
 export async function getSession(): Promise<SessionUser | null> {
   if (kuryelerMode === "demo") {
@@ -516,8 +552,9 @@ export async function signUp(input: {
   password: string;
   fullName: string;
   phone: string;
-  role: "customer" | "courier";
+  role: UserRole;
 }): Promise<SessionUser> {
+  assertSelfSignupAllowed(input.role, isLocalDemoPreview());
   if (kuryelerMode === "demo") {
     const state = loadDemo();
     if (state.users.some(u => u.email.toLocaleLowerCase("tr-TR") === input.email.trim().toLocaleLowerCase("tr-TR"))) {
@@ -533,7 +570,7 @@ export async function signUp(input: {
       isOnline: false,
       createdAt: nowIso(),
     };
-    if (input.role === "customer") {
+    if (input.role === "customer" && !state.users.some(item => item.id === "demo-customer")) {
       for (const order of state.orders) {
         if (order.customerId === "demo-customer") order.customerId = user.id;
       }

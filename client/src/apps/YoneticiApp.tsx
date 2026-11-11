@@ -9,6 +9,7 @@ export function YoneticiApp() {
       <Switch>
         <Route path="/" component={AdminPanel} />
         <Route path="/giris">{() => <AuthPage mode="giris" panel="yonetici" />}</Route>
+        <Route path="/kayit">{() => <AuthPage mode="kayit" panel="yonetici" />}</Route>
         <Route>{() => <NotFound homeHref="/" homeLabel="Yönetim" />}</Route>
       </Switch>
     </Router>

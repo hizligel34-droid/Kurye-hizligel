@@ -8,7 +8,15 @@ import { cardClass, fieldClass, goldBtn } from "@/lib/kuryelerTheme";
 import { FieldError, SkipLink } from "@/components/kuryeler/UiStates";
 import { firstError, validateAuthForm, type FieldErrors } from "@shared/kuryelerValidation";
 import { normalizeTurkishMobilePhone } from "@shared/orderValidation";
-import { ALLOW_COURIER_SELF_SIGNUP, CONTACT_PHONE_DISPLAY, isShowcaseMode, ROLE_LABELS, type UserRole } from "@shared/kuryeler";
+import {
+  CONTACT_PHONE_DISPLAY,
+  DEMO_SIGNUP_HINT,
+  canSelfSignupRole,
+  isLocalDemoPreview,
+  isShowcaseMode,
+  ROLE_LABELS,
+  type UserRole,
+} from "@shared/kuryeler";
 import { PANEL_ROLE, PWA_APPS, type PwaPanel } from "@shared/kuryelerPwa";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
@@ -33,7 +41,10 @@ export default function AuthPage({
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [resetOpen, setResetOpen] = useState(false);
   const [showcase, setShowcase] = useState(isShowcaseMode());
-  const courierSignupClosed = mode === "kayit" && panel === "kurye" && !ALLOW_COURIER_SELF_SIGNUP;
+  const localDemo = isLocalDemoPreview();
+  const courierSignupClosed = mode === "kayit" && panel === "kurye" && !canSelfSignupRole("courier", localDemo);
+  const adminSignupClosed = mode === "kayit" && panel === "yonetici" && !canSelfSignupRole("admin", localDemo);
+  const signupClosed = courierSignupClosed || adminSignupClosed;
 
   useEffect(() => {
     void getPricing()
@@ -54,7 +65,7 @@ export default function AuthPage({
       fullName,
       phone,
     });
-    if (mode === "kayit" && panel === "yonetici") {
+    if (adminSignupClosed) {
       nextErrors.email = "Yönetici hesabı bu uygulamadan açılamaz.";
     }
     if (mode === "kayit" && showcase) {
@@ -66,8 +77,10 @@ export default function AuthPage({
       toast.error(message);
       return;
     }
-    if (courierSignupClosed) {
-      toast.error("Kurye hesabı bu uygulamadan açılmaz.");
+    if (signupClosed) {
+      toast.error(
+        adminSignupClosed ? "Yönetici hesabı bu uygulamadan açılmaz." : "Kurye hesabı bu uygulamadan açılmaz.",
+      );
       return;
     }
     setBusy(true);
@@ -83,7 +96,7 @@ export default function AuthPage({
         password,
         fullName,
         phone: normalizeTurkishMobilePhone(phone),
-        role: expectedRole === "courier" ? "courier" : "customer",
+        role: expectedRole,
       });
       toast.success("Hesabınız oluşturuldu");
       navigate("/");
@@ -115,13 +128,15 @@ export default function AuthPage({
             <InstallHint panel={panel} />
           </CardHeader>
           <CardContent>
-            {courierSignupClosed ? (
+            {signupClosed ? (
               <p className="mb-4 rounded-2xl border border-[#3a3014] bg-black p-4 text-sm text-[#b4a882]">
-                Kurye hesabı bu uygulamadan açılmaz. Yönetici sizi kurye olarak atar.
+                {adminSignupClosed
+                  ? "Yönetici hesabı bu uygulamadan açılmaz."
+                  : "Kurye hesabı bu uygulamadan açılmaz. Yönetici sizi kurye olarak atar."}
               </p>
             ) : null}
             <form className="space-y-3" onSubmit={submit} noValidate>
-              {mode === "kayit" && panel !== "yonetici" && (
+              {mode === "kayit" && !adminSignupClosed && (
                 <>
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-[#8a7c52]" htmlFor="full-name">
@@ -211,7 +226,7 @@ export default function AuthPage({
                   Vitrin modu: yeni kayıt kapalıdır. {CONTACT_PHONE_DISPLAY}
                 </p>
               ) : (
-                <Button className={`h-11 w-full ${goldBtn}`} disabled={busy || courierSignupClosed || (mode === "kayit" && showcase)}>
+                <Button className={`h-11 w-full ${goldBtn}`} disabled={busy || signupClosed || (mode === "kayit" && showcase)}>
                   {busy ? "Lütfen bekleyin…" : mode === "giris" ? "Giriş yap" : "Hesap oluştur"}
                 </Button>
               )}
@@ -242,7 +257,7 @@ export default function AuthPage({
               </div>
             ) : null}
             <p className="mt-4 text-center text-sm text-[#8a7c52]">
-              {mode === "giris" && panel !== "yonetici" && !showcase ? (
+              {mode === "giris" && !showcase && (panel !== "yonetici" || localDemo) ? (
                 <>
                   Hesabınız yok mu?{" "}
                   <Link href="/kayit" className="font-bold text-[#D4AF37]">
@@ -264,9 +279,7 @@ export default function AuthPage({
               Bu uygulama yalnızca {ROLE_LABELS[expectedRole].toLocaleLowerCase("tr-TR")} hesapları içindir.
             </p>
             {dataMode === "demo" ? (
-              <p className="mt-4 text-center text-xs text-[#8a7c52]">
-                Yerel demo: hazır şifre yoktur. E-posta ve şifre ile kayıt olun.
-              </p>
+              <p className="mt-4 text-center text-xs text-[#8a7c52]">{DEMO_SIGNUP_HINT}</p>
             ) : null}
           </CardContent>
         </Card>

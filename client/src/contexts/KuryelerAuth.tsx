@@ -30,7 +30,7 @@ type AuthContextValue = {
     password: string;
     fullName: string;
     phone: string;
-    role: "customer" | "courier";
+    role: UserRole;
   }) => Promise<SessionUser>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
