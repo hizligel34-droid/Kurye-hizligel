@@ -7,7 +7,7 @@ const SITE_META: Record<string, { title: string; description: string }> = {
   "/": {
     title: "Hızlıgel — kuryeler.tr İstanbul kurye",
     description:
-      "Hızlıgel: İstanbul içi kurye. İl içi aynı gün teslimat. Üç ayrı uygulama — Müşteri, Kurye, Yönetici. Fiyatı TL görün, teslimatı takip edin.",
+      "Hızlıgel: İstanbul moto kurye. Evrak, paket, acil teslimat. İl içi aynı gün teslimat. Fiyatı TL görün, üye olmadan çağırın.",
   },
   "/takip": {
     title: "Sipariş takibi — Hızlıgel",
@@ -16,7 +16,16 @@ const SITE_META: Record<string, { title: string; description: string }> = {
   "/sss": {
     title: "SSS — Hızlıgel",
     description:
-      "Hızlıgel teslim süreleri: İl içi aynı gün teslimat. Hedef süredir; trafik ve hava koşullarına göre değişebilir.",
+      "Hızlıgel teslim süreleri, ücret, üyeliksiz çağrı ve ödeme. İl içi aynı gün teslimat. Hedef süredir; trafik ve hava koşullarına göre değişebilir.",
+  },
+  "/ucret-hesapla": {
+    title: "Ücret hesapla — Hızlıgel",
+    description:
+      "Hızlıgel yürürlükteki tarife: açılış 720 TL + km başı 60 TL KDV dahil. Sürüş kilometresine göre anında fiyat.",
+  },
+  "/404": {
+    title: "Sayfa bulunamadı — Hızlıgel",
+    description: "Aradığınız adres yok. İstanbul moto kurye için ana sayfadan fiyat görün veya arayın.",
   },
   "/kvkk": {
     title: "KVKK Aydınlatma Metni — Hızlıgel",

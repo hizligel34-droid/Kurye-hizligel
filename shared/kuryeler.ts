@@ -497,7 +497,7 @@ export function statusTone(status: OrderStatus) {
     case "pending":
       return "bg-[#2a2410] text-[#D4AF37]";
     case "confirmed":
-      return "bg-[#14241a] text-[#d4af37]";
+      return "bg-[#14241a] text-[#D4AF37]";
     case "assigned":
       return "bg-[#2a2410] text-[#D4AF37]";
     case "picked_up":
@@ -505,7 +505,7 @@ export function statusTone(status: OrderStatus) {
     case "en_route":
       return "bg-[#2a1e0c] text-[#f0d78c]";
     case "delivered":
-      return "bg-[#14241a] text-[#d4af37]";
+      return "bg-[#14241a] text-[#D4AF37]";
     case "cancelled":
       return "bg-[#1c1c1c] text-[#8a7c52]";
   }

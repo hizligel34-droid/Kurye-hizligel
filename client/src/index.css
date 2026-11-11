@@ -22,9 +22,10 @@
   --popover: 16 16 16;
   --popover-foreground: 245 237 214;
   --radius: 1rem;
-  --gold: #d4af37;
+  --gold: #D4AF37;
+  --gold-hover: #E3C35A;
   --gold-soft: #f5e6b8;
-  --ink: #0a0a0a;
+  --ink: #0A0A0A;
 }
 
 @theme inline {
@@ -32,7 +33,7 @@
   --color-foreground: #f5edd6;
   --color-card: #101010;
   --color-card-foreground: #f5edd6;
-  --color-primary: #d4af37;
+  --color-primary: #D4AF37;
   --color-primary-foreground: #0a0a0a;
   --color-secondary: #1a1a1a;
   --color-secondary-foreground: #f5edd6;
@@ -43,7 +44,7 @@
   --color-destructive: #c45c5c;
   --color-border: #3a3014;
   --color-input: #1a1a1a;
-  --color-ring: #d4af37;
+  --color-ring: #D4AF37;
   --color-popover: #101010;
   --color-popover-foreground: #f5edd6;
 }
@@ -52,19 +53,19 @@
 html { scroll-behavior: smooth; color-scheme: dark; overflow-x: hidden; }
 body {
   margin: 0;
-  background: #0a0a0a;
+  background: var(--ink);
   color: #f5edd6;
   font-family: 'DM Sans', sans-serif;
   overflow-x: hidden;
 }
 :focus-visible {
-  outline: 2px solid #d4af37;
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
 h1, h2, h3, h4, button { font-family: 'Space Grotesk', 'DM Sans', sans-serif; }
 button { cursor: pointer; transition: transform .16s cubic-bezier(.23,1,.32,1), background-color .16s ease, border-color .16s ease; }
 button:active { transform: scale(.97); }
-::selection { background: #d4af37; color: #0a0a0a; }
+::selection { background: var(--gold); color: var(--ink); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
@@ -79,5 +80,5 @@ button:active { transform: scale(.97); }
   font-size: 10px;
 }
 .leaflet-kuryeler .leaflet-control-attribution a {
-  color: #d4af37;
+  color: var(--gold);
 }

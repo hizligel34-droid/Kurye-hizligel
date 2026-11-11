@@ -10,10 +10,21 @@ import { Link, useLocation } from "wouter";
 
 export function BrandMark({ compact = false, href = "/" }: { compact?: boolean; href?: string }) {
   return (
-    <Link href={href} className="flex min-h-11 min-w-0 items-center gap-2 font-black tracking-tight text-[#f5edd6]">
-      <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#D4AF37] bg-black text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.25)]">
-        <Bike size={20} aria-hidden />
-      </span>
+    <Link
+      href={href}
+      className="flex min-h-11 min-w-0 items-center gap-2 font-black tracking-tight text-[#f5edd6]"
+      aria-label="Hızlıgel ana sayfa"
+    >
+      <picture>
+        <source srcSet="/pwa/logo.webp" type="image/webp" />
+        <img
+          src="/pwa/icons/site-192.png"
+          alt=""
+          width={36}
+          height={36}
+          className="size-9 shrink-0 rounded-xl border border-[var(--gold)] bg-black object-cover"
+        />
+      </picture>
       <span className={`truncate ${compact ? "text-base" : "text-base sm:text-xl"}`}>
         Hızlıgel
       </span>

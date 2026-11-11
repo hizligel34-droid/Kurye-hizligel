@@ -37,6 +37,15 @@ import {
 } from "@shared/kuryelerSupport";
 import { buildOrderConfirmationMail, type OutboundMail } from "@shared/orderConfirmation";
 import { DEFAULT_BUSINESS_PROFILE, mapBusinessProfileRow, type BusinessProfile } from "@shared/businessProfile";
+import {
+  GUEST_LEAD_RATE_LIMIT,
+  GUEST_LEAD_WINDOW_MS,
+  isHoneypotFilled,
+  normalizeGuestLead,
+  validateGuestLead,
+  type GuestLeadInput,
+} from "@shared/guestLead";
+import { firstError } from "@shared/kuryelerValidation";
 import { getSupabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
@@ -105,6 +114,18 @@ type DemoState = {
   notifications: AppNotification[];
   outboundMail: OutboundMail[];
   legalAcceptances: LegalAcceptanceRecord[];
+  guestLeads: GuestLeadRecord[];
+};
+
+export type GuestLeadRecord = {
+  id: string;
+  fullName: string;
+  phone: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  distanceKm: number;
+  product: string;
+  createdAt: string;
 };
 
 export type LegalAcceptanceRecord = {
@@ -301,6 +322,7 @@ function seedDemo(): DemoState {
     notifications: [],
     outboundMail: [],
     legalAcceptances: [],
+    guestLeads: [],
   };
 }
 
@@ -320,6 +342,7 @@ function loadDemo(): DemoState {
     parsed.notifications = parsed.notifications ?? [];
     parsed.outboundMail = parsed.outboundMail ?? [];
     parsed.legalAcceptances = parsed.legalAcceptances ?? [];
+    parsed.guestLeads = parsed.guestLeads ?? [];
     parsed.orders = (parsed.orders ?? []).map(order => ({
       ...emptyOrderExtras(),
       ...order,
@@ -843,6 +866,51 @@ export async function createOrder(customerId: string, input: CreateOrderInput): 
     mapped.companyRevenueTl = quote.companyRevenueTl;
   }
   return mapped;
+}
+
+export async function submitGuestLead(input: GuestLeadInput): Promise<{ id: string }> {
+  if (isHoneypotFilled(input.website)) {
+    return { id: "ignored" };
+  }
+  const first = firstError(validateGuestLead(input));
+  if (first) throw new Error(first);
+  const lead = normalizeGuestLead(input);
+  if (kuryelerMode === "demo") {
+    const state = loadDemo();
+    state.guestLeads = state.guestLeads ?? [];
+    const recent = state.guestLeads.filter(
+      row => row.phone === lead.phone && Date.now() - Date.parse(row.createdAt) < GUEST_LEAD_WINDOW_MS,
+    ).length;
+    if (recent >= GUEST_LEAD_RATE_LIMIT) {
+      throw new Error("Çok sık istek. Lütfen birkaç dakika bekleyin.");
+    }
+    const record: GuestLeadRecord = {
+      id: crypto.randomUUID(),
+      fullName: lead.fullName,
+      phone: lead.phone,
+      pickupAddress: lead.pickupAddress,
+      dropoffAddress: lead.dropoffAddress,
+      distanceKm: lead.distanceKm,
+      product: lead.product ?? "Kurye gönderisi",
+      createdAt: nowIso(),
+    };
+    state.guestLeads.unshift(record);
+    saveDemo(state);
+    return { id: record.id };
+  }
+  const { error } = await getSupabase()!.from("guest_leads").insert({
+    full_name: lead.fullName,
+    phone: lead.phone,
+    pickup_address: lead.pickupAddress,
+    dropoff_address: lead.dropoffAddress,
+    distance_km: lead.distanceKm,
+    product: lead.product,
+    website: "",
+    pre_info_ok: lead.preInfoOk,
+    withdraw_ok: lead.withdrawOk,
+  });
+  if (error) throw new Error(error.message);
+  return { id: "ok" };
 }
 
 export async function recordLegalAcceptance(input: {

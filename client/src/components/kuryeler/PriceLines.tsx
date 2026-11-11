@@ -17,7 +17,7 @@ export function PriceLines({
   audience?: "consumer" | "business";
 }) {
   if (audience === "consumer") {
-    const grossClass = size === "large" ? "text-3xl font-black text-[#D4AF37]" : "text-base font-black text-[#D4AF37]";
+    const grossClass = size === "large" ? "text-3xl font-black text-[var(--gold)]" : "text-base font-black text-[var(--gold)]";
     return (
       <div className="space-y-1">
         <p className={grossClass}>
@@ -29,7 +29,7 @@ export function PriceLines({
   }
 
   const netClass = size === "large" ? "text-lg font-black text-[#f5edd6]" : "text-sm font-semibold text-[#f5edd6]";
-  const grossClass = size === "large" ? "text-3xl font-black text-[#D4AF37]" : "text-base font-black text-[#D4AF37]";
+  const grossClass = size === "large" ? "text-3xl font-black text-[var(--gold)]" : "text-base font-black text-[var(--gold)]";
   return (
     <div className="space-y-1">
       <p className={netClass}>
