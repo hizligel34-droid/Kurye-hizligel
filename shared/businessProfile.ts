@@ -1,5 +1,7 @@
 /** Künye / fatura üst bilgisi. T.C. kimlik numarası alanı yoktur ve eklenmez. */
 
+import { CONTACT_PHONE_DISPLAY } from "./contactConfig";
+
 export const KUNYE_UNKNOWN = "?";
 export const BUSINESS_EMAIL = "serif.tekin@hotmail.com";
 export const BUSINESS_TAX_OFFICE = "Maslak Vergi Dairesi";
@@ -35,7 +37,7 @@ export const DEFAULT_BUSINESS_PROFILE: BusinessProfile = {
   mersis: KUNYE_UNKNOWN,
   tradeRegistryNo: KUNYE_UNKNOWN,
   address: "Büyük Beşiktaş Çarşısı, Ortabahçe Caddesi No: 10, Kat 1, No: 143, Beşiktaş/İstanbul",
-  phone: "0532 474 67 45",
+  phone: CONTACT_PHONE_DISPLAY,
   email: BUSINESS_EMAIL,
   kep: KUNYE_UNKNOWN,
   chamber: KUNYE_UNKNOWN,

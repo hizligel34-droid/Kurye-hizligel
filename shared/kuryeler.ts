@@ -13,9 +13,16 @@ export const VAT_INCL_LABEL = "KDV dahil";
 export const DEFAULT_VAT_RATE = 0.2;
 export const BRAND_URL = "https://kuryeler.tr";
 export const CONTACT_EMAIL = "serif.tekin@hotmail.com";
-export const CONTACT_PHONE_DISPLAY = "0532 474 67 45";
-export const CONTACT_PHONE_TEL = "tel:+905324746745";
-export const CONTACT_WHATSAPP_E164 = "905324746745";
+
+export {
+  CONTACT_PHONE_DISPLAY,
+  CONTACT_PHONE_E164,
+  CONTACT_PHONE_INTERNATIONAL,
+  CONTACT_PHONE_TEL,
+  CONTACT_WHATSAPP_E164,
+  CONTACT_WHATSAPP_HREF,
+  CUSTOMER_PHONE_NATIONAL,
+} from "./contactConfig";
 
 export {
   DEFAULT_BUSINESS_PROFILE,
@@ -408,8 +415,19 @@ export function formatPriceInclusive(price: Pick<PriceBreakdown, "grossTl">) {
   return `${formatTl(price.grossTl)} (${VAT_INCL_LABEL})`;
 }
 
-export function formatPriceHint(price: Pick<PriceBreakdown, "netTl" | "vatTl">) {
-  return `${formatTl(price.netTl)} + ${formatTl(price.vatTl)} KDV`;
+export function formatConsumerGross(price: Pick<PriceBreakdown, "grossTl">) {
+  return `${formatTl(price.grossTl)} ${VAT_INCL_LABEL}`;
+}
+
+export function formatConsumerVatLine(
+  price: Pick<PriceBreakdown, "netTl" | "vatTl"> & { vatRate?: number },
+) {
+  const vatRate = Number.isFinite(price.vatRate) ? Number(price.vatRate) : DEFAULT_VAT_RATE;
+  return `Net ${formatTl(price.netTl)} + KDV ${formatVatPercent(vatRate)} ${formatTl(price.vatTl)}`;
+}
+
+export function formatPriceHint(price: Pick<PriceBreakdown, "netTl" | "vatTl"> & { vatRate?: number }) {
+  return formatConsumerVatLine(price);
 }
 
 export function formatPriceBreakdown(price: Pick<PriceBreakdown, "netTl" | "vatTl" | "grossTl" | "vatRate">) {

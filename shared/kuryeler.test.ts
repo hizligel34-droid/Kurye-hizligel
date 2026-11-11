@@ -5,8 +5,11 @@ import {
   calculateDeliveryPrice,
   canTransitionStatus,
   CONTACT_PHONE_DISPLAY,
+  CONTACT_PHONE_E164,
+  CONTACT_PHONE_INTERNATIONAL,
   CONTACT_PHONE_TEL,
   CONTACT_WHATSAPP_E164,
+  CONTACT_WHATSAPP_HREF,
   DEFAULT_DELIVERY_TARGET_TIERS,
   DEFAULT_PRICING,
   DEFAULT_VAT_RATE,
@@ -19,6 +22,8 @@ import {
   PUBLIC_DELIVERY_PROMISE,
   SAME_DAY_CITY_DELIVERY,
   formatPriceBreakdown,
+  formatConsumerGross,
+  formatConsumerVatLine,
   formatPriceHint,
   formatPriceInclusive,
   formatTariff,
@@ -125,7 +130,9 @@ describe("kuryeler.tr sürüş fiyatı", () => {
     expect(formatTariff()).toBe("Açılış 600 TL + km başı 50 TL (KDV hariç)");
     const sample = calculateDeliveryPrice({ distanceKm: 10 });
     expect(formatPriceInclusive(sample)).toBe("1.320 TL (KDV dahil)");
-    expect(formatPriceHint(sample)).toBe("1.100 TL + 220 TL KDV");
+    expect(formatConsumerGross(sample)).toBe("1.320 TL KDV dahil");
+    expect(formatConsumerVatLine(sample)).toBe("Net 1.100 TL + KDV %20 220 TL");
+    expect(formatPriceHint(sample)).toBe("Net 1.100 TL + KDV %20 220 TL");
     expect(formatPriceBreakdown(sample)).toBe("1.100 TL KDV hariç · KDV (%20): 220 TL · 1.320 TL KDV dahil");
   });
 
@@ -220,9 +227,13 @@ describe("kuryeler.tr takip kodu", () => {
 
 describe("kuryeler.tr iletişim", () => {
   it("işletme telefonu ve WhatsApp numarasını gösterir", () => {
-    expect(CONTACT_PHONE_DISPLAY).toBe("0532 474 67 45");
-    expect(CONTACT_WHATSAPP_E164).toBe("905324746745");
-    expect(CONTACT_PHONE_TEL).toBe("tel:+905324746745");
+    expect(CONTACT_PHONE_DISPLAY).toBe("0553 255 67 45");
+    expect(CONTACT_PHONE_INTERNATIONAL).toBe("+90 553 255 67 45");
+    expect(CONTACT_PHONE_E164).toBe("905532556745");
+    expect(CONTACT_WHATSAPP_E164).toBe("905532556745");
+    expect(CONTACT_PHONE_TEL).toBe("tel:+905532556745");
+    expect(CONTACT_WHATSAPP_HREF).toBe("https://wa.me/905532556745");
+    expect(BUSINESS.phone).toBe(CONTACT_PHONE_DISPLAY);
   });
 
   it("künyede unvan, telefon ve Beşiktaş adresini doldurur; vergi ve e-posta ? kalır", () => {
@@ -351,7 +362,9 @@ describe("sipariş teyit e-postası", () => {
       "musteri@ornek.tr",
     );
     expect(mail.body).toContain("1.320 TL (KDV dahil)");
-    expect(mail.body).toContain("1.100 TL + 220 TL KDV");
+    expect(mail.body).toContain("Net 1.100 TL + KDV %20 220 TL");
+    expect(mail.body).toContain("0553 255 67 45");
+    expect(mail.body).not.toMatch(/0532\s*474|905324746745/);
     expect(mail.body).toContain("1.100 TL KDV hariç");
     expect(mail.body).toContain("KDV (%20): 220 TL");
     expect(mail.body).not.toContain("KDV ?");

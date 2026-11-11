@@ -20,7 +20,7 @@ import { calculateDeliveryPrice, formatTariffInclusive } from "./kuryeler";
 
 const valid = {
   fullName: "Ayşe Demir",
-  phone: "05324746745",
+  phone: "05421110003",
   pickupAddress: "Moda Cad. No 12, Kadıköy",
   dropoffAddress: "Büyükdere Cad. No 120, Levent",
   distanceKm: 10,
@@ -38,7 +38,7 @@ describe("üyeliksiz kısa talep", () => {
     expect(quote.netTl).toBe(1100);
     expect(quote.grossTl).toBe(1320);
     expect(formatConsumerGross(quote)).toBe("1.320 TL KDV dahil");
-    expect(formatConsumerVatLine(quote)).toMatch(/1\.100 TL net \+ %20 KDV \(220 TL\)/);
+    expect(formatConsumerVatLine(quote)).toBe("Net 1.100 TL + KDV %20 220 TL");
     expect(formatTariffInclusive()).toBe("Açılış 720 TL + km başı 60 TL (KDV dahil)");
   });
 

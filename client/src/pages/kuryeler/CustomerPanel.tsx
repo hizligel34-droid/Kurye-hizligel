@@ -27,6 +27,7 @@ import {
   BANNED_GOODS_HINT,
   BUSINESS,
   CONTACT_PHONE_DISPLAY,
+  CONTACT_PHONE_TEL,
   CUSTOMER_PAYMENT_METHODS,
   DEFAULT_PRICING,
   MAX_WEIGHT_KG,
@@ -517,7 +518,7 @@ function CustomerHome() {
               <p className="mt-3 text-xs leading-5 text-[#8a7c52]">
                 Hizmet sağlayıcı: {BUSINESS.legalName} · İşletme sahibi: {BUSINESS.ownerName} · Vergi dairesi:{" "}
                 {BUSINESS.taxOffice} · VKN: {BUSINESS.taxId} · KEP: {BUSINESS.kep} · {BUSINESS.address} ·{" "}
-                <a className="font-semibold text-[#D4AF37]" href="tel:+905324746745">
+                <a className="font-semibold text-[#D4AF37]" href={CONTACT_PHONE_TEL}>
                   {CONTACT_PHONE_DISPLAY}
                 </a>
               </p>
@@ -528,7 +529,7 @@ function CustomerHome() {
               </p>
               <p className="mt-2 text-xs text-[#8a7c52]">
                 Şikâyet: {BUSINESS.email} ·{" "}
-                <a className="font-semibold text-[#D4AF37]" href="tel:+905324746745">
+                <a className="font-semibold text-[#D4AF37]" href={CONTACT_PHONE_TEL}>
                   {CONTACT_PHONE_DISPLAY}
                 </a>{" "}
                 · Tüketici hakem heyeti / arabuluculuk.

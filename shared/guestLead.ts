@@ -1,12 +1,13 @@
 import {
   calculateDeliveryPrice,
-  formatTl,
-  formatVatPercent,
-  VAT_INCL_LABEL,
+  formatConsumerGross,
+  formatConsumerVatLine,
   type PriceBreakdown,
   type PricingSettings,
 } from "./kuryeler";
 import { isValidTurkishMobilePhone, normalizeTurkishMobilePhone } from "./orderValidation";
+
+export { formatConsumerGross, formatConsumerVatLine };
 
 export const GUEST_LEAD_RATE_LIMIT = 3;
 export const GUEST_LEAD_WINDOW_MS = 10 * 60 * 1000;
@@ -25,14 +26,6 @@ export type GuestLeadInput = {
 };
 
 export type GuestLeadFieldErrors = Partial<Record<keyof GuestLeadInput | "form", string>>;
-
-export function formatConsumerGross(price: PriceBreakdown) {
-  return `${formatTl(price.grossTl)} ${VAT_INCL_LABEL}`;
-}
-
-export function formatConsumerVatLine(price: PriceBreakdown) {
-  return `${formatTl(price.netTl)} net + ${formatVatPercent(price.vatRate)} KDV (${formatTl(price.vatTl)})`;
-}
 
 export function quoteGuestLead(distanceKm: number, pricing?: PricingSettings): PriceBreakdown {
   return calculateDeliveryPrice({ distanceKm, pricing });

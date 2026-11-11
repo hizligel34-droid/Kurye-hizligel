@@ -37,6 +37,11 @@ describe("avukat taslak metinleri", () => {
     expect(applyLegalPlaceholders("fatura için TCKN/VKN")).toBe("fatura için VKN");
   });
 
+  it("iletişim hattı 0553 255 67 45’tir; eski 0532 yoktur", () => {
+    expect(allText).toContain("0553 255 67 45");
+    expect(allText).not.toMatch(/0532\s*474|905324746745/);
+  });
+
   it("müşteriye süre tablosu veya aynı gün teslimat vaadi yazmaz", () => {
     expect(allText).not.toMatch(/60\s*dk|60 dakika|≤\s*5\s*km|>\s*100\s*km/i);
     expect(allText).not.toContain("İl içi aynı gün teslimat");

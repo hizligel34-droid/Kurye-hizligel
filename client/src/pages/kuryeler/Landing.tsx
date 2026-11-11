@@ -23,6 +23,7 @@ import {
   BRAND_PRODUCT,
   BRAND_URL,
   BUSINESS,
+  CONTACT_PHONE_E164,
   DEFAULT_PRICING,
   formatTariffInclusive,
   isShowcaseMode,
@@ -99,7 +100,7 @@ export default function Landing() {
     name: `${BRAND_PRODUCT} · ${BRAND_NAME}`,
     legalName: BUSINESS.legalName,
     url: BRAND_URL,
-    telephone: "+905324746745",
+    telephone: `+${CONTACT_PHONE_E164}`,
     areaServed: "İstanbul",
     address: {
       "@type": "PostalAddress",

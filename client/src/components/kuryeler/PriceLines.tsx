@@ -1,5 +1,6 @@
 import {
-  formatPriceHint,
+  formatConsumerGross,
+  formatConsumerVatLine,
   formatTl,
   formatVatPercent,
   VAT_EXCL_LABEL,
@@ -20,10 +21,8 @@ export function PriceLines({
     const grossClass = size === "large" ? "text-3xl font-black text-[var(--gold)]" : "text-base font-black text-[var(--gold)]";
     return (
       <div className="space-y-1">
-        <p className={grossClass}>
-          {formatTl(price.grossTl)} <span className="text-xs font-bold">{VAT_INCL_LABEL}</span>
-        </p>
-        <p className="text-xs text-[#8a7c52]">{formatPriceHint(price)}</p>
+        <p className={grossClass}>{formatConsumerGross(price)}</p>
+        <p className="text-xs text-[#8a7c52]">{formatConsumerVatLine(price)}</p>
       </div>
     );
   }

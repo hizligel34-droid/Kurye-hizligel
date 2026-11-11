@@ -34,7 +34,7 @@ insert into public.business_profile (
   '?',
   '?',
   'Büyük Beşiktaş Çarşısı, Ortabahçe Caddesi No: 10, Kat 1, No: 143, Beşiktaş/İstanbul',
-  '0532 474 67 45',
+  '0553 255 67 45',
   'serif.tekin@hotmail.com',
   '?',
   '?'

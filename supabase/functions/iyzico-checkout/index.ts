@@ -15,6 +15,7 @@ import {
   serverPriceKurus,
   stripSecretsForLog,
 } from "../_shared/iyzico.ts";
+import { CUSTOMER_PHONE_NATIONAL } from "../../../shared/contactConfig.ts";
 
 const INIT_PATH = "/payment/iyzipos/checkoutform/initialize/auth/ecom";
 
@@ -79,7 +80,8 @@ Deno.serve(async (req) => {
     await admin.from("orders").update({ payment_method: "iyzico" }).eq("id", orderId);
 
     const email = userData.user.email || "musteri@sandbox.local";
-    const phone = String(order.contact_phone ?? "5324746745").replace(/\D/g, "").slice(-11) || "5324746745";
+    const fallbackPhone = CUSTOMER_PHONE_NATIONAL.replace(/\D/g, "");
+    const phone = String(order.contact_phone ?? fallbackPhone).replace(/\D/g, "").slice(-11) || fallbackPhone;
     const iyzicoBody = {
       locale: "tr",
       conversationId,

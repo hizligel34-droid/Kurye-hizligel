@@ -3,14 +3,16 @@ import {
   CONTACT_PHONE_DISPLAY,
   CONTACT_PHONE_TEL,
   CONTACT_WHATSAPP_E164,
+  CONTACT_WHATSAPP_HREF,
 } from "@shared/kuryeler";
 
 export function whatsappNumber() {
-  return (import.meta.env.VITE_WHATSAPP_NUMBER ?? CONTACT_WHATSAPP_E164).replace(/\D/g, "");
+  return CONTACT_WHATSAPP_E164;
 }
 
-export function whatsappHref(text = "Merhaba, kuryeler.tr üzerinden sipariş vermek istiyorum.") {
-  return `https://wa.me/${whatsappNumber()}?text=${encodeURIComponent(text)}`;
+export function whatsappHref(text?: string) {
+  if (!text) return CONTACT_WHATSAPP_HREF;
+  return `${CONTACT_WHATSAPP_HREF}?text=${encodeURIComponent(text)}`;
 }
 
 export function contactEmail() {
@@ -18,11 +20,9 @@ export function contactEmail() {
 }
 
 export function contactPhoneDisplay() {
-  return import.meta.env.VITE_CONTACT_PHONE ?? CONTACT_PHONE_DISPLAY;
+  return CONTACT_PHONE_DISPLAY;
 }
 
 export function contactPhoneTel() {
-  const digits = contactPhoneDisplay().replace(/\D/g, "");
-  const national = digits.slice(-10);
-  return national.length === 10 ? `tel:+90${national}` : CONTACT_PHONE_TEL;
+  return CONTACT_PHONE_TEL;
 }
