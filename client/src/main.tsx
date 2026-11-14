@@ -40,18 +40,21 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       headers() {
+        const headers: Record<string, string> = {};
         try {
           const raw = sessionStorage.getItem("manus-cookie");
           if (raw) {
             const prefix = `${COOKIE_NAME}=`;
             const pair = raw.split(";").find(s => s.trim().startsWith(prefix));
             const token = pair?.trim().slice(prefix.length);
-            if (token) return { Authorization: `Bearer ${token}` };
+            if (token) headers.Authorization = `Bearer ${token}`;
           }
+          const internalDesk = sessionStorage.getItem("internal-desk-session");
+          if (internalDesk) headers["x-internal-desk"] = internalDesk;
         } catch {
           // sessionStorage unavailable
         }
-        return {};
+        return headers;
       },
       fetch(input, init) {
         return globalThis.fetch(input, { ...(init ?? {}), credentials: "include" });

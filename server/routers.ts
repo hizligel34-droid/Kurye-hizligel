@@ -19,6 +19,7 @@ import { isValidTurkeyLocation, publishCourierLocation } from "./realtime";
 import { arePickupAndDeliveryDifferent, isValidBuildingNo, isValidTurkishMobilePhone, isValidTurkishPostalCode, normalizeTurkishMobilePhone } from "@shared/orderValidation";
 import { evaluateDeliveryCoverage } from "@shared/deliveryCoverage";
 import { getAddressSourceHealth } from "./addressProxy";
+import { internalDeskRouter } from "./internalDeskRouter";
 
 const courierDocumentTypes = ["identity", "license", "vehicle_registration"] as const;
 const courierDocumentContentTypes = ["image/jpeg", "image/png", "application/pdf"] as const;
@@ -172,6 +173,7 @@ export const savedAddressInputSchema = z.object({
 
 export const appRouter = router({
   system: systemRouter,
+  internalDesk: internalDeskRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => { ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 }); return { success: true } as const; }),

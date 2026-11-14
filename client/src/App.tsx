@@ -10,9 +10,10 @@ import AdsReport from "@/pages/AdsReport";
 import CourierProfile from "@/pages/CourierProfile";
 import Membership from "@/pages/Membership";
 import AdminControl from "@/pages/AdminControl";
+import InternalDesk from "@/pages/InternalDesk";
 
 function Router() {
-  return <Switch><Route path="/" component={Home}/><Route path="/order" component={Home}/><Route path="/track" component={Home}/><Route path="/demo" component={Demo}/><Route path="/ads-report" component={AdsReport}/><Route path="/courier-profile" component={CourierProfile}/><Route path="/membership" component={Membership}/><Route path="/admin-control" component={AdminControl}/><Route path="/chat" component={Home}/><Route path="/panel" component={Home}/><Route path="/account" component={Home}/><Route path="/404" component={NotFound}/><Route component={NotFound}/></Switch>;
+  return <Switch><Route path="/" component={Home}/><Route path="/order" component={Home}/><Route path="/track" component={Home}/><Route path="/demo" component={Demo}/><Route path="/ads-report" component={AdsReport}/><Route path="/courier-profile" component={CourierProfile}/><Route path="/membership" component={Membership}/><Route path="/admin-control" component={AdminControl}/><Route path="/ic-operasyon" component={InternalDesk}/><Route path="/chat" component={Home}/><Route path="/panel" component={Home}/><Route path="/account" component={Home}/><Route path="/404" component={NotFound}/><Route component={NotFound}/></Switch>;
 }
 
 export default function App() {
