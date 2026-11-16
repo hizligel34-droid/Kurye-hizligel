@@ -422,13 +422,13 @@ function NewJob({ home, onCreated }: { home: HomeData; onCreated: () => Promise<
       </div>
       <aside className="rounded-3xl bg-slate-950 p-5 text-white">
         <Bike className="h-5 w-5 text-orange-300" aria-hidden="true" />
-        <h2 className="mt-3 text-lg font-black">{mode === "local" ? "Bu gönderinin bedeli" : "Bedel fiyat listesinden gelir"}</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-300">Tutar elle yazılmaz. Tarifeyi yalnız merkez müdür ve admin değiştirir. Gönderi açılınca o anki bedel kilitlenir.</p>
+        <h2 className="mt-3 text-lg font-black">{home.capabilities.canViewTariff ? (mode === "local" ? "Bu gönderinin bedeli" : "Bedel fiyat listesinden gelir") : "Gönderi kaydı"}</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-300">{home.capabilities.canViewTariff ? "Tutar elle yazılmaz. Tarifeyi yalnız merkez müdür ve admin değiştirir. Gönderi açılınca o anki bedel kilitlenir." : "Fiyatlandırma merkez müdür ve admin ekranındadır."}</p>
         {mode === "local" && localQuote.data && (
           <dl className="mt-5 space-y-3 text-sm">
             <div className="flex justify-between gap-3"><dt>Bölge</dt><dd className="text-right font-bold">{localQuote.data.branchName} · {localQuote.data.district}</dd></div>
             <div className="flex justify-between gap-3"><dt>Mesafe</dt><dd className="font-bold">{localQuote.data.distanceKm} km</dd></div>
-            <div className="flex justify-between gap-3"><dt>Şube bedeli</dt><dd className="font-bold">{money(localQuote.data.branchChargeTl)}</dd></div>
+            {localQuote.data.branchChargeTl != null && <div className="flex justify-between gap-3"><dt>Şube bedeli</dt><dd className="font-bold">{money(localQuote.data.branchChargeTl)}</dd></div>}
             {localQuote.data.courierPayoutTl != null && <div className="flex justify-between gap-3"><dt>Kurye ödemesi</dt><dd className="font-bold">{money(localQuote.data.courierPayoutTl)}</dd></div>}
           </dl>
         )}
@@ -436,7 +436,7 @@ function NewJob({ home, onCreated }: { home: HomeData; onCreated: () => Promise<
           <dl className="mt-5 space-y-3 text-sm">
             <div className="flex justify-between gap-3"><dt>Hat</dt><dd className="font-bold">{hubQuote.data.branchName} ↔ {hubQuote.data.centralBranchName}</dd></div>
             <div className="flex justify-between gap-3"><dt>Mesafe</dt><dd className="font-bold">{hubQuote.data.distanceKm} km</dd></div>
-            <div className="flex justify-between gap-3"><dt>Şube bedeli</dt><dd className="font-bold">{money(hubQuote.data.branchChargeTl)}</dd></div>
+            {hubQuote.data.branchChargeTl != null && <div className="flex justify-between gap-3"><dt>Şube bedeli</dt><dd className="font-bold">{money(hubQuote.data.branchChargeTl)}</dd></div>}
             {hubQuote.data.courierPayoutTl != null && <div className="flex justify-between gap-3"><dt>Kurye ödemesi</dt><dd className="font-bold">{money(hubQuote.data.courierPayoutTl)}</dd></div>}
           </dl>
         )}

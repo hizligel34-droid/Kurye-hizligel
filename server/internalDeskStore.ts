@@ -28,6 +28,7 @@ import {
   canEditTariff,
   canSeeJob,
   canSettleLedger,
+  canSeePrices,
   canViewLedger,
   canViewTariff,
   cleanText,
@@ -371,16 +372,15 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
     }));
     const charges = roundListed(entries.filter(entry => entry.kind === "branch_charge"));
     const payouts = roundListed(entries.filter(entry => entry.kind === "courier_payout"));
-    const fullBooks = actor.role === "central_manager" || actor.role === "accountant";
     return {
       title: ledgerTitle(actor.role),
       canSettle: canSettleLedger(actor.role),
-      showCharges: actor.role !== "courier",
-      showPayouts: actor.role !== "branch_manager",
+      showCharges: true,
+      showPayouts: true,
       entries,
       chargeTotalTl: charges,
       payoutTotalTl: payouts,
-      marginTl: fullBooks ? roundListedAmount(charges - payouts) : null,
+      marginTl: roundListedAmount(charges - payouts),
     };
   }
 
@@ -803,7 +803,7 @@ function presentLocalQuote(actor: Staff, store: Branch, district: string, quote:
     district,
     region: [...regionDistricts(store.id)],
     distanceKm: quote.distanceKm,
-    branchChargeTl: quote.branchChargeTl,
+    branchChargeTl: canSeePrices(actor.role) ? quote.branchChargeTl : null,
     courierPayoutTl: canViewTariff(actor.role) ? quote.courierPayoutTl : null,
     feeLabel: "tarife" as const,
   };
@@ -816,7 +816,7 @@ function presentQuote(actor: Staff, row: PriceRow, direction: HubDirection) {
     branchName: branchById(row.branchId)?.name ?? row.branchId,
     centralBranchName: CENTRAL_BRANCH.name,
     distanceKm: row.distanceKm,
-    branchChargeTl: row.chargeTl,
+    branchChargeTl: canSeePrices(actor.role) ? row.chargeTl : null,
     courierPayoutTl: canViewTariff(actor.role) ? row.payoutTl : null,
     feeLabel: "liste" as const,
   };

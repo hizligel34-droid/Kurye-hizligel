@@ -45,10 +45,12 @@ describe("internal branch and central courier desk", () => {
     const edited = desk.updatePriceList(admin, BRANCHES.map(branch => ({ branchId: branch.id, chargeTl: branch.id === "kadikoy" ? 880 : 100, payoutTl: 40 })));
     expect(edited.rows.find(row => row.branchId === "kadikoy")?.chargeTl).toBe(880);
     const created = desk.createHubJob(staff, { direction: "to_central", product: "Koli", quantity: 1, weightKg: 1 });
-    expect(created.branchChargeTl).toBe(880);
+    expect(created.branchChargeTl).toBeNull();
     expect(created.courierPayoutTl).toBeNull();
+    expect(desk.quote(staff, { direction: "to_central" }).branchChargeTl).toBeNull();
     const approved = desk.approve(branchManager, created.id);
-    expect(approved.branchChargeTl).toBe(880);
+    expect(approved.branchChargeTl).toBeNull();
+    expect(desk.home(branchManager).jobs.find(job => job.id === created.id)?.branchChargeTl).toBeNull();
     desk.updatePriceList(manager, BRANCHES.map(branch => ({ branchId: branch.id, chargeTl: 10, payoutTl: 5 })));
     expect(desk.home(manager).jobs.find(job => job.id === created.id)?.branchChargeTl).toBe(880);
   });
@@ -79,10 +81,13 @@ describe("internal branch and central courier desk", () => {
     expect(() => desk.ledger(staff)).toThrow(/Muhasebe bu role kapalı/);
     expect(() => desk.ledger(admin)).toThrow(/Muhasebe bu role kapalı/);
     expect(desk.home(lead).ledger).toBeNull();
-    expect(desk.ledger(courier).entries.every(entry => entry.kind === "courier_payout" && entry.courierId === "kurye-1")).toBe(true);
-    expect(desk.ledger(otherCourier).entries).toHaveLength(0);
-    expect(desk.ledger(branchManager).entries.every(entry => entry.kind === "branch_charge" && entry.branchId === "kadikoy")).toBe(true);
-    expect(desk.ledger(otherManager).entries.some(entry => entry.branchId === "kadikoy")).toBe(false);
+    expect(() => desk.ledger(courier)).toThrow(/Muhasebe bu role kapalı/);
+    expect(() => desk.ledger(otherCourier)).toThrow(/Muhasebe bu role kapalı/);
+    expect(() => desk.ledger(branchManager)).toThrow(/Muhasebe bu role kapalı/);
+    expect(() => desk.ledger(otherManager)).toThrow(/Muhasebe bu role kapalı/);
+    expect(desk.home(courier).jobs.every(job => job.branchChargeTl == null && job.courierPayoutTl == null)).toBe(true);
+    expect(desk.home(branchManager).jobs.every(job => job.branchChargeTl == null && job.courierPayoutTl == null)).toBe(true);
+    expect(desk.home(lead).jobs.every(job => job.branchChargeTl == null && job.courierPayoutTl == null)).toBe(true);
     expect(() => desk.settle(branchManager, "ldg-1")).toThrow(/Tahsilatı kapatma/);
   });
 
@@ -114,12 +119,14 @@ describe("internal branch and central courier desk", () => {
     expect(created.code).toMatch(/^IS-/);
     expect(created.status).toBe("assigned");
     expect(created.addressLine).toContain("Üsküdar");
-    expect(created.branchChargeTl).toBeGreaterThan(120);
+    expect(created.branchChargeTl).toBeNull();
     expect(created.courierPayoutTl).toBeNull();
+    expect(desk.home(actorOf(desk, "kurye-1")).jobs.find(job => job.id === created.id)?.courierPayoutTl).toBeNull();
     expect(desk.home(staff).jobs.map(job => job.code)).toEqual([created.code, "MK-2401"]);
     expect(desk.home(other).jobs.some(job => job.code === created.code)).toBe(false);
 
-    const locked = created.branchChargeTl;
+    const locked = desk.home(manager).jobs.find(job => job.id === created.id)?.branchChargeTl;
+    expect(locked).toBeGreaterThan(120);
     const rows = desk.priceList(admin).rows;
     desk.updateLocalTariffs(admin, rows.map(row => ({
       branchId: row.branchId,
@@ -129,7 +136,8 @@ describe("internal branch and central courier desk", () => {
       localPayoutPerKmTl: row.localPayoutPerKmTl,
     })));
     expect(desk.home(manager).jobs.find(job => job.id === created.id)?.branchChargeTl).toBe(locked);
-    expect(desk.quoteLocal(staff, { district: "Kadıköy" }).branchChargeTl).toBeGreaterThan(locked!);
+    expect(desk.quoteLocal(staff, { district: "Kadıköy" }).branchChargeTl).toBeNull();
+    expect(desk.quoteLocal(manager, { branchId: "kadikoy", district: "Kadıköy" }).branchChargeTl).toBeGreaterThan(locked!);
     expect(() => desk.updateLocalTariffs(staff, rows.map(row => ({ branchId: row.branchId, localOpeningFeeTl: 1, localPerKmTl: 1, localPayoutOpeningTl: 1, localPayoutPerKmTl: 1 })))).toThrow(/yalnız merkez müdür ve admin/);
     expect(() => desk.priceList(actorOf(desk, "muhasebe"))).toThrow(/Fiyat listesini yalnız merkez müdür ve admin/);
 

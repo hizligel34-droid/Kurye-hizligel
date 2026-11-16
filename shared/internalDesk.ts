@@ -24,10 +24,10 @@ export const ROLE_NOTES: Record<InternalRole, string> = {
   central_manager: "On şube ile merkez hattını ve her şubenin İstanbul içi tarifesini yönetir. İç muhasebeyi görür.",
   admin: "Merkez hat fiyat listesini ve her şubenin İstanbul içi tarifesini görür ve düzenler. Muhasebe defteri bu role kapalıdır.",
   accountant: "İç muhasebeyi görür ve tahsilatı kapatır. Fiyat listesini göremez ve değiştiremez.",
-  branch_manager: "Kendi bölgesinde İstanbul içi gönderi açar ve merkez kuryesini onaylar. Defterde yalnız kendi şubesine kesilen bedeller vardır.",
-  branch_staff: "Kendi İstanbul bölgesinde adres yazıp kurye çağırır. Fiyat listesi ve muhasebe kapalıdır.",
-  courier_lead: "Kurye atar ve kurye operasyon sohbetini kullanır. Fiyat listesi ve muhasebe kapalıdır.",
-  courier: "Yalnızca kendine atanan işi ilerletir. Kazanç ekranında yalnız kendi ödemesi görünür.",
+  branch_manager: "Kendi bölgesinde İstanbul içi gönderi açar ve merkez kuryesini onaylar. Fiyatlandırma ve muhasebe bu role kapalıdır.",
+  branch_staff: "Kendi İstanbul bölgesinde adres yazıp kurye çağırır. Fiyatlandırma ve muhasebe bu role kapalıdır.",
+  courier_lead: "Kurye atar ve kurye operasyon sohbetini kullanır. Fiyatlandırma ve muhasebe bu role kapalıdır.",
+  courier: "Yalnızca kendine atanan işi ilerletir. Fiyatlandırma ve kazanç tutarı bu role kapalıdır.",
 };
 
 export type Branch = {
@@ -321,17 +321,19 @@ export function canViewTariff(role: InternalRole) {
   return canEditTariff(role);
 }
 
+export function canSeePrices(role: InternalRole) {
+  return role === "central_manager" || role === "admin" || role === "accountant";
+}
+
 export function canViewLedger(role: InternalRole) {
-  return role === "central_manager" || role === "accountant" || role === "branch_manager" || role === "courier";
+  return role === "central_manager" || role === "accountant";
 }
 
 export function canSettleLedger(role: InternalRole) {
   return role === "central_manager" || role === "accountant";
 }
 
-export function ledgerTitle(role: InternalRole) {
-  if (role === "courier") return "Kazancım";
-  if (role === "branch_manager") return "Şube muhasebesi";
+export function ledgerTitle(_role: InternalRole) {
   return "İç muhasebe";
 }
 
@@ -351,32 +353,19 @@ export function canSeeJob(actor: Staff, job: JobRecord) {
 }
 
 export function visibleCharge(actor: Staff, job: JobRecord) {
-  const involved =
-    (actor.role === "branch_manager" || actor.role === "branch_staff") &&
-    (actor.branchId === job.fromBranchId || actor.branchId === job.toBranchId);
-  const full = actor.role === "central_manager" || actor.role === "admin" || actor.role === "accountant";
-  if (!full && !involved) return null;
+  if (!canSeePrices(actor.role)) return null;
   if (job.branchChargeTl != null && job.status !== "requested" && job.status !== "cancelled") return job.branchChargeTl;
   return job.estimateChargeTl;
 }
 
 export function visiblePayout(actor: Staff, job: JobRecord) {
-  const full = actor.role === "central_manager" || actor.role === "admin" || actor.role === "accountant";
-  const lead = actor.role === "courier_lead";
-  const ownCourier = actor.role === "courier" && job.courierId === actor.id;
-  if (!full && !lead && !ownCourier) return null;
+  if (!canSeePrices(actor.role)) return null;
   if (job.courierPayoutTl != null && job.status !== "requested" && job.status !== "cancelled") return job.courierPayoutTl;
   return job.estimatePayoutTl;
 }
 
 export function filterLedger(actor: Staff, entries: LedgerEntry[]) {
   if (actor.role === "central_manager" || actor.role === "accountant") return entries;
-  if (actor.role === "branch_manager") {
-    return entries.filter(entry => entry.kind === "branch_charge" && entry.branchId === actor.branchId);
-  }
-  if (actor.role === "courier") {
-    return entries.filter(entry => entry.kind === "courier_payout" && entry.courierId === actor.id);
-  }
   return [];
 }
 
