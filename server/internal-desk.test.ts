@@ -24,7 +24,7 @@ describe("internal branch and central courier desk", () => {
     expect(desk.directory().staff.every(person => !("pin" in person))).toBe(true);
   });
 
-  it("shows and edits the price list only for the central manager and admin", () => {
+  it("keeps the price list with the admin, including open and close", () => {
     const desk = createInternalDesk();
     const manager = actorOf(desk, "merkez-mudur");
     const admin = actorOf(desk, "admin");
@@ -33,14 +33,17 @@ describe("internal branch and central courier desk", () => {
     const staff = actorOf(desk, "kadikoy-calisan");
     const lead = actorOf(desk, "kurye-yetkili");
 
-    expect(desk.home(manager).priceList?.rows).toHaveLength(10);
     expect(desk.home(admin).priceList?.rows).toHaveLength(10);
+    expect(desk.home(admin).priceList?.open).toBe(true);
+    expect(desk.home(manager).priceList).toBeNull();
     expect(desk.home(accountant).priceList).toBeNull();
     expect(desk.home(branchManager).priceList).toBeNull();
     expect(desk.home(staff).priceList).toBeNull();
     expect(desk.home(lead).priceList).toBeNull();
-    expect(() => desk.priceList(staff)).toThrow(/Fiyat listesini yalnız merkez müdür ve admin/);
-    expect(() => desk.updateTariff(accountant, DEFAULT_TARIFF)).toThrow(/Fiyat listesini yalnız merkez müdür ve admin/);
+    expect(() => desk.priceList(manager)).toThrow(/Fiyat listesini yalnız admin/);
+    expect(() => desk.priceList(staff)).toThrow(/Fiyat listesini yalnız admin/);
+    expect(() => desk.setPriceListOpen(manager, false)).toThrow(/yalnız admin açar ve kapatır/);
+    expect(() => desk.updateTariff(accountant, DEFAULT_TARIFF)).toThrow(/Fiyat listesini yalnız admin/);
 
     const edited = desk.updatePriceList(admin, BRANCHES.map(branch => ({ branchId: branch.id, chargeTl: branch.id === "kadikoy" ? 880 : 100, payoutTl: 40 })));
     expect(edited.rows.find(row => row.branchId === "kadikoy")?.chargeTl).toBe(880);
@@ -51,8 +54,15 @@ describe("internal branch and central courier desk", () => {
     const approved = desk.approve(branchManager, created.id);
     expect(approved.branchChargeTl).toBeNull();
     expect(desk.home(branchManager).jobs.find(job => job.id === created.id)?.branchChargeTl).toBeNull();
-    desk.updatePriceList(manager, BRANCHES.map(branch => ({ branchId: branch.id, chargeTl: 10, payoutTl: 5 })));
+    expect(() => desk.updatePriceList(manager, BRANCHES.map(branch => ({ branchId: branch.id, chargeTl: 10, payoutTl: 5 })))).toThrow(/yalnız admin/);
+    desk.updatePriceList(admin, BRANCHES.map(branch => ({ branchId: branch.id, chargeTl: 10, payoutTl: 5 })));
     expect(desk.home(manager).jobs.find(job => job.id === created.id)?.branchChargeTl).toBe(880);
+
+    expect(desk.setPriceListOpen(admin, false).open).toBe(false);
+    expect(desk.home(staff).priceListOpen).toBe(false);
+    expect(() => desk.createHubJob(staff, { direction: "to_central", product: "Kapalı liste", quantity: 1, weightKg: 1 })).toThrow(/Fiyat listesi kapalı/);
+    expect(desk.home(manager).jobs.find(job => job.id === created.id)?.branchChargeTl).toBe(880);
+    expect(desk.setPriceListOpen(admin, true).open).toBe(true);
   });
 
   it("moves goods only between a store branch and the central branch", () => {
@@ -138,12 +148,12 @@ describe("internal branch and central courier desk", () => {
     expect(desk.home(manager).jobs.find(job => job.id === created.id)?.branchChargeTl).toBe(locked);
     expect(desk.quoteLocal(staff, { district: "Kadıköy" }).branchChargeTl).toBeNull();
     expect(desk.quoteLocal(manager, { branchId: "kadikoy", district: "Kadıköy" }).branchChargeTl).toBeGreaterThan(locked!);
-    expect(() => desk.updateLocalTariffs(staff, rows.map(row => ({ branchId: row.branchId, localOpeningFeeTl: 1, localPerKmTl: 1, localPayoutOpeningTl: 1, localPayoutPerKmTl: 1 })))).toThrow(/yalnız merkez müdür ve admin/);
-    expect(() => desk.priceList(actorOf(desk, "muhasebe"))).toThrow(/Fiyat listesini yalnız merkez müdür ve admin/);
+    expect(() => desk.updateLocalTariffs(staff, rows.map(row => ({ branchId: row.branchId, localOpeningFeeTl: 1, localPerKmTl: 1, localPayoutOpeningTl: 1, localPayoutPerKmTl: 1 })))).toThrow(/yalnız admin/);
+    expect(() => desk.priceList(actorOf(desk, "muhasebe"))).toThrow(/Fiyat listesini yalnız admin/);
 
-    desk.updateTariff(manager, DEFAULT_TARIFF);
-    desk.updatePriceList(manager, BRANCHES.map(branch => ({ branchId: branch.id, chargeTl: 10, payoutTl: 5 })));
-    const kadikoy = desk.priceList(manager).rows.find(row => row.branchId === "kadikoy");
+    desk.updateTariff(admin, DEFAULT_TARIFF);
+    desk.updatePriceList(admin, BRANCHES.map(branch => ({ branchId: branch.id, chargeTl: 10, payoutTl: 5 })));
+    const kadikoy = desk.priceList(admin).rows.find(row => row.branchId === "kadikoy");
     expect(kadikoy?.localOpeningFeeTl).toBe(400);
     expect(kadikoy?.chargeTl).toBe(10);
     expect(kadikoy?.coverage).toContain("Kadıköy");
@@ -168,19 +178,25 @@ describe("internal desk router", () => {
     await expect(guest.internalDesk.login({ staffId: "merkez-mudur", pin: "0000" })).rejects.toThrow(/hatalı/);
     const session = await guest.internalDesk.login({ staffId: "merkez-mudur", pin: "4812" });
     const manager = caller(session.token);
-    const list = await manager.internalDesk.priceList();
-    expect(list.rows).toHaveLength(10);
+    await expect(manager.internalDesk.priceList()).rejects.toThrow(/Fiyat listesini yalnız admin/);
+    await expect(manager.internalDesk.setPriceListOpen({ open: false })).rejects.toThrow(/yalnız admin açar ve kapatır/);
     const codes = await manager.internalDesk.staffCodes();
     const staffPin = codes.find(person => person.id === "kadikoy-calisan")?.pin ?? "";
     const staffSession = await guest.internalDesk.login({ staffId: "kadikoy-calisan", pin: staffPin });
     const staff = caller(staffSession.token);
-    await expect(staff.internalDesk.priceList()).rejects.toThrow(/Fiyat listesini yalnız merkez müdür ve admin/);
-    await expect(staff.internalDesk.ledger()).rejects.toThrow(/kapalı/);
+    await expect(staff.internalDesk.priceList()).rejects.toThrow(/Fiyat listesini yalnız admin/);
+    await expect(staff.internalDesk.ledger()).rejects.toThrow(/Muhasebe bu role kapalı/);
     const adminPin = codes.find(person => person.id === "admin")?.pin ?? "";
     const adminSession = await guest.internalDesk.login({ staffId: "admin", pin: adminPin });
     const admin = caller(adminSession.token);
+    const list = await admin.internalDesk.priceList();
+    expect(list.rows).toHaveLength(10);
+    expect(list.open).toBe(true);
     const saved = await admin.internalDesk.updatePriceList({ rows: list.rows.map(row => ({ branchId: row.branchId, chargeTl: 250, payoutTl: 90 })) });
     expect(saved.rows.every(row => row.chargeTl === 250)).toBe(true);
-    await expect(admin.internalDesk.ledger()).rejects.toThrow(/kapalı/);
+    expect((await admin.internalDesk.setPriceListOpen({ open: false })).open).toBe(false);
+    await expect(staff.internalDesk.createLocalJob({ district: "Kadıköy", neighborhood: "Caferağa", street: "Moda Caddesi", buildingNo: "14", addressDetail: "Zemin kat", product: "Poşet", quantity: 1, weightKg: 1 })).rejects.toThrow(/Fiyat listesi kapalı/);
+    expect((await admin.internalDesk.setPriceListOpen({ open: true })).open).toBe(true);
+    await expect(admin.internalDesk.ledger()).rejects.toThrow(/Muhasebe bu role kapalı/);
   });
 });

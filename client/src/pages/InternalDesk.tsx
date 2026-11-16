@@ -97,7 +97,7 @@ function Login({ onSuccess }: { onSuccess: (token: string) => void }) {
           <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">10 şubeli mağaza</Badge>
           <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950">İç operasyon masası</h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
-            Her şube kendi İstanbul bölgesinde adres ve detay yazıp kurye çağırır. O bölgenin tarifesini yalnız merkez müdür ve admin yönetir. Şubeler ile merkez şube arasındaki hat da aynı masadadır.
+            Her şube kendi İstanbul bölgesinde adres ve detay yazıp kurye çağırır. Fiyat listesini admin görür, açar ve kapatır. Şubeler ile merkez şube arasındaki hat da aynı masadadır.
           </p>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
             {(directory.data?.branches ?? []).map(branch => (
@@ -359,6 +359,7 @@ function NewJob({ home, onCreated }: { home: HomeData; onCreated: () => Promise<
   return (
     <form className="grid gap-4 rounded-3xl bg-white p-4 shadow-sm sm:p-6 lg:grid-cols-[1.2fr_.8fr]" onSubmit={submit}>
       <div className="space-y-4">
+        {!home.priceListOpen && <p className="rounded-2xl bg-orange-50 p-3 text-sm font-semibold leading-6 text-orange-800">Fiyat listesi kapalı. Yeni gönderi açılmaz.</p>}
         <div className="flex flex-wrap gap-2">
           <button type="button" className={`min-h-11 rounded-full px-4 text-sm font-bold ${mode === "local" ? "bg-slate-950 text-white" : "bg-slate-100"}`} onClick={() => setMode("local")}>İstanbul içi</button>
           <button type="button" className={`min-h-11 rounded-full px-4 text-sm font-bold ${mode === "hub" ? "bg-slate-950 text-white" : "bg-slate-100"}`} onClick={() => setMode("hub")}>Merkez hattı</button>
@@ -418,12 +419,12 @@ function NewJob({ home, onCreated }: { home: HomeData; onCreated: () => Promise<
         <label className="block text-sm font-semibold">Not
           <textarea className="mt-1 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:ring-2 focus:ring-orange-300" value={note} onChange={event => setNote(event.target.value)} />
         </label>
-        <Button type="submit" className="h-11 rounded-xl bg-[#e54725] hover:bg-[#cf3d1e]" disabled={pending}>{mode === "local" ? "Kurye çağır ve gönder" : "Kurye talebi gönder"}</Button>
+        <Button type="submit" className="h-11 rounded-xl bg-[#e54725] hover:bg-[#cf3d1e]" disabled={pending || !home.priceListOpen}>{mode === "local" ? "Kurye çağır ve gönder" : "Kurye talebi gönder"}</Button>
       </div>
       <aside className="rounded-3xl bg-slate-950 p-5 text-white">
         <Bike className="h-5 w-5 text-orange-300" aria-hidden="true" />
-        <h2 className="mt-3 text-lg font-black">{home.capabilities.canViewTariff ? (mode === "local" ? "Bu gönderinin bedeli" : "Bedel fiyat listesinden gelir") : "Gönderi kaydı"}</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-300">{home.capabilities.canViewTariff ? "Tutar elle yazılmaz. Tarifeyi yalnız merkez müdür ve admin değiştirir. Gönderi açılınca o anki bedel kilitlenir." : "Fiyatlandırma merkez müdür ve admin ekranındadır."}</p>
+        <h2 className="mt-3 text-lg font-black">{(mode === "local" ? localQuote.data?.branchChargeTl : hubQuote.data?.branchChargeTl) != null ? (mode === "local" ? "Bu gönderinin bedeli" : "Bedel fiyat listesinden gelir") : "Gönderi kaydı"}</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-300">{(mode === "local" ? localQuote.data?.branchChargeTl : hubQuote.data?.branchChargeTl) != null ? "Tutar elle yazılmaz. Fiyat listesini admin açar, kapatır ve düzenler. Gönderi açılınca o anki bedel kilitlenir." : "Fiyat listesi admin ekranındadır."}</p>
         {mode === "local" && localQuote.data && (
           <dl className="mt-5 space-y-3 text-sm">
             <div className="flex justify-between gap-3"><dt>Bölge</dt><dd className="text-right font-bold">{localQuote.data.branchName} · {localQuote.data.district}</dd></div>
@@ -555,6 +556,7 @@ function TariffPanel({ list, canEdit, onChanged }: { list: NonNullable<HomeData[
   const updateRates = trpc.internalDesk.updateTariff.useMutation();
   const updateRows = trpc.internalDesk.updatePriceList.useMutation();
   const updateLocal = trpc.internalDesk.updateLocalTariffs.useMutation();
+  const setOpen = trpc.internalDesk.setPriceListOpen.useMutation();
   const [rates, setRates] = useState<Tariff>(() => list.tariff);
   const [rows, setRows] = useState(list.rows);
   useEffect(() => { setRates(list.tariff); setRows(list.rows); }, [list]);
@@ -574,9 +576,20 @@ function TariffPanel({ list, canEdit, onChanged }: { list: NonNullable<HomeData[
 
   return (
     <section className="space-y-4">
+      <div className="flex flex-col gap-3 rounded-3xl bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-black">Fiyat listesi {list.open ? "açık" : "kapalı"}</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500">Görme, açma ve kapatma adminde. Kapalıyken yeni gönderi açılmaz. Daha önce kilitlenen bedeller durur.</p>
+        </div>
+        {canEdit && (
+          <Button type="button" className="h-11 rounded-xl bg-[#e54725] hover:bg-[#cf3d1e]" disabled={setOpen.isPending} onClick={() => setOpen.mutate({ open: !list.open }, { onSuccess: () => { toast.success(list.open ? "Fiyat listesi kapatıldı" : "Fiyat listesi açıldı"); void onChanged(); }, onError: error => toast.error(error.message) })}>
+            {list.open ? "Listeyi kapat" : "Listeyi aç"}
+          </Button>
+        )}
+      </div>
       <form className="rounded-3xl bg-white p-5 shadow-sm" onSubmit={saveRates}>
         <h2 className="text-lg font-black">Merkez hat formülü</h2>
-        <p className="mt-1 text-sm leading-6 text-slate-500">Bu formül on şubenin liste fiyatını yeniden yazar. Düzenleme yalnız merkez müdür ve adminde.</p>
+        <p className="mt-1 text-sm leading-6 text-slate-500">Bu formül on şubenin liste fiyatını yeniden yazar. Düzenleme adminde.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {TARIFF_FIELDS.map(field => (
             <label key={field.key} className="text-sm font-semibold text-slate-700">{field.label}
@@ -613,7 +626,7 @@ function TariffPanel({ list, canEdit, onChanged }: { list: NonNullable<HomeData[
         });
       }}>
         <h2 className="text-lg font-black">İstanbul içi tarife</h2>
-        <p className="mt-1 text-sm leading-6 text-slate-500">Her satır yalnız o şubenin bölgesi için geçerlidir. Düzenleme merkez müdür ve admine aittir. Açılmış gönderilerin bedeli değişmez.</p>
+        <p className="mt-1 text-sm leading-6 text-slate-500">Her satır yalnız o şubenin bölgesi için geçerlidir. Düzenleme adminde. Açılmış gönderilerin bedeli değişmez.</p>
         <table className="mt-4 w-full min-w-[52rem] text-left text-sm">
           <thead className="text-xs uppercase tracking-wider text-slate-400"><tr><th className="py-2">Şube</th><th>Bölge</th><th>Açılış</th><th>Km</th><th>Kurye açılış</th><th>Kurye km</th></tr></thead>
           <tbody>

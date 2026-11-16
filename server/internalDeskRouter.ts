@@ -91,6 +91,9 @@ export const internalDeskRouter = router({
       })).length(10),
     }))
     .mutation(({ ctx, input }) => call(() => internalDeskRuntime.api.updateLocalTariffs(ctx.actor, input.rows))),
+  setPriceListOpen: deskProcedure
+    .input(z.object({ open: z.boolean() }))
+    .mutation(({ ctx, input }) => call(() => internalDeskRuntime.api.setPriceListOpen(ctx.actor, input.open))),
   priceList: deskProcedure.query(({ ctx }) => call(() => internalDeskRuntime.api.priceList(ctx.actor))),
   ledger: deskProcedure.query(({ ctx }) => call(() => internalDeskRuntime.api.ledger(ctx.actor))),
   settle: deskProcedure.input(z.object({ entryId: z.string() })).mutation(({ ctx, input }) => call(() => internalDeskRuntime.api.settle(ctx.actor, input.entryId))),

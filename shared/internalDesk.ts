@@ -21,8 +21,8 @@ export const ROLE_LABELS: Record<InternalRole, string> = {
 };
 
 export const ROLE_NOTES: Record<InternalRole, string> = {
-  central_manager: "On şube ile merkez hattını ve her şubenin İstanbul içi tarifesini yönetir. İç muhasebeyi görür.",
-  admin: "Merkez hat fiyat listesini ve her şubenin İstanbul içi tarifesini görür ve düzenler. Muhasebe defteri bu role kapalıdır.",
+  central_manager: "On şube ile merkez hattını ve iç muhasebeyi görür. Fiyat listesi adminde.",
+  admin: "Fiyat listesini görür, düzenler, açar ve kapatır. Muhasebe defteri bu role kapalıdır.",
   accountant: "İç muhasebeyi görür ve tahsilatı kapatır. Fiyat listesini göremez ve değiştiremez.",
   branch_manager: "Kendi bölgesinde İstanbul içi gönderi açar ve merkez kuryesini onaylar. Fiyatlandırma ve muhasebe bu role kapalıdır.",
   branch_staff: "Kendi İstanbul bölgesinde adres yazıp kurye çağırır. Fiyatlandırma ve muhasebe bu role kapalıdır.",
@@ -314,7 +314,7 @@ export function assertTariff(input: Tariff): Tariff {
 }
 
 export function canEditTariff(role: InternalRole) {
-  return role === "central_manager" || role === "admin";
+  return role === "admin";
 }
 
 export function canViewTariff(role: InternalRole) {

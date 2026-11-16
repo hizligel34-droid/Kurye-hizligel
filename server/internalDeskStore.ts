@@ -68,6 +68,7 @@ type DeskState = {
   sessions: Map<string, string>;
   tariff: Tariff;
   prices: PriceRow[];
+  priceListOpen: boolean;
   tariffUpdatedBy: string | null;
   tariffUpdatedAt: string;
   jobs: JobRecord[];
@@ -244,7 +245,7 @@ function seedState(now: string): DeskState {
       id: "msg-1",
       roomId: "hq",
       senderId: MANAGER_ID,
-      body: "Kurye, on mağaza şubesi ile merkez şube arasında çalışır. Fiyat listesini yalnız merkez müdür ve admin görür.",
+      body: "Fiyat listesini yalnız admin görür. Listeyi açmak ve kapatmak da adminde.",
       createdAt: "2026-11-13T06:00:00.000Z",
     },
     {
@@ -269,6 +270,7 @@ function seedState(now: string): DeskState {
     sessions: new Map(),
     tariff,
     prices,
+    priceListOpen: true,
     tariffUpdatedBy: null,
     tariffUpdatedAt: now,
     jobs,
@@ -417,6 +419,7 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
 
   function priceListView() {
     return {
+      open: state.priceListOpen,
       centralBranchName: CENTRAL_BRANCH.name,
       updatedAt: state.tariffUpdatedAt,
       updatedBy: state.tariffUpdatedBy ? person(state.tariffUpdatedBy)?.name ?? null : null,
@@ -430,7 +433,11 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
   }
 
   function assertPriceEditor(actor: Staff) {
-    if (!canEditTariff(actor.role)) throw new DeskError("Fiyat listesini yalnız merkez müdür ve admin düzenler", "FORBIDDEN");
+    if (!canEditTariff(actor.role)) throw new DeskError("Fiyat listesini yalnız admin düzenler", "FORBIDDEN");
+  }
+
+  function assertPriceListOpen() {
+    if (!state.priceListOpen) throw new DeskError("Fiyat listesi kapalı");
   }
 
   function issueSession(actor: Staff) {
@@ -511,7 +518,8 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
       const openJobs = jobs.filter(job => job.status !== "delivered" && job.status !== "cancelled");
       return {
         actor: publicPerson(actor),
-        note: "Her şube kendi İstanbul bölgesinde adres yazıp kurye çağırır. O şubenin tarifesini yalnız merkez müdür ve admin yönetir.",
+        priceListOpen: state.priceListOpen,
+        note: "Her şube kendi İstanbul bölgesinde adres yazıp kurye çağırır. Fiyat listesini admin görür, açar ve kapatır.",
         capabilities: {
           canCreate: actor.role === "central_manager" || actor.role === "branch_manager" || actor.role === "branch_staff",
           canEditTariff: canEditTariff(actor.role),
@@ -541,10 +549,12 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
       };
     },
     quote(actor: Staff, input: { branchId?: string; direction: HubDirection }) {
+      assertPriceListOpen();
       const store = originBranch(actor, input.branchId);
       return presentQuote(actor, listedPrice(store.id), input.direction);
     },
     createHubJob(actor: Staff, input: { branchId?: string; direction: HubDirection; product: string; quantity: number; weightKg: number; note?: string }) {
+      assertPriceListOpen();
       const store = originBranch(actor, input.branchId);
       const price = listedPrice(store.id);
       const towardCentral = input.direction === "to_central";
@@ -580,11 +590,13 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
       return jobView(actor, job);
     },
     quoteLocal(actor: Staff, input: { branchId?: string; district: string }) {
+      assertPriceListOpen();
       const store = originBranch(actor, input.branchId);
       const district = requiredText(input.district, 2, 40, "İlçe");
       return presentLocalQuote(actor, store, district, localQuote(store, district));
     },
     createLocalJob(actor: Staff, input: { branchId?: string; district: string; neighborhood: string; street: string; buildingNo: string; addressDetail: string; product: string; quantity: number; weightKg: number; note?: string; courierId?: string }) {
+      assertPriceListOpen();
       const store = originBranch(actor, input.branchId);
       const district = requiredText(input.district, 2, 40, "İlçe");
       const quote = localQuote(store, district);
@@ -638,6 +650,7 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
     approve(actor: Staff, jobId: string) {
       const job = requireJob(actor, jobId);
       if (!canApprove(actor, job)) throw new DeskError("Bu işi onaylama yetkiniz yok", "FORBIDDEN");
+      assertPriceListOpen();
       if (job.type === "local") {
         const store = branchById(job.storeBranchId);
         if (!store) throw new DeskError("Şube bulunamadı");
@@ -729,8 +742,15 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
       state.tariffUpdatedAt = now();
       return priceListView();
     },
+    setPriceListOpen(actor: Staff, open: boolean) {
+      if (!canEditTariff(actor.role)) throw new DeskError("Fiyat listesini yalnız admin açar ve kapatır", "FORBIDDEN");
+      state.priceListOpen = open;
+      state.tariffUpdatedBy = actor.id;
+      state.tariffUpdatedAt = now();
+      return priceListView();
+    },
     priceList(actor: Staff) {
-      if (!canViewTariff(actor.role)) throw new DeskError("Fiyat listesini yalnız merkez müdür ve admin görür", "FORBIDDEN");
+      if (!canViewTariff(actor.role)) throw new DeskError("Fiyat listesini yalnız admin görür", "FORBIDDEN");
       return priceListView();
     },
     openAdminSession() {
@@ -804,7 +824,7 @@ function presentLocalQuote(actor: Staff, store: Branch, district: string, quote:
     region: [...regionDistricts(store.id)],
     distanceKm: quote.distanceKm,
     branchChargeTl: canSeePrices(actor.role) ? quote.branchChargeTl : null,
-    courierPayoutTl: canViewTariff(actor.role) ? quote.courierPayoutTl : null,
+    courierPayoutTl: canSeePrices(actor.role) ? quote.courierPayoutTl : null,
     feeLabel: "tarife" as const,
   };
 }
@@ -817,7 +837,7 @@ function presentQuote(actor: Staff, row: PriceRow, direction: HubDirection) {
     centralBranchName: CENTRAL_BRANCH.name,
     distanceKm: row.distanceKm,
     branchChargeTl: canSeePrices(actor.role) ? row.chargeTl : null,
-    courierPayoutTl: canViewTariff(actor.role) ? row.payoutTl : null,
+    courierPayoutTl: canSeePrices(actor.role) ? row.payoutTl : null,
     feeLabel: "liste" as const,
   };
 }
