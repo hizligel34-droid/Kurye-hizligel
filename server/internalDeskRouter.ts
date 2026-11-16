@@ -50,9 +50,24 @@ export const internalDeskRouter = router({
   quote: deskProcedure
     .input(z.object({ branchId: z.string().optional(), direction: z.enum(["to_central", "from_central"]) }))
     .query(({ ctx, input }) => call(() => internalDeskRuntime.api.quote(ctx.actor, input))),
+  quoteLocal: deskProcedure
+    .input(z.object({ branchId: z.string().optional(), district: z.string().trim().min(2).max(40) }))
+    .query(({ ctx, input }) => call(() => internalDeskRuntime.api.quoteLocal(ctx.actor, input))),
   createHubJob: deskProcedure
     .input(z.object({ branchId: z.string().optional(), direction: z.enum(["to_central", "from_central"]), ...jobText }))
     .mutation(({ ctx, input }) => call(() => internalDeskRuntime.api.createHubJob(ctx.actor, input))),
+  createLocalJob: deskProcedure
+    .input(z.object({
+      branchId: z.string().optional(),
+      district: z.string().trim().min(2).max(40),
+      neighborhood: z.string().trim().min(2).max(80),
+      street: z.string().trim().min(2).max(120),
+      buildingNo: z.string().trim().min(1).max(20),
+      addressDetail: z.string().trim().min(2).max(240),
+      courierId: z.string().trim().min(2).max(80).optional(),
+      ...jobText,
+    }))
+    .mutation(({ ctx, input }) => call(() => internalDeskRuntime.api.createLocalJob(ctx.actor, input))),
   approve: deskProcedure.input(z.object({ jobId: z.string() })).mutation(({ ctx, input }) => call(() => internalDeskRuntime.api.approve(ctx.actor, input.jobId))),
   assign: deskProcedure
     .input(z.object({ jobId: z.string(), courierId: z.string() }))
@@ -65,6 +80,17 @@ export const internalDeskRouter = router({
   updatePriceList: deskProcedure
     .input(z.object({ rows: z.array(z.object({ branchId: z.string(), chargeTl: z.number(), payoutTl: z.number() })).length(10) }))
     .mutation(({ ctx, input }) => call(() => internalDeskRuntime.api.updatePriceList(ctx.actor, input.rows))),
+  updateLocalTariffs: deskProcedure
+    .input(z.object({
+      rows: z.array(z.object({
+        branchId: z.string(),
+        localOpeningFeeTl: z.number(),
+        localPerKmTl: z.number(),
+        localPayoutOpeningTl: z.number(),
+        localPayoutPerKmTl: z.number(),
+      })).length(10),
+    }))
+    .mutation(({ ctx, input }) => call(() => internalDeskRuntime.api.updateLocalTariffs(ctx.actor, input.rows))),
   priceList: deskProcedure.query(({ ctx }) => call(() => internalDeskRuntime.api.priceList(ctx.actor))),
   ledger: deskProcedure.query(({ ctx }) => call(() => internalDeskRuntime.api.ledger(ctx.actor))),
   settle: deskProcedure.input(z.object({ entryId: z.string() })).mutation(({ ctx, input }) => call(() => internalDeskRuntime.api.settle(ctx.actor, input.entryId))),

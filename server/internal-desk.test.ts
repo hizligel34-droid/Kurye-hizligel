@@ -99,6 +99,47 @@ describe("internal branch and central courier desk", () => {
     expect(() => desk.messages(outsider, room)).toThrow(/görme/);
     expect(() => desk.messages(courier, room)).toThrow(/görme/);
   });
+
+  it("lets a branch call a courier inside its own Istanbul region", () => {
+    const desk = createInternalDesk();
+    const staff = actorOf(desk, "kadikoy-calisan");
+    const other = actorOf(desk, "besiktas-calisan");
+    const admin = actorOf(desk, "admin");
+    const manager = actorOf(desk, "merkez-mudur");
+    const address = { neighborhood: "Mimar Sinan", street: "Uncular Caddesi", buildingNo: "9", addressDetail: "Zemin kat", product: "Poşet", quantity: 1, weightKg: 1 };
+
+    expect(() => desk.createLocalJob(staff, { ...address, district: "Pendik" })).toThrow(/bölgesinde değil/);
+    expect(() => desk.createLocalJob(other, { ...address, district: "Kadıköy" })).toThrow(/bölgesinde değil/);
+    const created = desk.createLocalJob(staff, { ...address, district: "Üsküdar", courierId: "kurye-1" });
+    expect(created.code).toMatch(/^IS-/);
+    expect(created.status).toBe("assigned");
+    expect(created.addressLine).toContain("Üsküdar");
+    expect(created.branchChargeTl).toBeGreaterThan(120);
+    expect(created.courierPayoutTl).toBeNull();
+    expect(desk.home(staff).jobs.map(job => job.code)).toEqual([created.code, "MK-2401"]);
+    expect(desk.home(other).jobs.some(job => job.code === created.code)).toBe(false);
+
+    const locked = created.branchChargeTl;
+    const rows = desk.priceList(admin).rows;
+    desk.updateLocalTariffs(admin, rows.map(row => ({
+      branchId: row.branchId,
+      localOpeningFeeTl: row.branchId === "kadikoy" ? 400 : row.localOpeningFeeTl,
+      localPerKmTl: row.localPerKmTl,
+      localPayoutOpeningTl: row.localPayoutOpeningTl,
+      localPayoutPerKmTl: row.localPayoutPerKmTl,
+    })));
+    expect(desk.home(manager).jobs.find(job => job.id === created.id)?.branchChargeTl).toBe(locked);
+    expect(desk.quoteLocal(staff, { district: "Kadıköy" }).branchChargeTl).toBeGreaterThan(locked!);
+    expect(() => desk.updateLocalTariffs(staff, rows.map(row => ({ branchId: row.branchId, localOpeningFeeTl: 1, localPerKmTl: 1, localPayoutOpeningTl: 1, localPayoutPerKmTl: 1 })))).toThrow(/yalnız merkez müdür ve admin/);
+    expect(() => desk.priceList(actorOf(desk, "muhasebe"))).toThrow(/Fiyat listesini yalnız merkez müdür ve admin/);
+
+    desk.updateTariff(manager, DEFAULT_TARIFF);
+    desk.updatePriceList(manager, BRANCHES.map(branch => ({ branchId: branch.id, chargeTl: 10, payoutTl: 5 })));
+    const kadikoy = desk.priceList(manager).rows.find(row => row.branchId === "kadikoy");
+    expect(kadikoy?.localOpeningFeeTl).toBe(400);
+    expect(kadikoy?.chargeTl).toBe(10);
+    expect(kadikoy?.coverage).toContain("Kadıköy");
+  });
 });
 
 describe("internal desk router", () => {

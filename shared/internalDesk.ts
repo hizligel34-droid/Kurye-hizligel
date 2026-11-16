@@ -21,11 +21,11 @@ export const ROLE_LABELS: Record<InternalRole, string> = {
 };
 
 export const ROLE_NOTES: Record<InternalRole, string> = {
-  central_manager: "On şube ile merkez şube arasındaki kuryeyi ve iç muhasebeyi görür. Fiyat listesini admin ile birlikte düzenler.",
-  admin: "Fiyat listesini görür ve düzenler. Muhasebe defteri bu role kapalıdır.",
+  central_manager: "On şube ile merkez hattını ve her şubenin İstanbul içi tarifesini yönetir. İç muhasebeyi görür.",
+  admin: "Merkez hat fiyat listesini ve her şubenin İstanbul içi tarifesini görür ve düzenler. Muhasebe defteri bu role kapalıdır.",
   accountant: "İç muhasebeyi görür ve tahsilatı kapatır. Fiyat listesini göremez ve değiştiremez.",
-  branch_manager: "Kendi şubesinin merkez kuryesini onaylar. Defterde yalnız kendi şubesine kesilen bedeller vardır.",
-  branch_staff: "Kendi şubesi için merkez şube kuryesi açar. Fiyat listesi ve muhasebe kapalıdır.",
+  branch_manager: "Kendi bölgesinde İstanbul içi gönderi açar ve merkez kuryesini onaylar. Defterde yalnız kendi şubesine kesilen bedeller vardır.",
+  branch_staff: "Kendi İstanbul bölgesinde adres yazıp kurye çağırır. Fiyat listesi ve muhasebe kapalıdır.",
   courier_lead: "Kurye atar ve kurye operasyon sohbetini kullanır. Fiyat listesi ve muhasebe kapalıdır.",
   courier: "Yalnızca kendine atanan işi ilerletir. Kazanç ekranında yalnız kendi ödemesi görünür.",
 };
@@ -54,6 +54,46 @@ export const BRANCHES: readonly Branch[] = [
 
 export const BRANCH_LIMIT = 10;
 
+export const BRANCH_REGIONS: Record<string, readonly string[]> = {
+  kadikoy: ["Kadıköy", "Üsküdar", "Ataşehir"],
+  besiktas: ["Beşiktaş", "Sarıyer", "Şişli"],
+  sisli: ["Şişli", "Kağıthane", "Beyoğlu"],
+  bakirkoy: ["Bakırköy", "Bahçelievler", "Zeytinburnu"],
+  uskudar: ["Üsküdar", "Ümraniye", "Beykoz"],
+  atasehir: ["Ataşehir", "Sancaktepe", "Çekmeköy"],
+  beyoglu: ["Beyoğlu", "Fatih", "Eyüpsultan"],
+  maltepe: ["Maltepe", "Kartal", "Pendik"],
+  pendik: ["Pendik", "Tuzla", "Kartal"],
+  basaksehir: ["Başakşehir", "Esenyurt", "Avcılar"],
+};
+
+export const DISTRICT_POINTS: Record<string, { latitude: number; longitude: number }> = {
+  Kadıköy: { latitude: 40.9903, longitude: 29.0291 },
+  Üsküdar: { latitude: 41.0256, longitude: 29.015 },
+  Ataşehir: { latitude: 40.9923, longitude: 29.1244 },
+  Beşiktaş: { latitude: 41.0428, longitude: 29.0072 },
+  Sarıyer: { latitude: 41.166, longitude: 29.05 },
+  Şişli: { latitude: 41.0602, longitude: 28.9871 },
+  Kağıthane: { latitude: 41.082, longitude: 28.976 },
+  Beyoğlu: { latitude: 41.0369, longitude: 28.9775 },
+  Bakırköy: { latitude: 40.9796, longitude: 28.8724 },
+  Bahçelievler: { latitude: 41.002, longitude: 28.859 },
+  Zeytinburnu: { latitude: 41.004, longitude: 28.904 },
+  Ümraniye: { latitude: 41.016, longitude: 29.124 },
+  Beykoz: { latitude: 41.135, longitude: 29.092 },
+  Sancaktepe: { latitude: 41.002, longitude: 29.231 },
+  Çekmeköy: { latitude: 41.033, longitude: 29.179 },
+  Fatih: { latitude: 41.018, longitude: 28.94 },
+  Eyüpsultan: { latitude: 41.048, longitude: 28.934 },
+  Maltepe: { latitude: 40.9352, longitude: 29.1306 },
+  Kartal: { latitude: 40.888, longitude: 29.187 },
+  Pendik: { latitude: 40.8775, longitude: 29.2332 },
+  Tuzla: { latitude: 40.816, longitude: 29.3 },
+  Başakşehir: { latitude: 41.0934, longitude: 28.8021 },
+  Esenyurt: { latitude: 41.034, longitude: 28.68 },
+  Avcılar: { latitude: 40.979, longitude: 28.721 },
+};
+
 export const CENTRAL_BRANCH: Branch = {
   id: "merkez",
   name: "Merkez şube",
@@ -63,8 +103,9 @@ export const CENTRAL_BRANCH: Branch = {
   longitude: 28.987,
 };
 
-export type JobType = "hub";
+export type JobType = "hub" | "local";
 export type HubDirection = "to_central" | "from_central";
+export type JobDirection = HubDirection | "local";
 export type JobStatus = "requested" | "approved" | "assigned" | "picked_up" | "delivered" | "cancelled";
 export type LedgerKind = "branch_charge" | "courier_payout";
 export type RoomKind = "hq" | "dispatch" | "branch_pair" | "hub";
@@ -81,6 +122,13 @@ export const DEFAULT_TARIFF: Tariff = {
   transferPerKmTl: 40,
   courierPayoutOpeningTl: 70,
   courierPayoutPerKmTl: 18,
+};
+
+export const DEFAULT_LOCAL_TARIFF = {
+  localOpeningFeeTl: 120,
+  localPerKmTl: 35,
+  localPayoutOpeningTl: 60,
+  localPayoutPerKmTl: 15,
 };
 
 export const TARIFF_FIELDS: { key: keyof Tariff; label: string; hint: string }[] = [
@@ -117,17 +165,26 @@ export type PriceRow = {
   distanceKm: number;
   chargeTl: number;
   payoutTl: number;
+  localOpeningFeeTl: number;
+  localPerKmTl: number;
+  localPayoutOpeningTl: number;
+  localPayoutPerKmTl: number;
 };
 
 export type JobRecord = {
   id: string;
   code: string;
   type: JobType;
-  direction: HubDirection;
+  direction: JobDirection;
   storeBranchId: string;
   fromBranchId: string;
   toBranchId: string;
   destinationLabel: string;
+  district: string;
+  neighborhood: string;
+  street: string;
+  buildingNo: string;
+  addressDetail: string;
   product: string;
   quantity: number;
   weightKg: number;
@@ -199,18 +256,44 @@ export function quoteTransfer(tariff: Tariff, from: Branch, to: Branch): MoneyQu
   };
 }
 
-export function hubPrice(tariff: Tariff, branch: Branch): PriceRow {
+export function regionDistricts(branchId: string) {
+  return BRANCH_REGIONS[branchId] ?? [];
+}
+
+export function localDistanceKm(branch: Branch, district: string) {
+  if (!regionDistricts(branch.id).includes(district)) {
+    throw new Error(`${district || "Seçilen ilçe"} bu şubenin İstanbul bölgesinde değil`);
+  }
+  const point = DISTRICT_POINTS[district];
+  if (!point) throw new Error("İlçe İstanbul listesinde yok");
+  return drivingDistanceKm(branch, { ...branch, id: district, name: district, district, address: district, latitude: point.latitude, longitude: point.longitude });
+}
+
+export function hubPrice(tariff: Tariff, branch: Branch, previous?: PriceRow): PriceRow {
   const distanceKm = drivingDistanceKm(branch, CENTRAL_BRANCH);
   return {
     branchId: branch.id,
     distanceKm,
     chargeTl: priceKm(tariff.transferOpeningFeeTl, tariff.transferPerKmTl, distanceKm),
     payoutTl: priceKm(tariff.courierPayoutOpeningTl, tariff.courierPayoutPerKmTl, distanceKm),
+    localOpeningFeeTl: previous?.localOpeningFeeTl ?? DEFAULT_LOCAL_TARIFF.localOpeningFeeTl,
+    localPerKmTl: previous?.localPerKmTl ?? DEFAULT_LOCAL_TARIFF.localPerKmTl,
+    localPayoutOpeningTl: previous?.localPayoutOpeningTl ?? DEFAULT_LOCAL_TARIFF.localPayoutOpeningTl,
+    localPayoutPerKmTl: previous?.localPayoutPerKmTl ?? DEFAULT_LOCAL_TARIFF.localPayoutPerKmTl,
   };
 }
 
-export function buildPriceList(tariff: Tariff) {
-  return BRANCHES.map(branch => hubPrice(tariff, branch));
+export function buildPriceList(tariff: Tariff, previous: readonly PriceRow[] = []) {
+  return BRANCHES.map(branch => hubPrice(tariff, branch, previous.find(row => row.branchId === branch.id)));
+}
+
+export function quoteLocal(branch: Branch, row: PriceRow, district: string): MoneyQuote {
+  const distanceKm = localDistanceKm(branch, district);
+  return {
+    distanceKm,
+    branchChargeTl: priceKm(row.localOpeningFeeTl, row.localPerKmTl, distanceKm),
+    courierPayoutTl: priceKm(row.localPayoutOpeningTl, row.localPayoutPerKmTl, distanceKm),
+  };
 }
 
 export function assertMoney(value: number, label: string) {
@@ -310,6 +393,7 @@ export function canApprove(actor: Staff, job: JobRecord) {
 export function canAssign(actor: Staff, job: JobRecord) {
   if (job.status !== "approved" && job.status !== "assigned") return false;
   if (actor.role === "central_manager" || actor.role === "courier_lead") return true;
+  if (job.type === "local" && actor.role === "branch_staff" && actor.branchId === job.storeBranchId) return true;
   return managesStore(actor, job);
 }
 
@@ -325,6 +409,7 @@ export function canCancel(actor: Staff, job: JobRecord) {
   if (job.status === "delivered" || job.status === "cancelled") return false;
   if (actor.role === "central_manager") return true;
   if (managesStore(actor, job)) return true;
+  if (job.type === "local" && actor.id === job.requestedBy && (job.status === "approved" || job.status === "assigned")) return true;
   return actor.id === job.requestedBy && job.status === "requested";
 }
 

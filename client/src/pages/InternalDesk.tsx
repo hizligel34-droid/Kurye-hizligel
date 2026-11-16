@@ -97,7 +97,7 @@ function Login({ onSuccess }: { onSuccess: (token: string) => void }) {
           <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">10 şubeli mağaza</Badge>
           <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950">İç operasyon masası</h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
-            Kurye, on mağaza şubesi ile merkez şube arasında ürün taşır. Fiyat listesini yalnız merkez müdür ve admin görür ve düzenler. Muhasebe her role açık değildir.
+            Her şube kendi İstanbul bölgesinde adres ve detay yazıp kurye çağırır. O bölgenin tarifesini yalnız merkez müdür ve admin yönetir. Şubeler ile merkez şube arasındaki hat da aynı masadadır.
           </p>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
             {(directory.data?.branches ?? []).map(branch => (
@@ -105,6 +105,7 @@ function Login({ onSuccess }: { onSuccess: (token: string) => void }) {
                 <Building2 className="h-4 w-4 text-orange-600" aria-hidden="true" />
                 <p className="mt-2 text-sm font-bold text-slate-900">{branch.name}</p>
                 <p className="text-xs leading-5 text-slate-500">{branch.address}</p>
+                <p className="mt-1 text-[11px] leading-4 text-slate-400">Bölge: {branch.coverage}</p>
               </div>
             ))}
           </div>
@@ -216,6 +217,7 @@ function Overview({ home }: { home: HomeData }) {
           <article key={branch.id} className="rounded-3xl bg-white p-4 shadow-sm">
             <h2 className="font-bold text-slate-950">{branch.name}</h2>
             <p className="mt-1 text-xs leading-5 text-slate-500">{branch.address}</p>
+            <p className="mt-1 text-[11px] leading-4 text-slate-400">{branch.districts.join(", ")}</p>
             <p className="mt-3 text-sm font-semibold text-slate-700">{branch.openJobs} açık çıkış</p>
           </article>
         ))}
@@ -232,6 +234,7 @@ function Jobs({ home, onChanged }: { home: HomeData; onChanged: () => Promise<vo
   const [filter, setFilter] = useState("acik");
   const [courierByJob, setCourierByJob] = useState<Record<string, string>>({});
   const jobs = home.jobs.filter(job => {
+    if (filter === "local") return job.type === "local";
     if (filter === "to_central" || filter === "from_central") return job.direction === filter;
     if (filter === "acik") return job.status !== "delivered" && job.status !== "cancelled";
     return true;
@@ -244,7 +247,7 @@ function Jobs({ home, onChanged }: { home: HomeData; onChanged: () => Promise<vo
   return (
     <section className="space-y-3">
       <div className="flex gap-2 overflow-x-auto">
-        {[["acik", "Açık"], ["to_central", "Merkeze giden"], ["from_central", "Şubeye gelen"], ["hepsi", "Tümü"]].map(([id, label]) => (
+        {[["acik", "Açık"], ["local", "İstanbul içi"], ["to_central", "Merkeze giden"], ["from_central", "Şubeye gelen"], ["hepsi", "Tümü"]].map(([id, label]) => (
           <button key={id} className={`min-h-10 rounded-full px-3 text-sm font-bold ${filter === id ? "bg-orange-600 text-white" : "bg-white text-slate-600"}`} onClick={() => setFilter(id)}>{label}</button>
         ))}
       </div>
@@ -274,7 +277,11 @@ function JobCard({ job, couriers, courierId, onCourier, busy, onApprove, onAssig
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{job.code} · {job.typeLabel}</p>
           <h2 className="mt-1 text-lg font-black text-slate-950">{job.product}</h2>
-          <p className="mt-1 text-sm text-slate-600">{job.fromBranchName} → {job.toBranchName ?? job.destinationLabel}</p>
+          {job.type === "local" ? (
+            <p className="mt-1 text-sm text-slate-600">{job.addressLine}<span className="mt-1 block text-slate-500">{job.addressDetail}</span></p>
+          ) : (
+            <p className="mt-1 text-sm text-slate-600">{job.fromBranchName} → {job.toBranchName}</p>
+          )}
         </div>
         <Badge variant="secondary">{STATUS_LABELS[job.status]}</Badge>
       </div>
@@ -306,42 +313,96 @@ function JobCard({ job, couriers, courierId, onCourier, busy, onApprove, onAssig
 }
 
 function NewJob({ home, onCreated }: { home: HomeData; onCreated: () => Promise<void> }) {
+  const [mode, setMode] = useState<"local" | "hub">("local");
   const [direction, setDirection] = useState<"to_central" | "from_central">("to_central");
   const [source, setSource] = useState(home.actor.branchId ?? home.branches[0]?.id ?? "");
+  const branchId = home.actor.branchId ?? source;
+  const districts = home.branches.find(branch => branch.id === branchId)?.districts ?? [];
+  const [district, setDistrict] = useState(districts[0] ?? "");
+  const [neighborhood, setNeighborhood] = useState("");
+  const [street, setStreet] = useState("");
+  const [buildingNo, setBuildingNo] = useState("");
+  const [addressDetail, setAddressDetail] = useState("");
+  const [courierId, setCourierId] = useState("");
   const [product, setProduct] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [weightKg, setWeightKg] = useState("1");
   const [note, setNote] = useState("");
-  const branchId = home.actor.branchId ?? source;
-  const quote = trpc.internalDesk.quote.useQuery(
+  const coverage = districts.join("|");
+
+  useEffect(() => {
+    if (!districts.includes(district)) setDistrict(districts[0] ?? "");
+  }, [coverage, district, districts]);
+
+  const hubQuote = trpc.internalDesk.quote.useQuery(
     { branchId: home.actor.branchId ? undefined : branchId, direction },
-    { enabled: Boolean(branchId) },
+    { enabled: mode === "hub" && Boolean(branchId) },
   );
-  const createJob = trpc.internalDesk.createHubJob.useMutation();
+  const localQuote = trpc.internalDesk.quoteLocal.useQuery(
+    { branchId: home.actor.branchId ? undefined : branchId, district },
+    { enabled: mode === "local" && district.length >= 2 },
+  );
+  const createHub = trpc.internalDesk.createHubJob.useMutation();
+  const createLocal = trpc.internalDesk.createLocalJob.useMutation();
+  const pending = createHub.isPending || createLocal.isPending;
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    createJob.mutateAsync({
-      branchId: home.actor.branchId ? undefined : branchId,
-      direction,
-      product,
-      quantity: Number(quantity),
-      weightKg: Number(weightKg),
-      note,
-    }).then(onCreated).catch((error: Error) => toast.error(error.message));
+    const branchPayload = home.actor.branchId ? {} : { branchId };
+    const cargo = { product, quantity: Number(quantity), weightKg: Number(weightKg), note };
+    const request = mode === "local"
+      ? createLocal.mutateAsync({ ...branchPayload, district, neighborhood, street, buildingNo, addressDetail, ...cargo, ...(courierId ? { courierId } : {}) })
+      : createHub.mutateAsync({ ...branchPayload, direction, ...cargo });
+    request.then(onCreated).catch((error: Error) => toast.error(error.message));
   }
 
   return (
     <form className="grid gap-4 rounded-3xl bg-white p-4 shadow-sm sm:p-6 lg:grid-cols-[1.2fr_.8fr]" onSubmit={submit}>
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
-          <button type="button" className={`min-h-11 rounded-full px-4 text-sm font-bold ${direction === "to_central" ? "bg-slate-950 text-white" : "bg-slate-100"}`} onClick={() => setDirection("to_central")}>Şubeden merkeze</button>
-          <button type="button" className={`min-h-11 rounded-full px-4 text-sm font-bold ${direction === "from_central" ? "bg-slate-950 text-white" : "bg-slate-100"}`} onClick={() => setDirection("from_central")}>Merkezden şubeye</button>
+          <button type="button" className={`min-h-11 rounded-full px-4 text-sm font-bold ${mode === "local" ? "bg-slate-950 text-white" : "bg-slate-100"}`} onClick={() => setMode("local")}>İstanbul içi</button>
+          <button type="button" className={`min-h-11 rounded-full px-4 text-sm font-bold ${mode === "hub" ? "bg-slate-950 text-white" : "bg-slate-100"}`} onClick={() => setMode("hub")}>Merkez hattı</button>
         </div>
+        {mode === "hub" && (
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={`min-h-11 rounded-full px-4 text-sm font-bold ${direction === "to_central" ? "bg-orange-600 text-white" : "bg-slate-100"}`} onClick={() => setDirection("to_central")}>Şubeden merkeze</button>
+            <button type="button" className={`min-h-11 rounded-full px-4 text-sm font-bold ${direction === "from_central" ? "bg-orange-600 text-white" : "bg-slate-100"}`} onClick={() => setDirection("from_central")}>Merkezden şubeye</button>
+          </div>
+        )}
         {!home.actor.branchId && (
           <label className="block text-sm font-semibold">Mağaza şubesi
             <select className={`${fieldClass()} mt-1`} value={source} onChange={event => setSource(event.target.value)}>{home.branches.map(branch => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select>
           </label>
+        )}
+        {mode === "local" && (
+          <>
+            <p className="text-sm leading-6 text-slate-500">Bu şubenin bölgesi: {districts.join(", ")}. Bölge dışına gönderi açılmaz.</p>
+            <label className="block text-sm font-semibold">İlçe
+              <select className={`${fieldClass()} mt-1`} value={district} onChange={event => setDistrict(event.target.value)}>
+                {districts.map(name => <option key={name} value={name}>{name}</option>)}
+              </select>
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block text-sm font-semibold">Mahalle
+                <input className={`${fieldClass()} mt-1`} value={neighborhood} onChange={event => setNeighborhood(event.target.value)} />
+              </label>
+              <label className="block text-sm font-semibold">Sokak
+                <input className={`${fieldClass()} mt-1`} value={street} onChange={event => setStreet(event.target.value)} />
+              </label>
+              <label className="block text-sm font-semibold">Bina no
+                <input className={`${fieldClass()} mt-1`} value={buildingNo} onChange={event => setBuildingNo(event.target.value)} />
+              </label>
+              <label className="block text-sm font-semibold">Adres detayı
+                <input className={`${fieldClass()} mt-1`} value={addressDetail} onChange={event => setAddressDetail(event.target.value)} placeholder="Kat, daire, teslim notu" />
+              </label>
+            </div>
+            <label className="block text-sm font-semibold">Kurye
+              <select className={`${fieldClass()} mt-1`} value={courierId} onChange={event => setCourierId(event.target.value)}>
+                <option value="">Kurye ekibi atasın</option>
+                {home.couriers.map(courier => <option key={courier.id} value={courier.id}>{courier.name}</option>)}
+              </select>
+            </label>
+          </>
         )}
         <label className="block text-sm font-semibold">Ürün
           <input className={`${fieldClass()} mt-1`} value={product} onChange={event => setProduct(event.target.value)} />
@@ -357,21 +418,30 @@ function NewJob({ home, onCreated }: { home: HomeData; onCreated: () => Promise<
         <label className="block text-sm font-semibold">Not
           <textarea className="mt-1 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:ring-2 focus:ring-orange-300" value={note} onChange={event => setNote(event.target.value)} />
         </label>
-        <Button type="submit" className="h-11 rounded-xl bg-[#e54725] hover:bg-[#cf3d1e]" disabled={createJob.isPending}>Kurye talebi gönder</Button>
+        <Button type="submit" className="h-11 rounded-xl bg-[#e54725] hover:bg-[#cf3d1e]" disabled={pending}>{mode === "local" ? "Kurye çağır ve gönder" : "Kurye talebi gönder"}</Button>
       </div>
       <aside className="rounded-3xl bg-slate-950 p-5 text-white">
         <Bike className="h-5 w-5 text-orange-300" aria-hidden="true" />
-        <h2 className="mt-3 text-lg font-black">Bedel fiyat listesinden gelir</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-300">Tutar elle yazılmaz. Listeyi yalnız merkez müdür ve admin değiştirir. Onay, o andaki liste fiyatını kilitler.</p>
-        {quote.data && (
+        <h2 className="mt-3 text-lg font-black">{mode === "local" ? "Bu gönderinin bedeli" : "Bedel fiyat listesinden gelir"}</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-300">Tutar elle yazılmaz. Tarifeyi yalnız merkez müdür ve admin değiştirir. Gönderi açılınca o anki bedel kilitlenir.</p>
+        {mode === "local" && localQuote.data && (
           <dl className="mt-5 space-y-3 text-sm">
-            <div className="flex justify-between gap-3"><dt>Hat</dt><dd className="font-bold">{quote.data.branchName} ↔ {quote.data.centralBranchName}</dd></div>
-            <div className="flex justify-between gap-3"><dt>Mesafe</dt><dd className="font-bold">{quote.data.distanceKm} km</dd></div>
-            <div className="flex justify-between gap-3"><dt>Şube bedeli</dt><dd className="font-bold">{money(quote.data.branchChargeTl)}</dd></div>
-            {quote.data.courierPayoutTl != null && <div className="flex justify-between gap-3"><dt>Kurye ödemesi</dt><dd className="font-bold">{money(quote.data.courierPayoutTl)}</dd></div>}
+            <div className="flex justify-between gap-3"><dt>Bölge</dt><dd className="text-right font-bold">{localQuote.data.branchName} · {localQuote.data.district}</dd></div>
+            <div className="flex justify-between gap-3"><dt>Mesafe</dt><dd className="font-bold">{localQuote.data.distanceKm} km</dd></div>
+            <div className="flex justify-between gap-3"><dt>Şube bedeli</dt><dd className="font-bold">{money(localQuote.data.branchChargeTl)}</dd></div>
+            {localQuote.data.courierPayoutTl != null && <div className="flex justify-between gap-3"><dt>Kurye ödemesi</dt><dd className="font-bold">{money(localQuote.data.courierPayoutTl)}</dd></div>}
           </dl>
         )}
-        {quote.error && <p className="mt-4 text-sm text-orange-200">{quote.error.message}</p>}
+        {mode === "hub" && hubQuote.data && (
+          <dl className="mt-5 space-y-3 text-sm">
+            <div className="flex justify-between gap-3"><dt>Hat</dt><dd className="font-bold">{hubQuote.data.branchName} ↔ {hubQuote.data.centralBranchName}</dd></div>
+            <div className="flex justify-between gap-3"><dt>Mesafe</dt><dd className="font-bold">{hubQuote.data.distanceKm} km</dd></div>
+            <div className="flex justify-between gap-3"><dt>Şube bedeli</dt><dd className="font-bold">{money(hubQuote.data.branchChargeTl)}</dd></div>
+            {hubQuote.data.courierPayoutTl != null && <div className="flex justify-between gap-3"><dt>Kurye ödemesi</dt><dd className="font-bold">{money(hubQuote.data.courierPayoutTl)}</dd></div>}
+          </dl>
+        )}
+        {mode === "local" && localQuote.error && <p className="mt-4 text-sm text-orange-200">{localQuote.error.message}</p>}
+        {mode === "hub" && hubQuote.error && <p className="mt-4 text-sm text-orange-200">{hubQuote.error.message}</p>}
       </aside>
     </form>
   );
@@ -484,6 +554,7 @@ function Ledger({ ledger, onChanged }: { ledger: NonNullable<HomeData["ledger"]>
 function TariffPanel({ list, canEdit, onChanged }: { list: NonNullable<HomeData["priceList"]>; canEdit: boolean; onChanged: () => Promise<void> }) {
   const updateRates = trpc.internalDesk.updateTariff.useMutation();
   const updateRows = trpc.internalDesk.updatePriceList.useMutation();
+  const updateLocal = trpc.internalDesk.updateLocalTariffs.useMutation();
   const [rates, setRates] = useState<Tariff>(() => list.tariff);
   const [rows, setRows] = useState(list.rows);
   useEffect(() => { setRates(list.tariff); setRows(list.rows); }, [list]);
@@ -533,6 +604,34 @@ function TariffPanel({ list, canEdit, onChanged }: { list: NonNullable<HomeData[
           </tbody>
         </table>
         {canEdit && <Button type="submit" className="mt-4 h-11 rounded-xl bg-[#e54725] hover:bg-[#cf3d1e]" disabled={updateRows.isPending}>Listeyi kaydet</Button>}
+      </form>
+      <form className="overflow-x-auto rounded-3xl bg-white p-5 shadow-sm" onSubmit={event => {
+        event.preventDefault();
+        updateLocal.mutate({ rows: rows.map(row => ({ branchId: row.branchId, localOpeningFeeTl: Number(row.localOpeningFeeTl), localPerKmTl: Number(row.localPerKmTl), localPayoutOpeningTl: Number(row.localPayoutOpeningTl), localPayoutPerKmTl: Number(row.localPayoutPerKmTl) })) }, {
+          onSuccess: () => { toast.success("İstanbul içi tarife kaydedildi"); void onChanged(); },
+          onError: error => toast.error(error.message),
+        });
+      }}>
+        <h2 className="text-lg font-black">İstanbul içi tarife</h2>
+        <p className="mt-1 text-sm leading-6 text-slate-500">Her satır yalnız o şubenin bölgesi için geçerlidir. Düzenleme merkez müdür ve admine aittir. Açılmış gönderilerin bedeli değişmez.</p>
+        <table className="mt-4 w-full min-w-[52rem] text-left text-sm">
+          <thead className="text-xs uppercase tracking-wider text-slate-400"><tr><th className="py-2">Şube</th><th>Bölge</th><th>Açılış</th><th>Km</th><th>Kurye açılış</th><th>Kurye km</th></tr></thead>
+          <tbody>
+            {rows.map(row => {
+              return (
+                <tr key={`local-${row.branchId}`} className="border-t border-slate-100">
+                  <td className="py-3 font-semibold">{row.branchName}</td>
+                  <td className="max-w-48 pr-3 text-xs leading-5 text-slate-500">{row.coverage}</td>
+                  <td><label className="sr-only" htmlFor={`local-open-${row.branchId}`}>{row.branchName} açılış</label><input id={`local-open-${row.branchId}`} className="h-10 w-24 rounded-lg border border-slate-200 px-2" inputMode="decimal" disabled={!canEdit} value={row.localOpeningFeeTl} onChange={event => setRows(current => current.map(item => item.branchId === row.branchId ? { ...item, localOpeningFeeTl: Number(event.target.value) } : item))} /></td>
+                  <td><label className="sr-only" htmlFor={`local-km-${row.branchId}`}>{row.branchName} km</label><input id={`local-km-${row.branchId}`} className="h-10 w-24 rounded-lg border border-slate-200 px-2" inputMode="decimal" disabled={!canEdit} value={row.localPerKmTl} onChange={event => setRows(current => current.map(item => item.branchId === row.branchId ? { ...item, localPerKmTl: Number(event.target.value) } : item))} /></td>
+                  <td><label className="sr-only" htmlFor={`local-payout-open-${row.branchId}`}>{row.branchName} kurye açılış</label><input id={`local-payout-open-${row.branchId}`} className="h-10 w-24 rounded-lg border border-slate-200 px-2" inputMode="decimal" disabled={!canEdit} value={row.localPayoutOpeningTl} onChange={event => setRows(current => current.map(item => item.branchId === row.branchId ? { ...item, localPayoutOpeningTl: Number(event.target.value) } : item))} /></td>
+                  <td><label className="sr-only" htmlFor={`local-payout-km-${row.branchId}`}>{row.branchName} kurye km</label><input id={`local-payout-km-${row.branchId}`} className="h-10 w-24 rounded-lg border border-slate-200 px-2" inputMode="decimal" disabled={!canEdit} value={row.localPayoutPerKmTl} onChange={event => setRows(current => current.map(item => item.branchId === row.branchId ? { ...item, localPayoutPerKmTl: Number(event.target.value) } : item))} /></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {canEdit && <Button type="submit" className="mt-4 h-11 rounded-xl bg-[#e54725] hover:bg-[#cf3d1e]" disabled={updateLocal.isPending}>İstanbul içi tarifeyi kaydet</Button>}
       </form>
     </section>
   );

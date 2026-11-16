@@ -3,12 +3,14 @@ import {
   BRANCHES,
   BRANCH_LIMIT,
   CENTRAL_BRANCH,
+  type Branch,
   DEFAULT_TARIFF,
   ROLE_LABELS,
   type HubDirection,
   type InternalRole,
   type JobRecord,
   type LedgerEntry,
+  type MoneyQuote,
   type PriceRow,
   type Staff,
   type Tariff,
@@ -16,6 +18,8 @@ import {
   assertTariff,
   branchById,
   buildPriceList,
+  quoteLocal,
+  regionDistricts,
   canAdvance,
   canApprove,
   canAssign,
@@ -69,7 +73,16 @@ type DeskState = {
   ledger: LedgerEntry[];
   messages: ChatMessage[];
   transferSeq: number;
+  localSeq: number;
   ids: number;
+};
+
+const blankStop = {
+  district: "",
+  neighborhood: "",
+  street: "",
+  buildingNo: "",
+  addressDetail: "",
 };
 
 const MANAGER_ID = "merkez-mudur";
@@ -129,6 +142,7 @@ function seedState(now: string): DeskState {
       fromBranchId: "kadikoy",
       toBranchId: CENTRAL_BRANCH.id,
       destinationLabel: "Merkez şube",
+      ...blankStop,
       product: "Depo sevkiyatı — kutu kolonya",
       quantity: 12,
       weightKg: 8,
@@ -154,6 +168,7 @@ function seedState(now: string): DeskState {
       fromBranchId: CENTRAL_BRANCH.id,
       toBranchId: "besiktas",
       destinationLabel: "Beşiktaş şubesi",
+      ...blankStop,
       product: "Vitrin ayakkabı çifti",
       quantity: 4,
       weightKg: 3,
@@ -179,6 +194,7 @@ function seedState(now: string): DeskState {
       fromBranchId: "bakirkoy",
       toBranchId: CENTRAL_BRANCH.id,
       destinationLabel: "Merkez şube",
+      ...blankStop,
       product: "İade kolisi",
       quantity: 2,
       weightKg: 6,
@@ -258,6 +274,7 @@ function seedState(now: string): DeskState {
     ledger,
     messages,
     transferSeq: 2403,
+    localSeq: 2400,
     ids: 3,
   };
 }
@@ -293,13 +310,19 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
       code: job.code,
       type: job.type,
       direction: job.direction,
-      typeLabel: job.direction === "to_central" ? "Şubeden merkez şubeye" : "Merkez şubeden şubeye",
+      typeLabel: job.type === "local" ? "İstanbul içi gönderi" : job.direction === "to_central" ? "Şubeden merkez şubeye" : "Merkez şubeden şubeye",
       storeBranchId: job.storeBranchId,
       fromBranchId: job.fromBranchId,
       fromBranchName: locationById(job.fromBranchId)?.name ?? job.fromBranchId,
       toBranchId: job.toBranchId,
       toBranchName: locationById(job.toBranchId)?.name ?? job.toBranchId,
       destinationLabel: job.destinationLabel,
+      district: job.district,
+      neighborhood: job.neighborhood,
+      street: job.street,
+      buildingNo: job.buildingNo,
+      addressDetail: job.addressDetail,
+      addressLine: job.type === "local" ? `${job.neighborhood}, ${job.street} No:${job.buildingNo}, ${job.district}` : "",
       product: job.product,
       quantity: job.quantity,
       weightKg: job.weightKg,
@@ -384,13 +407,25 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
     return row;
   }
 
+  function localQuote(store: Branch, district: string) {
+    try {
+      return quoteLocal(store, listedPrice(store.id), district);
+    } catch (error) {
+      throw new DeskError(error instanceof Error ? error.message : "İlçe bu bölgede değil");
+    }
+  }
+
   function priceListView() {
     return {
       centralBranchName: CENTRAL_BRANCH.name,
       updatedAt: state.tariffUpdatedAt,
       updatedBy: state.tariffUpdatedBy ? person(state.tariffUpdatedBy)?.name ?? null : null,
       tariff: { ...state.tariff },
-      rows: state.prices.map(row => ({ ...row, branchName: branchById(row.branchId)?.name ?? row.branchId })),
+      rows: state.prices.map(row => ({
+        ...row,
+        branchName: branchById(row.branchId)?.name ?? row.branchId,
+        coverage: regionDistricts(row.branchId).join(", "),
+      })),
     };
   }
 
@@ -416,7 +451,7 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
         branchId: job.storeBranchId,
         courierId: null,
         amountTl: job.branchChargeTl,
-        description: `${storeName} ↔ ${CENTRAL_BRANCH.name} kurye bedeli`,
+        description: job.type === "local" ? `${storeName} İstanbul içi ${job.district} bedeli` : `${storeName} ↔ ${CENTRAL_BRANCH.name} kurye bedeli`,
         settled: false,
         createdAt: when,
       },
@@ -441,7 +476,7 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
         branchCount: BRANCHES.length,
         branchLimit: BRANCH_LIMIT,
         centralBranch: { id: CENTRAL_BRANCH.id, name: CENTRAL_BRANCH.name, district: CENTRAL_BRANCH.district, address: CENTRAL_BRANCH.address },
-        branches: BRANCHES.map(branch => ({ id: branch.id, name: branch.name, district: branch.district, address: branch.address })),
+        branches: BRANCHES.map(branch => ({ id: branch.id, name: branch.name, district: branch.district, address: branch.address, coverage: regionDistricts(branch.id).join(", ") })),
         staff: state.staff.map(publicPerson),
         managerHint: "İlk merkez müdür kodu 4812. Diğer personel kodlarını merkez müdür ekranından paylaşın.",
       };
@@ -476,7 +511,7 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
       const openJobs = jobs.filter(job => job.status !== "delivered" && job.status !== "cancelled");
       return {
         actor: publicPerson(actor),
-        note: "Kurye on şube ile merkez şube arasında çalışır. Fiyat listesini yalnız merkez müdür ve admin görür.",
+        note: "Her şube kendi İstanbul bölgesinde adres yazıp kurye çağırır. O şubenin tarifesini yalnız merkez müdür ve admin yönetir.",
         capabilities: {
           canCreate: actor.role === "central_manager" || actor.role === "branch_manager" || actor.role === "branch_staff",
           canEditTariff: canEditTariff(actor.role),
@@ -492,9 +527,10 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
           name: branch.name,
           district: branch.district,
           address: branch.address,
+          districts: [...regionDistricts(branch.id)],
           openJobs: state.jobs.filter(job => job.fromBranchId === branch.id && job.status !== "delivered" && job.status !== "cancelled").length,
         })),
-        couriers: actor.role === "central_manager" || actor.role === "courier_lead" || actor.role === "branch_manager"
+        couriers: actor.role === "central_manager" || actor.role === "courier_lead" || actor.role === "branch_manager" || actor.role === "branch_staff"
           ? state.staff.filter(item => item.role === "courier").map(publicPerson)
           : [],
         jobs,
@@ -523,6 +559,7 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
         fromBranchId: towardCentral ? store.id : CENTRAL_BRANCH.id,
         toBranchId: towardCentral ? CENTRAL_BRANCH.id : store.id,
         destinationLabel: towardCentral ? CENTRAL_BRANCH.name : `${store.name} şubesi`,
+        ...blankStop,
         product: requiredText(input.product, 2, 120, "Ürün"),
         quantity: whole(input.quantity, 1, 500, "Adet"),
         weightKg: weight(input.weightKg),
@@ -542,13 +579,78 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
       state.jobs.push(job);
       return jobView(actor, job);
     },
+    quoteLocal(actor: Staff, input: { branchId?: string; district: string }) {
+      const store = originBranch(actor, input.branchId);
+      const district = requiredText(input.district, 2, 40, "İlçe");
+      return presentLocalQuote(actor, store, district, localQuote(store, district));
+    },
+    createLocalJob(actor: Staff, input: { branchId?: string; district: string; neighborhood: string; street: string; buildingNo: string; addressDetail: string; product: string; quantity: number; weightKg: number; note?: string; courierId?: string }) {
+      const store = originBranch(actor, input.branchId);
+      const district = requiredText(input.district, 2, 40, "İlçe");
+      const quote = localQuote(store, district);
+      const neighborhood = requiredText(input.neighborhood, 2, 80, "Mahalle");
+      const street = requiredText(input.street, 2, 120, "Sokak");
+      const buildingNo = requiredText(input.buildingNo, 1, 20, "Bina no");
+      const addressDetail = requiredText(input.addressDetail, 2, 240, "Adres detayı");
+      let courierId: string | null = null;
+      let status: JobRecord["status"] = "approved";
+      if (input.courierId) {
+        const courier = requirePerson(input.courierId);
+        if (courier.role !== "courier") throw new DeskError("İş yalnız kurye çalışanına atanır");
+        courierId = courier.id;
+        status = "assigned";
+      }
+      const when = now();
+      state.localSeq += 1;
+      const job: JobRecord = {
+        id: nextId("job"),
+        code: `IS-${state.localSeq}`,
+        type: "local",
+        direction: "local",
+        storeBranchId: store.id,
+        fromBranchId: store.id,
+        toBranchId: store.id,
+        destinationLabel: `${neighborhood}, ${street} No:${buildingNo}, ${district}`,
+        district,
+        neighborhood,
+        street,
+        buildingNo,
+        addressDetail,
+        product: requiredText(input.product, 2, 120, "Ürün"),
+        quantity: whole(input.quantity, 1, 500, "Adet"),
+        weightKg: weight(input.weightKg),
+        distanceKm: quote.distanceKm,
+        status,
+        requestedBy: actor.id,
+        approvedBy: actor.id,
+        courierId,
+        branchChargeTl: quote.branchChargeTl,
+        courierPayoutTl: quote.courierPayoutTl,
+        estimateChargeTl: quote.branchChargeTl,
+        estimatePayoutTl: quote.courierPayoutTl,
+        note: cleanText(input.note ?? "", 300),
+        createdAt: when,
+        updatedAt: when,
+      };
+      state.jobs.push(job);
+      return jobView(actor, job);
+    },
     approve(actor: Staff, jobId: string) {
       const job = requireJob(actor, jobId);
       if (!canApprove(actor, job)) throw new DeskError("Bu işi onaylama yetkiniz yok", "FORBIDDEN");
-      const price = listedPrice(job.storeBranchId);
-      job.distanceKm = price.distanceKm;
-      job.branchChargeTl = price.chargeTl;
-      job.courierPayoutTl = price.payoutTl;
+      if (job.type === "local") {
+        const store = branchById(job.storeBranchId);
+        if (!store) throw new DeskError("Şube bulunamadı");
+        const quote = localQuote(store, job.district);
+        job.distanceKm = quote.distanceKm;
+        job.branchChargeTl = quote.branchChargeTl;
+        job.courierPayoutTl = quote.courierPayoutTl;
+      } else {
+        const price = listedPrice(job.storeBranchId);
+        job.distanceKm = price.distanceKm;
+        job.branchChargeTl = price.chargeTl;
+        job.courierPayoutTl = price.payoutTl;
+      }
       job.status = "approved";
       job.approvedBy = actor.id;
       job.updatedAt = now();
@@ -583,7 +685,7 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
     updateTariff(actor: Staff, tariff: Tariff) {
       assertPriceEditor(actor);
       state.tariff = assertTariff(tariff);
-      state.prices = buildPriceList(state.tariff);
+      state.prices = buildPriceList(state.tariff, state.prices);
       state.tariffUpdatedBy = actor.id;
       state.tariffUpdatedAt = now();
       return priceListView();
@@ -594,14 +696,35 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
       const next = BRANCHES.map(branch => {
         const row = rows.find(item => item.branchId === branch.id);
         if (!row) throw new DeskError("Fiyat listesi on şubenin tamamını kapsamalı");
+        const current = listedPrice(branch.id);
         return {
+          ...current,
           branchId: branch.id,
-          distanceKm: listedPrice(branch.id).distanceKm,
+          distanceKm: current.distanceKm,
           chargeTl: assertMoney(row.chargeTl, `${branch.name} bedeli`),
           payoutTl: assertMoney(row.payoutTl, `${branch.name} kurye ödemesi`),
         };
       });
       state.prices = next;
+      state.tariffUpdatedBy = actor.id;
+      state.tariffUpdatedAt = now();
+      return priceListView();
+    },
+    updateLocalTariffs(actor: Staff, rows: { branchId: string; localOpeningFeeTl: number; localPerKmTl: number; localPayoutOpeningTl: number; localPayoutPerKmTl: number }[]) {
+      assertPriceEditor(actor);
+      if (rows.length !== BRANCH_LIMIT) throw new DeskError("İstanbul içi tarife on şubenin tamamını kapsamalı");
+      state.prices = BRANCHES.map(branch => {
+        const row = rows.find(item => item.branchId === branch.id);
+        if (!row) throw new DeskError("İstanbul içi tarife on şubenin tamamını kapsamalı");
+        const current = listedPrice(branch.id);
+        return {
+          ...current,
+          localOpeningFeeTl: assertMoney(row.localOpeningFeeTl, `${branch.name} İstanbul içi açılış`),
+          localPerKmTl: assertMoney(row.localPerKmTl, `${branch.name} İstanbul içi km`),
+          localPayoutOpeningTl: assertMoney(row.localPayoutOpeningTl, `${branch.name} kurye açılış`),
+          localPayoutPerKmTl: assertMoney(row.localPayoutPerKmTl, `${branch.name} kurye km`),
+        };
+      });
       state.tariffUpdatedBy = actor.id;
       state.tariffUpdatedAt = now();
       return priceListView();
@@ -670,6 +793,19 @@ export function createInternalDesk(now: () => string = () => new Date().toISOStr
       state.failures.delete(staffId);
       return { success: true as const };
     },
+  };
+}
+
+function presentLocalQuote(actor: Staff, store: Branch, district: string, quote: MoneyQuote) {
+  return {
+    branchId: store.id,
+    branchName: store.name,
+    district,
+    region: [...regionDistricts(store.id)],
+    distanceKm: quote.distanceKm,
+    branchChargeTl: quote.branchChargeTl,
+    courierPayoutTl: canViewTariff(actor.role) ? quote.courierPayoutTl : null,
+    feeLabel: "tarife" as const,
   };
 }
 
