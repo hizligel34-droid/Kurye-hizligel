@@ -1,11 +1,14 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
+import type { Staff } from "../../shared/internalDesk";
+import { actorFromHeader } from "../internalDeskStore";
 import { sdk } from "./sdk";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
   res: CreateExpressContextOptions["res"];
   user: User | null;
+  internalActor: Staff | null;
 };
 
 export async function createContext(
@@ -24,5 +27,6 @@ export async function createContext(
     req: opts.req,
     res: opts.res,
     user,
+    internalActor: actorFromHeader(opts.req.headers["x-internal-desk"]),
   };
 }

@@ -1531,6 +1531,9 @@ export default function Home() {
             <button onClick={() => window.location.assign("/membership")}>
               Üyelik
             </button>
+            <button onClick={() => window.location.assign("/ic-operasyon")}>
+              İç masa
+            </button>
             {isAuthenticated && (
               <button onClick={() => nav("account")}>{t.account}</button>
             )}
@@ -1539,6 +1542,14 @@ export default function Home() {
             )}
           </nav>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden"
+              onClick={() => window.location.assign("/ic-operasyon")}
+            >
+              İç masa
+            </Button>
             <label className="sr-only" htmlFor="language-select">
               {t.language}
             </label>
